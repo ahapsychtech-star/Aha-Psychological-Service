@@ -81,7 +81,7 @@ CORS(app, supports_credentials=True, origins=[
 
 
 
-CLINICAL_AI_MODEL = 'gemini-1.5-flash'
+CLINICAL_AI_MODEL = 'gemini-2.0-flash'
 
 TELEGRAM_BOT_USERNAME = os.getenv('TELEGRAM_BOT_USERNAME', 'Aha_Psychological_Service_Bot').strip()
 
@@ -1431,7 +1431,7 @@ def call_openai(prompt, system=None, model=None, num_predict=700):
         'the exact headings requested.'
     )
 
-    chosen_model = "gemini-1.5-flash"
+    chosen_model = "gemini-2.0-flash"
 
     try:
         gemini_model = genai.GenerativeModel(
