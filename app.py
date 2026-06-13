@@ -81,7 +81,7 @@ CORS(app, supports_credentials=True, origins=[
 
 
 
-CLINICAL_AI_MODEL = 'gpt-4o-mini'
+CLINICAL_AI_MODEL = 'gemini-1.5-flash'
 
 TELEGRAM_BOT_USERNAME = os.getenv('TELEGRAM_BOT_USERNAME', 'Aha_Psychological_Service_Bot').strip()
 
@@ -1418,10 +1418,11 @@ def backfill_missing_appointment_rooms():
 
 
 def call_openai(prompt, system=None, model=None, num_predict=700):
-    gemini_api_key = os.getenv("GEMINI_API_KEY")
+    gemini_api_key = os.getenv("GEMINI_API_KEY", "").strip()
     if not gemini_api_key:
+        print("[AI ERROR] GEMINI_API_KEY is not set or empty in environment variables.")
         return False, "GEMINI_API_KEY not configured."
-        
+
     genai.configure(api_key=gemini_api_key)
     system_prompt = system or (
         'You are a careful clinical documentation assistant. You may improve grammar, punctuation, '
@@ -1429,9 +1430,9 @@ def call_openai(prompt, system=None, model=None, num_predict=700):
         'or outcomes. Keep the content grounded in the source text and return plain-text output with '
         'the exact headings requested.'
     )
-    
+
     chosen_model = "gemini-1.5-flash"
-    
+
     try:
         gemini_model = genai.GenerativeModel(
             model_name=chosen_model,
@@ -1443,9 +1444,24 @@ def call_openai(prompt, system=None, model=None, num_predict=700):
             )
         )
         response = gemini_model.generate_content(prompt)
-        return True, response.text
+        result_text = response.text
+        print(f"[AI OK] Gemini responded with {len(result_text)} chars.")
+        return True, result_text
     except Exception as e:
+        print(f"[AI ERROR] Gemini call failed: {e}")
         return False, str(e)
+
+
+@app.route('/api/ai/test', methods=['GET'])
+def ai_test():
+    """Diagnostic endpoint to verify Gemini AI is configured and working."""
+    key = os.getenv('GEMINI_API_KEY', '').strip()
+    if not key:
+        return jsonify({'status': 'error', 'message': 'GEMINI_API_KEY is not set in environment variables.'}), 500
+    ok, result = call_openai('Say hello in one sentence.', num_predict=50)
+    if ok:
+        return jsonify({'status': 'ok', 'message': 'Gemini AI is working.', 'response': result})
+    return jsonify({'status': 'error', 'message': result}), 500
 
 
 

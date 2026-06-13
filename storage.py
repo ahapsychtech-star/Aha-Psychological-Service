@@ -48,6 +48,16 @@ def upload_file(file_obj, filename):
     client = _get_client()
     if client:
         try:
+            # Try to ensure bucket exists
+            try:
+                client.storage.get_bucket(BUCKET)
+            except Exception:
+                # If it doesn't exist, try to create it as a public bucket
+                try:
+                    client.storage.create_bucket(BUCKET, {"public": True})
+                except Exception as e_create:
+                    print(f'[STORAGE] Bucket creation failed: {e_create}')
+            
             file_bytes = file_obj.read()
             content_type = file_obj.content_type or 'application/octet-stream'
             client.storage.from_(BUCKET).upload(
