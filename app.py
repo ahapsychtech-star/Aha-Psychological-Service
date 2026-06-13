@@ -1017,7 +1017,7 @@ def telegram_api_get(method, params=None, timeout=20):
 
 
 
-def send_telegram_message(chat_id, text):
+def send_telegram_message(chat_id, text, parse_mode='HTML'):
 
     if not chat_id:
 
@@ -1025,7 +1025,14 @@ def send_telegram_message(chat_id, text):
 
         return False
 
-    ok, result = telegram_api('sendMessage', {'chat_id': chat_id, 'text': text, 'disable_web_page_preview': True})
+    payload = {
+        'chat_id': chat_id,
+        'text': text,
+        'disable_web_page_preview': True,
+        'parse_mode': parse_mode
+    }
+
+    ok, result = telegram_api('sendMessage', payload)
 
     print(f'[TELEGRAM] send_telegram_message to {chat_id}: ok={ok}, result={result}')
 
@@ -4975,7 +4982,42 @@ def public_intake():
 
         conn.commit()
 
-    
+    # ── Telegram notification to admins/receptionists ──
+    try:
+        gender = personal.get('gender', 'Not specified')
+        lang = intake.get('language_pref', 'Not specified')
+        concerns_text = intake.get('concerns', '').strip() or 'Not provided'
+        pref_date = intake.get('appointment_date', '') or intake.get('preferred_date', '') or 'Not specified'
+        pref_time = intake.get('appointment_time', '') or intake.get('preferred_time', '') or 'Not specified'
+        source = intake.get('intake_source', 'Website Intake Form')
+
+        notif = (
+            f"\U0001f195 <b>New Client Self-Registered</b>\n"
+            f"\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n"
+            f"\U0001f194 <b>Client Code:</b> <code>{code}</code>\n"
+            f"\U0001f464 <b>Gender:</b> {gender}\n"
+            f"\U0001f4ac <b>Language:</b> {lang}\n"
+            f"\U0001f4cd <b>Source:</b> {source}\n"
+            f"\n"
+            f"\U0001f4cb <b>Presenting Concern:</b>\n"
+            f"{concerns_text[:300]}{'...' if len(concerns_text) > 300 else ''}\n"
+            f"\n"
+            f"\U0001f4c5 <b>Preferred Date:</b> {pref_date}\n"
+            f"\u23f0 <b>Preferred Time:</b> {pref_time}\n"
+            f"\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n"
+            f"\u27a1\ufe0f Please log in to the reception portal to assign a therapist."
+        )
+
+        with get_db() as notif_conn:
+            notif_users = notif_conn.execute(
+                "SELECT telegram_chat_id FROM users WHERE role IN ('admin','receptionist') AND is_active=1 AND telegram_chat_id IS NOT NULL AND telegram_chat_id != ''"
+            ).fetchall()
+
+        for nu in notif_users:
+            send_telegram_message(nu['telegram_chat_id'], notif)
+
+    except Exception as tg_err:
+        print(f'[TELEGRAM] Failed to send new client notification: {tg_err}')
 
     return jsonify({'success': True, 'client_code': code}), 201
 

@@ -708,14 +708,22 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
 
         <!-- Step 2 -->
         <div class="step-panel" id="step2">
-          <h3 style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:18px">Service Preferences</h3>
+          <h3 style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:18px">Service Preferences &amp; Concerns</h3>
           <div class="grid-2">
             <div class="form-group"><label>Intake Source</label><select class="form-control" id="nc_source"><option>Walk-in</option><option>Referral</option><option>Online</option><option>Phone</option><option>Other</option></select></div>
             <div class="form-group"><label>Preferred Language</label><select class="form-control" id="nc_lang"><option>English</option><option>Amharic</option><option>Oromiffa</option><option>Tigrinya</option><option>Somali</option></select></div>
             <div class="form-group"><label>Therapist Gender Preference</label><select class="form-control" id="nc_genderpref"><option>No Preference</option><option>Male</option><option>Female</option></select></div>
+            <div class="form-group"><label>Preferred Appointment Date</label><input type="date" class="form-control" id="nc_pref_date"></div>
+            <div class="form-group"><label>Preferred Appointment Time</label><select class="form-control" id="nc_pref_time">
+              <option value="">Select preferred time</option>
+              <option value="Morning (8am–12pm)">Morning (8am–12pm)</option>
+              <option value="Afternoon (12pm–5pm)">Afternoon (12pm–5pm)</option>
+              <option value="Evening (5pm–8pm)">Evening (5pm–8pm)</option>
+              <option value="Any time">Any time</option>
+            </select></div>
           </div>
-          <div class="form-group"><label>Presenting Concerns</label><textarea class="form-control" id="nc_concerns" placeholder="Briefly describe why the client is seeking services..."></textarea></div>
-          <div class="form-group"><label>Additional Notes</label><textarea class="form-control" id="nc_notes" style="min-height:80px" placeholder="Any other relevant information..."></textarea></div>
+          <div class="form-group"><label>Presenting Concerns <span style="color:var(--danger)">*</span></label><textarea class="form-control" id="nc_concerns" rows="4" placeholder="Briefly describe why the client is seeking psychological services — their primary concern, symptoms, or situation..."></textarea></div>
+          <div class="form-group"><label>Additional Notes</label><textarea class="form-control" id="nc_notes" style="min-height:80px" placeholder="Any other relevant information, referral source details, special requirements..."></textarea></div>
           <div style="display:flex;justify-content:space-between;margin-top:8px">
             <button class="btn btn-ghost" onclick="nextStep(1)"><i class="fa-solid fa-arrow-left"></i> Back</button>
             <button class="btn btn-primary" onclick="nextStep(3)">Review <i class="fa-solid fa-arrow-right"></i></button>
@@ -2498,6 +2506,8 @@ function buildReview() {
     ['Language Preference', document.getElementById('nc_lang').value],
     ['Therapist Gender Pref', document.getElementById('nc_genderpref').value],
     ['Intake Source', document.getElementById('nc_source').value],
+    ['Preferred Date', document.getElementById('nc_pref_date').value||'-'],
+    ['Preferred Time', document.getElementById('nc_pref_time').value||'-'],
     ['Presenting Concerns', document.getElementById('nc_concerns').value||'-'],
   ];
   document.getElementById('reviewContent').innerHTML = rows.map(([l,v])=>
@@ -2511,6 +2521,17 @@ async function registerClient() {
   const btn = document.getElementById('registerBtn');
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registering...';
   btn.disabled = true;
+  const prefDate = document.getElementById('nc_pref_date').value;
+  const prefTime = document.getElementById('nc_pref_time').value;
+  const concerns = document.getElementById('nc_concerns').value;
+  const extraNotes = document.getElementById('nc_notes').value;
+  const notesStr = [
+    concerns ? `Presenting Concerns:\n${concerns}` : '',
+    prefDate ? `Preferred Appointment Date: ${prefDate}` : '',
+    prefTime ? `Preferred Appointment Time: ${prefTime}` : '',
+    extraNotes ? `Additional Notes:\n${extraNotes}` : ''
+  ].filter(Boolean).join('\n\n');
+
   const body = {
     full_name: document.getElementById('nc_name').value,
     date_of_birth: document.getElementById('nc_dob').value,
@@ -2523,7 +2544,7 @@ async function registerClient() {
     language_pref: document.getElementById('nc_lang').value,
     therapist_gender_pref: document.getElementById('nc_genderpref').value,
     intake_source: document.getElementById('nc_source').value,
-    notes: document.getElementById('nc_notes').value,
+    notes: notesStr,
   };
   try {
     const r = await apiFetch('/api/clients', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
@@ -2540,7 +2561,7 @@ async function registerClient() {
 }
 
 function resetClientForm() {
-  ['nc_name','nc_dob','nc_phone','nc_email','nc_address','nc_ecname','nc_ecphone','nc_concerns','nc_notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  ['nc_name','nc_dob','nc_phone','nc_email','nc_address','nc_ecname','nc_ecphone','nc_concerns','nc_notes','nc_pref_date','nc_pref_time'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   currentStep = 1;
   nextStep(1);
 }
