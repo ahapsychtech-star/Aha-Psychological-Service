@@ -7,13 +7,14 @@
   // Your Railway backend URL
   const PRODUCTION_API_URL = 'https://web-production-0b7ca.up.railway.app';
 
-  const isLocal = (
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1'
-  );
-
   // Expose globally so all JS files can use it
-  window.API_BASE = isLocal ? '' : PRODUCTION_API_URL;
+  window.API_BASE = PRODUCTION_API_URL;
+  window.getApiUrl = function(path) {
+    if (!path) return path;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    if (path.startsWith('/')) return window.API_BASE + path;
+    return window.API_BASE + '/' + path;
+  };
 
   /**
    * Prefixed fetch - use this instead of plain fetch() in all portal JS files.

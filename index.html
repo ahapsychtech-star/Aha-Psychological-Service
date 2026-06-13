@@ -18,7 +18,9 @@ WWW.UNITEDTHEMES.COM
 
 Version: 4.9.5.6u
 ##########################################################################################
---><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+--><head>
+    <script src="/api_config.js"></script>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">
     
@@ -714,7 +716,7 @@ var $hero_rain_background_container=$("#ut-rain-background","#ut-hero");if($hero
         const slide   = document.createElement('div');
         slide.className = `aha-slide align-${align}` + (i === 0 ? ' active' : '');
         slide.innerHTML = `
-          <div class="aha-slide-bg" style="background-image:url('${s.image_path}')"></div>
+          <div class="aha-slide-bg" style="background-image:url('${window.getApiUrl ? window.getApiUrl(s.image_path) : s.image_path}')"></div>
           <div class="aha-slide-content">
             <h2>${heading}</h2>
             <p>${s.summary || ''}</p>
@@ -1301,7 +1303,7 @@ var $hero_rain_background_container=$("#ut-rain-background","#ut-hero");if($hero
   window.openOrgModal = function(m) {
     const left = document.getElementById('orgModalLeft');
     if (m.photo_path) {
-      left.innerHTML = `<img src="${m.photo_path}" class="org-modal-img">`;
+      left.innerHTML = `<img src="${window.getApiUrl ? window.getApiUrl(m.photo_path) : m.photo_path}" class="org-modal-img">`;
     } else {
       left.innerHTML = `<div class="org-modal-placeholder">${(m.name||'?')[0].toUpperCase()}</div>`;
     }
@@ -1338,7 +1340,7 @@ var $hero_rain_background_container=$("#ut-rain-background","#ut-hero");if($hero
       function makeNodeContent(m) {
         const initial = (m.name||'?')[0].toUpperCase();
         const photo = m.photo_path
-          ? `<img class="org-node-photo" src="${m.photo_path}" alt="${m.name}">`
+          ? `<img class="org-node-photo" src="${window.getApiUrl ? window.getApiUrl(m.photo_path) : m.photo_path}" alt="${m.name}">`
           : `<div class="org-node-photo-placeholder">${initial}</div>`;
         const typeClass = m.node_type === 'root' ? 'root'
                         : m.node_type === 'advisory' ? 'advisory'
@@ -1438,6 +1440,7 @@ var $hero_rain_background_container=$("#ut-rain-background","#ut-hero");if($hero
     }
   }
   
+  document.querySelectorAll('.scroll-anim').forEach(el => animObserver.observe(el));
   loadOrgChart();
 })();
 </script>
