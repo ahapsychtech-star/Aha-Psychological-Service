@@ -2,7 +2,7 @@ import os
 
 import json
 
-import google.generativeai as genai
+from openai import OpenAI as GroqOpenAI
 
 import hashlib
 
@@ -81,7 +81,7 @@ CORS(app, supports_credentials=True, origins=[
 
 
 
-CLINICAL_AI_MODEL = 'gemini-2.0-flash'
+CLINICAL_AI_MODEL = 'llama-3.3-70b-versatile'
 
 TELEGRAM_BOT_USERNAME = os.getenv('TELEGRAM_BOT_USERNAME', 'Aha_Psychological_Service_Bot').strip()
 
@@ -1418,12 +1418,11 @@ def backfill_missing_appointment_rooms():
 
 
 def call_openai(prompt, system=None, model=None, num_predict=700):
-    gemini_api_key = os.getenv("GEMINI_API_KEY", "").strip()
-    if not gemini_api_key:
-        print("[AI ERROR] GEMINI_API_KEY is not set or empty in environment variables.")
-        return False, "GEMINI_API_KEY not configured."
+    groq_api_key = os.getenv("GROQ_API_KEY", "").strip()
+    if not groq_api_key:
+        print("[AI ERROR] GROQ_API_KEY is not set or empty in environment variables.")
+        return False, "GROQ_API_KEY not configured."
 
-    genai.configure(api_key=gemini_api_key)
     system_prompt = system or (
         'You are a careful clinical documentation assistant. You may improve grammar, punctuation, '
         'structure, and professionalism, but you must not invent facts, diagnoses, interventions, '
@@ -1431,36 +1430,40 @@ def call_openai(prompt, system=None, model=None, num_predict=700):
         'the exact headings requested.'
     )
 
-    chosen_model = "gemini-2.0-flash"
+    chosen_model = model or CLINICAL_AI_MODEL
 
     try:
-        gemini_model = genai.GenerativeModel(
-            model_name=chosen_model,
-            system_instruction=system_prompt,
-            generation_config=genai.types.GenerationConfig(
-                temperature=0.1,
-                top_p=0.9,
-                max_output_tokens=num_predict,
-            )
+        client = GroqOpenAI(
+            api_key=groq_api_key,
+            base_url="https://api.groq.com/openai/v1",
         )
-        response = gemini_model.generate_content(prompt)
-        result_text = response.text
-        print(f"[AI OK] Gemini responded with {len(result_text)} chars.")
+        response = client.chat.completions.create(
+            model=chosen_model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.1,
+            top_p=0.9,
+            max_tokens=num_predict,
+        )
+        result_text = response.choices[0].message.content
+        print(f"[AI OK] Groq responded with {len(result_text)} chars.")
         return True, result_text
     except Exception as e:
-        print(f"[AI ERROR] Gemini call failed: {e}")
+        print(f"[AI ERROR] Groq call failed: {e}")
         return False, str(e)
 
 
 @app.route('/api/ai/test', methods=['GET'])
 def ai_test():
-    """Diagnostic endpoint to verify Gemini AI is configured and working."""
-    key = os.getenv('GEMINI_API_KEY', '').strip()
+    """Diagnostic endpoint to verify Groq AI is configured and working."""
+    key = os.getenv('GROQ_API_KEY', '').strip()
     if not key:
-        return jsonify({'status': 'error', 'message': 'GEMINI_API_KEY is not set in environment variables.'}), 500
+        return jsonify({'status': 'error', 'message': 'GROQ_API_KEY is not set in environment variables.'}), 500
     ok, result = call_openai('Say hello in one sentence.', num_predict=50)
     if ok:
-        return jsonify({'status': 'ok', 'message': 'Gemini AI is working.', 'response': result})
+        return jsonify({'status': 'ok', 'message': 'Groq AI is working.', 'response': result})
     return jsonify({'status': 'error', 'message': result}), 500
 
 
