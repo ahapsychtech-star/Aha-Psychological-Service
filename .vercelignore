@@ -1,0 +1,12 @@
+# Hide backend files from Vercel so it serves static HTML only
+app.py
+db.py
+storage.py
+requirements.txt
+Procfile
+*.db
+.env
+__pycache__/
+patch_*.py
+modules/
+uploads/
