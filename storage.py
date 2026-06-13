@@ -1,5 +1,5 @@
 """
-storage.py — Supabase Storage adapter for Aha Psychological Service
+storage.py  Supabase Storage adapter for Aha Psychological Service
 Uploads files to Supabase Storage bucket and returns a public URL.
 Falls back to local disk if Supabase credentials are missing (dev mode).
 """
@@ -66,4 +66,4 @@ def upload_file(file_obj, filename):
     local_path = os.path.join(local_dir, unique_name)
     file_obj.seek(0)
     file_obj.save(local_path)
-    return f'/uploads/{unique_name}'
+    return f'/uploads/{unique_name}'

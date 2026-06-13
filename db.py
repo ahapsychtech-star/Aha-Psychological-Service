@@ -1,5 +1,5 @@
 """
-db.py — PostgreSQL adapter for Aha Psychological Service
+db.py  PostgreSQL adapter for Aha Psychological Service
 Replaces the SQLite3 connection used locally with a psycopg2-backed
 connection that behaves identically (row-as-dict, context manager, etc.).
 """
@@ -143,4 +143,4 @@ def connect():
         )
     raw = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
     raw.autocommit = False
-    return _Connection(raw)
+    return _Connection(raw)
