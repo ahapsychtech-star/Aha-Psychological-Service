@@ -1,18 +1,12 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "app.py",
-      "use": "@vercel/python",
-      "config": {
-        "maxLambdaSize": "50mb"
-      }
-    }
-  ],
   "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "app.py"
-    }
+    { "src": "/login", "dest": "/login.html" },
+    { "src": "/about", "dest": "/about.html" },
+    { "src": "/contact", "dest": "/contact.html" },
+    { "src": "/team", "dest": "/team.html" },
+    { "src": "/blog", "dest": "/blog.html" },
+    { "src": "/assessment", "dest": "/assessment.html" },
+    { "src": "/news-events", "dest": "/news-events.html" }
   ]
 }

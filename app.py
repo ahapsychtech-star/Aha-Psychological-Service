@@ -71,17 +71,12 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # ─── CORS: allow Vercel frontend to call Railway backend ───
 
 CORS(app, supports_credentials=True, origins=[
-
     'http://localhost:5000',
-
     'http://127.0.0.1:5000',
-
     'http://localhost:8000',
-
     'https://*.vercel.app',
-
+    'https://web-production-0b7ca.up.railway.app',
     os.getenv('FRONTEND_URL', ''),
-
 ])
 
 
