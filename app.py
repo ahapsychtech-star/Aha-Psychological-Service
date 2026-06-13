@@ -3684,11 +3684,22 @@ def start_telegram_scheduler():
 
 
 
-init_db()
+# Startup: only run on persistent servers (Railway), not Vercel serverless
+_is_vercel = os.getenv('VERCEL', '') or os.getenv('VERCEL_ENV', '')
+if not _is_vercel:
+    try:
+        init_db()
+    except Exception as _e:
+        print(f'[STARTUP] init_db failed: {_e}')
 
-start_telegram_scheduler()
-
-start_telegram_polling()
+    start_telegram_scheduler()
+    start_telegram_polling()
+else:
+    # On Vercel, init DB lazily on first request
+    try:
+        init_db()
+    except Exception as _e:
+        print(f'[VERCEL STARTUP] init_db failed (DB may not be set): {_e}')
 
 
 
@@ -4212,13 +4223,13 @@ def get_appointments():
 
         if start:
 
-            conditions.append('date(a.start_time)>=date(?)')
+            conditions.append('a.start_time::date >= %s::date')
 
             params.append(start)
 
         if end:
 
-            conditions.append('date(a.start_time)<=date(?)')
+            conditions.append('a.start_time::date <= %s::date')
 
             params.append(end)
 
