@@ -2,7 +2,7 @@ import os
 
 import json
 
-import openai
+import google.generativeai as genai
 
 import hashlib
 
@@ -1423,61 +1423,33 @@ def backfill_missing_appointment_rooms():
 
 
 def call_openai(prompt, system=None, model=None, num_predict=700):
-
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-
-    if not openai_api_key:
-
-        return False, "OpenAI API key not configured."
-
+    gemini_api_key = os.getenv("GEMINI_API_KEY")
+    if not gemini_api_key:
+        return False, "GEMINI_API_KEY not configured."
         
-
-    client = openai.OpenAI(api_key=openai_api_key)
-
+    genai.configure(api_key=gemini_api_key)
     system_prompt = system or (
-
         'You are a careful clinical documentation assistant. You may improve grammar, punctuation, '
-
         'structure, and professionalism, but you must not invent facts, diagnoses, interventions, '
-
         'or outcomes. Keep the content grounded in the source text and return plain-text output with '
-
         'the exact headings requested.'
-
     )
-
     
-
-    chosen_model = model if model and "gpt" in model else "gpt-4o-mini"
-
+    chosen_model = "gemini-1.5-flash"
     
-
     try:
-
-        response = client.chat.completions.create(
-
-            model=chosen_model,
-
-            messages=[
-
-                {"role": "system", "content": system_prompt},
-
-                {"role": "user", "content": prompt}
-
-            ],
-
-            temperature=0.1,
-
-            max_tokens=num_predict,
-
-            top_p=0.9
-
+        gemini_model = genai.GenerativeModel(
+            model_name=chosen_model,
+            system_instruction=system_prompt,
+            generation_config=genai.types.GenerationConfig(
+                temperature=0.1,
+                top_p=0.9,
+                max_output_tokens=num_predict,
+            )
         )
-
-        return True, response.choices[0].message.content
-
+        response = gemini_model.generate_content(prompt)
+        return True, response.text
     except Exception as e:
-
         return False, str(e)
 
 
