@@ -16,6 +16,8 @@ import time
 
 import io
 
+import html
+
 from urllib import request as urllib_request, error as urllib_error, parse as urllib_parse
 
 from datetime import datetime, timedelta
@@ -1039,6 +1041,140 @@ def send_telegram_message(chat_id, text, parse_mode='HTML'):
     return ok, result
 
 
+def _telegram_safe(value, default='Not specified'):
+
+    text = default if value in (None, '') else str(value)
+
+    return html.escape(text, quote=False)
+
+
+def _appointment_notification_body(appt, action, reason='', old_start_time=None, old_end_time=None, change_scope=''):
+
+    client_code = _telegram_safe(appt.get('client_code') or 'Not specified')
+
+    therapist = _telegram_safe(appt.get('therapist_name') or 'Unassigned therapist')
+
+    room_source = appt.get('room')
+
+    if room_source:
+
+        try:
+
+            room = _telegram_safe(room_display_name(room_source))
+
+        except Exception:
+
+            room = _telegram_safe(appt.get('location') or appt.get('room_name') or appt.get('room_code') or 'Unassigned')
+
+    else:
+
+        room = _telegram_safe(appt.get('location') or appt.get('room_name') or appt.get('room_code') or 'Unassigned')
+
+    current_status = (appt.get('status') or 'scheduled').replace('_', ' ').strip().title()
+
+    if current_status.lower() == 'no show':
+
+        current_status = 'No-show'
+
+    current_start = _telegram_safe(format_datetime_readable(appt.get('start_time')))
+
+    current_end = _telegram_safe(format_datetime_readable(appt.get('end_time')))
+
+    reason_text = _telegram_safe(reason or 'No reason provided')
+
+    scope = (change_scope or '').strip().lower()
+
+    scope_label = 'Temporary change' if scope == 'temporary' else 'Permanent change' if scope == 'permanent' else 'Administrative update'
+
+    lines = [
+
+        '📋 <b>Appointment details</b>',
+
+        '',
+
+        f'• <b>Client code:</b> <code>{client_code}</code>',
+
+        f'• <b>Therapist:</b> {therapist}',
+
+        f'• <b>Room:</b> {room}',
+
+        f'• <b>Current status:</b> {current_status}',
+
+    ]
+
+    if action in ('rescheduled', 'changed'):
+
+        lines.extend(['', '🔄 <b>Change details</b>'])
+
+        if old_start_time:
+
+            lines.append(f'• <b>Previous date/time:</b> {_telegram_safe(format_datetime_readable(old_start_time))}')
+
+        if old_end_time:
+
+            lines.append(f'• <b>Previous end time:</b> {_telegram_safe(format_datetime_readable(old_end_time))}')
+
+        lines.extend([
+
+            f'• <b>New date/time:</b> {current_start}',
+
+            f'• <b>New end time:</b> {current_end}',
+
+        ])
+
+    elif action in ('cancelled', 'terminated'):
+
+        lines.extend([
+
+            '',
+
+            '🛑 <b>Cancellation details</b>' if action == 'cancelled' else '🚫 <b>Termination details</b>',
+
+            f'• <b>Scheduled date/time:</b> {current_start}',
+
+            f'• <b>End time:</b> {current_end}',
+
+        ])
+
+    elif action == 'no_show':
+
+        lines.extend([
+
+            '',
+
+            '⚠️ <b>No-show details</b>',
+
+            f'• <b>Session time:</b> {current_start}',
+
+            f'• <b>End time:</b> {current_end}',
+
+        ])
+
+    else:
+
+        lines.extend([
+
+            '',
+
+            '🗓️ <b>Schedule details</b>',
+
+            f'• <b>Date/time:</b> {current_start}',
+
+            f'• <b>End time:</b> {current_end}',
+
+        ])
+
+    lines.extend([
+
+        f'• <b>Scope:</b> {_telegram_safe(scope_label)}',
+
+        f'• <b>Reason:</b> {reason_text}',
+
+    ])
+
+    return '\n'.join(lines)
+
+
 
 def build_appointment_message(appt, action, reason='', old_start_time=None, old_end_time=None, change_scope=''):
 
@@ -1157,8 +1293,6 @@ def build_appointment_message(appt, action, reason='', old_start_time=None, old_
     
 
     return '\n'.join(lines)
-
-
 
 def notify_appointment_update(appt, action, reason='', old_start_time=None, old_end_time=None, change_scope=''):
 
@@ -2890,6 +3024,24 @@ def build_appointment_message(appt, action, reason='', old_start_time=None, old_
     return '\n'.join(lines)
 
 
+def format_appointment_message(appt, action, reason=''):
+
+    return _appointment_notification_body(appt, action, reason)
+
+
+
+def build_appointment_message(appt, action, reason='', old_start_time=None, old_end_time=None, change_scope=''):
+
+    return _appointment_notification_body(
+        appt,
+        action,
+        reason,
+        old_start_time=old_start_time,
+        old_end_time=old_end_time,
+        change_scope=change_scope,
+    )
+
+
 
 def notify_appointment_update(appt, action, reason='', old_start_time=None, old_end_time=None, change_scope=''):
 
@@ -2993,7 +3145,9 @@ def handle_telegram_update(update):
 
     command = raw_command.split('@', 1)[0].lower() if raw_command else ''
 
-    command_args = text[len(raw_command):].strip() if raw_command else ''
+    start_match = re.match(r'^/start(?:@\w+)?(?:\s+(.*))?$', text, re.IGNORECASE | re.DOTALL)
+
+    command_args = (start_match.group(1) or '').strip() if start_match else (text[len(raw_command):].strip() if raw_command else '')
 
     
 
