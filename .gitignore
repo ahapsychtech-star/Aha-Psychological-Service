@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Local databases (DO NOT commit — use Supabase in production)
+aha.db
+slides.db
+
+# Local uploads (DO NOT commit — use Supabase Storage in production)
+uploads/
+
+# Environment variables (NEVER commit — set on Railway/Vercel dashboards)
+.env
+
+# Node.js
+node_modules/
+package-lock.json
+
+# Patch/debug scripts (dev only)
+patch_*.py
+migrate_db.py
+scratch_test.js
+make_pptx*.js
+test1.js
+test2.js
+_check_*.js
+
+# OS
+.DS_Store
+Thumbs.db

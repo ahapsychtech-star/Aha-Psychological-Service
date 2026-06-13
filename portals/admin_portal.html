@@ -1,0 +1,2122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/api_config.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Portal — Aha Psychological Services</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --navy:#043069;--navy-light:#0a4b9c;--navy-dark:#021e45;
+  --gold:#ffbf00;--gold-light:#ffd84d;
+  --bg:#f4f7fc;--surface:#fff;
+  --success:#10b981;--warning:#f59e0b;--danger:#ef4444;--info:#3b82f6;
+  --teal:#0d9488;--purple:#7c3aed;--indigo:#4f46e5;
+  --text:#1e293b;--muted:#64748b;--border:#e2e8f0;
+  --sidebar:260px;--topbar:64px;
+  --shadow:0 4px 24px rgba(4,48,105,.08);--shadow-lg:0 12px 40px rgba(4,48,105,.14);
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden}
+
+/* Sidebar */
+.sidebar{width:var(--sidebar);background:var(--navy);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100}
+.sb-logo{padding:20px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sb-logo-text{font-size:22px;font-weight:800;color:#fff}
+.sb-logo-text span{color:var(--gold)}
+.sb-logo-sub{font-size:10px;color:rgba(255,255,255,.4);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+.sb-role{margin:12px 16px;background:rgba(255,191,0,.15);border:1px solid rgba(255,191,0,.3);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:8px}
+.sb-role i{color:var(--gold);font-size:13px}
+.sb-role span{color:rgba(255,255,255,.85);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.nav{flex:1;padding:8px 0;overflow-y:auto}
+.nav-section{padding:14px 20px 6px;font-size:10px;color:rgba(255,255,255,.35);font-weight:700;letter-spacing:1.5px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:12px;padding:11px 20px;color:rgba(255,255,255,.65);cursor:pointer;transition:.2s;font-size:13.5px;font-weight:500;border-left:3px solid transparent}
+.nav-item:hover{color:#fff;background:rgba(255,255,255,.07)}
+.nav-item.active{color:#fff;background:rgba(255,255,255,.1);border-left-color:var(--gold)}
+.nav-item i{width:18px;text-align:center;font-size:15px}
+.sb-footer{padding:16px;border-top:1px solid rgba(255,255,255,.08)}
+.sb-user{display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,.07);border-radius:8px}
+.sb-avatar{width:36px;height:36px;border-radius:50%;background:var(--gold);color:var(--navy);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0}
+.sb-name{color:#fff;font-size:13px;font-weight:600}
+.sb-role-txt{color:rgba(255,255,255,.45);font-size:11px}
+.sb-logout{margin-left:auto;color:rgba(255,255,255,.4);cursor:pointer;font-size:16px;transition:.2s}
+.sb-logout:hover{color:var(--danger)}
+
+/* Main */
+.main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:var(--topbar);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:16px;flex-shrink:0;box-shadow:0 2px 8px rgba(4,48,105,.04)}
+.tb-title{font-size:18px;font-weight:700;color:var(--navy);flex:1}
+.tb-actions{display:flex;align-items:center;gap:10px}
+.tb-btn{position:relative;width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:16px;transition:.2s}
+.tb-btn:hover{background:var(--bg);color:var(--navy)}
+.tb-badge{position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;font-size:9px;font-weight:800;border-radius:50%;width:17px;height:17px;display:flex;align-items:center;justify-content:center}
+.content{flex:1;overflow-y:auto;padding:28px}
+.section{display:none}
+.section.active{display:block}
+
+/* Stat Cards */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+@media(max-width:1300px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-card{background:var(--surface);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow);display:flex;align-items:center;gap:16px;transition:.3s;border:1px solid var(--border)}
+.stat-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);border-color:rgba(4,48,105,.1)}
+.stat-icon{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.stat-val{font-size:30px;font-weight:800;line-height:1}
+.stat-label{font-size:12.5px;color:var(--muted);margin-top:5px;font-weight:500}
+.stat-icon.blue{background:rgba(59,130,246,.1);color:var(--info)}
+.stat-icon.gold{background:rgba(255,191,0,.12);color:var(--gold)}
+.stat-icon.orange{background:rgba(245,158,11,.1);color:var(--warning)}
+.stat-icon.red{background:rgba(239,68,68,.1);color:var(--danger)}
+.stat-icon.green{background:rgba(16,185,129,.1);color:var(--success)}
+.stat-icon.teal{background:rgba(13,148,136,.1);color:var(--teal)}
+.stat-icon.purple{background:rgba(124,58,237,.1);color:var(--purple)}
+.stat-icon.indigo{background:rgba(79,70,229,.1);color:var(--indigo)}
+.pulse{animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* Panels */
+.panel{background:var(--surface);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);margin-bottom:20px;border:1px solid var(--border)}
+.panel-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.panel-title{font-size:14.5px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:8px}
+.panel-title i{color:var(--gold)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:1100px){.grid-2{grid-template-columns:1fr}}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;font-weight:600;font-size:13px;border:none;cursor:pointer;transition:.2s;font-family:inherit;text-decoration:none}
+.btn-primary{background:var(--navy);color:#fff}.btn-primary:hover{background:var(--navy-light)}
+.btn-gold{background:var(--gold);color:var(--navy)}.btn-gold:hover{background:var(--gold-light)}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}.btn-ghost:hover{background:var(--bg);color:var(--text)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-success{background:var(--success);color:#fff}
+.btn-outline{background:transparent;border:1.5px solid var(--navy);color:var(--navy)}.btn-outline:hover{background:var(--navy);color:#fff}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:6px}
+.btn-xs{padding:4px 8px;font-size:11px;border-radius:5px}
+.btn-icon{width:32px;height:32px;padding:0;justify-content:center}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.badge-blue{background:rgba(59,130,246,.1);color:var(--info)}
+.badge-green{background:rgba(16,185,129,.1);color:var(--success)}
+.badge-red{background:rgba(239,68,68,.1);color:var(--danger)}
+.badge-orange{background:rgba(245,158,11,.12);color:var(--warning)}
+.badge-teal{background:rgba(13,148,136,.1);color:var(--teal)}
+.badge-indigo{background:rgba(79,70,229,.1);color:var(--indigo)}
+.badge-purple{background:rgba(124,58,237,.1);color:var(--purple)}
+.badge-navy{background:rgba(4,48,105,.1);color:var(--navy)}
+.badge-gray{background:rgba(100,116,139,.1);color:var(--muted)}
+
+/* Table */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;padding:10px 14px;border-bottom:2px solid var(--border);white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:13.5px;vertical-align:middle}
+tr:hover td{background:rgba(244,247,252,.7)}
+tr:last-child td{border-bottom:none}
+
+/* Form */
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:6px}
+.form-control{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;color:var(--text);background:var(--surface);transition:.2s}
+.form-control:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(4,48,105,.08)}
+textarea.form-control{resize:vertical;min-height:90px}
+select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M7 7l3 3 3-3' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:20px;padding-right:36px}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+/* Drawer */
+.overlay{display:none;position:fixed;inset:0;background:rgba(4,48,105,.4);backdrop-filter:blur(4px);z-index:200}
+.overlay.open{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:520px;background:var(--surface);box-shadow:-8px 0 40px rgba(4,48,105,.15);z-index:201;transform:translateX(100%);transition:.35s cubic-bezier(.2,.8,.2,1);overflow-y:auto;display:flex;flex-direction:column}
+.drawer.open{transform:translateX(0)}
+.drawer-hdr{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:2}
+.drawer-title{font-size:16px;font-weight:700;color:var(--navy)}
+.drawer-close{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.drawer-close:hover{background:var(--danger);color:#fff;border-color:var(--danger)}
+.drawer-body{padding:24px;flex:1}
+.drawer-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:var(--surface)}
+
+/* Modal */
+.modal-wrap{display:none;position:fixed;inset:0;z-index:300;align-items:center;justify-content:center}
+.modal-wrap.open{display:flex}
+.modal{background:var(--surface);border-radius:18px;width:90%;max-width:520px;max-height:88vh;overflow-y:auto;box-shadow:var(--shadow-lg)}
+.modal-hdr{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface)}
+.modal-title{font-size:16px;font-weight:700;color:var(--navy)}
+.modal-body{padding:24px}
+.modal-footer{padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px}
+.appt-editor-modal{max-width:760px}
+.appt-editor-hero{padding:16px 18px;border-radius:16px;background:linear-gradient(135deg,rgba(4,48,105,.06),rgba(255,191,0,.12));border:1px solid rgba(4,48,105,.08);margin-bottom:16px}
+.appt-editor-title{font-size:20px;font-weight:800;color:var(--navy);margin-bottom:6px}
+.appt-editor-sub{font-size:13px;color:var(--text-muted);line-height:1.6}
+.appt-mode-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.appt-mode-btn{padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;transition:.2s}
+.appt-mode-btn.active.temp{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.28);color:#92400e}
+.appt-mode-btn.active.perm{background:rgba(255,191,0,.18);border-color:rgba(255,191,0,.32);color:var(--navy)}
+.appt-mode-btn.active.cancel{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.28);color:var(--danger)}
+.appt-editor-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.appt-editor-note{padding:12px 14px;border-radius:12px;background:rgba(255,191,0,.08);border:1px solid rgba(255,191,0,.18);font-size:12.5px;line-height:1.6;color:var(--text)}
+.appt-editor-note strong{color:var(--navy)}
+.appt-editor-hidden{display:none}
+.appt-editor-save{min-width:160px}
+.tg-status-card{display:flex;align-items:flex-start;gap:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:linear-gradient(180deg,#fff,#fbfdff)}
+.tg-status-badge{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(13,148,136,.1);color:var(--teal);font-size:18px;flex-shrink:0}
+.tg-status-title{font-size:14px;font-weight:800;color:var(--navy)}
+.tg-status-text{font-size:12px;color:var(--text-muted);line-height:1.6;margin-top:4px}
+
+/* Toast */
+.toast-wrap{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:10px}
+.toast{background:var(--surface);border-radius:12px;padding:13px 18px;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:12px;min-width:280px;transform:translateX(360px);transition:.4s cubic-bezier(.2,.8,.2,1);border-left:4px solid var(--success)}
+.toast.show{transform:translateX(0)}
+.toast.err{border-left-color:var(--danger)}
+.toast i{font-size:17px;color:var(--success)}
+.toast.err i{color:var(--danger)}
+.toast span{font-size:13.5px;font-weight:600}
+
+/* Toggle */
+.toggle{position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--border);border-radius:22px;cursor:pointer;transition:.3s}
+.toggle-slider:before{content:'';position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;left:3px;top:3px;transition:.3s}
+.toggle input:checked+.toggle-slider{background:var(--success)}
+.toggle input:checked+.toggle-slider:before{transform:translateX(18px)}
+
+/* Chart containers */
+.chart-box{position:relative;height:240px}
+
+/* Activity feed */
+.activity-item{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.activity-item:last-child{border-bottom:none}
+.act-icon{width:32px;height:32px;border-radius:50%;background:rgba(4,48,105,.08);color:var(--navy);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:2px}
+.act-text{font-size:13px;font-weight:600;flex:1}
+.act-sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+.act-time{font-size:11px;color:var(--muted);white-space:nowrap}
+
+/* Tabs */
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px}
+.tab{padding:10px 18px;cursor:pointer;font-size:13.5px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:.2s}
+.tab.active{color:var(--navy);border-bottom-color:var(--navy)}
+
+/* Calendar */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-day-header{text-align:center;font-size:12px;font-weight:700;color:var(--muted);padding:8px;text-transform:uppercase}
+.cal-day{min-height:96px;background:var(--surface);border-radius:10px;padding:8px;cursor:pointer;transition:.2s;border:1px solid var(--border)}
+.cal-day:hover{border-color:var(--navy)}
+.cal-day.other-month .cal-day-num{color:var(--border)}
+.cal-day-num{font-size:13px;font-weight:700;margin-bottom:6px;width:24px;height:24px;display:flex;align-items:center;justify-content:center}
+.cal-appt-dot{font-size:11px;background:rgba(59,130,246,.1);color:var(--info);border-radius:4px;padding:2px 6px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+
+/* Photo upload */
+.photo-drop{border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:.2s;color:var(--muted);font-size:13px}
+.photo-drop:hover{border-color:var(--navy);color:var(--navy)}
+.photo-drop i{font-size:28px;margin-bottom:8px;display:block}
+
+/* Caseload bar */
+.caseload-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.caseload-fill{height:100%;border-radius:4px;transition:width .5s}
+
+/* Skeleton */
+.skel{background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);background-size:200% 100%;animation:skel 1.4s infinite;border-radius:6px}
+@keyframes skel{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* Client detail tabs */
+.detail-tab-content{display:none}
+.detail-tab-content.active{display:block}
+
+/* Hidden therapist fields */
+.therapist-fields{display:none}
+</style>
+</head>
+<body>
+
+<!-- ─── SIDEBAR ─── -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <img src="https://www.ahaethiopia.com/site/wp-content/uploads/2021/03/aha-logo-2.png" style="height:40px; margin-bottom:20px;">
+    <div class="sb-logo-sub">Psychological Services</div>
+  </div>
+  <div class="sb-role"><i class="fa-solid fa-shield-halved"></i><span>Admin Portal</span></div>
+  <nav class="nav">
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" data-sec="dashboard"><i class="fa-solid fa-gauge-high"></i>Dashboard</div>
+    <div class="nav-item" data-sec="users"><i class="fa-solid fa-users"></i>User Management</div>
+    <div class="nav-item" data-sec="clients"><i class="fa-solid fa-person"></i>Clients</div>
+    <div class="nav-item" data-sec="appointments"><i class="fa-solid fa-calendar-check"></i>Appointments</div>
+    <div class="nav-section">Configuration</div>
+    <div class="nav-item" data-sec="rooms"><i class="fa-solid fa-door-open"></i>Therapy Rooms</div>
+    <div class="nav-item" data-sec="services"><i class="fa-solid fa-briefcase-medical"></i>Services</div>
+    <div class="nav-item" data-sec="finance"><i class="fa-solid fa-chart-line"></i>Finance</div>
+    <div class="nav-item" data-sec="screening"><i class="fa-solid fa-clipboard-list"></i>Screening</div>
+    <div class="nav-section">Content</div>
+    <div class="nav-item" data-sec="orgchart"><i class="fa-solid fa-sitemap"></i>Org Chart</div>
+    <div class="nav-item" data-sec="slides"><i class="fa-solid fa-images"></i>Hero Slides</div>
+    <div class="nav-section">System</div>
+    <div class="nav-item" data-sec="audit"><i class="fa-solid fa-shield-halved"></i>Audit Logs</div>
+    <div class="nav-item" data-sec="comms"><i class="fa-solid fa-comments"></i>Communications</div>
+    <div class="nav-item" data-sec="telegram"><i class="fa-brands fa-telegram"></i>Telegram</div>
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-user">
+      <div class="sb-avatar" id="sbAvatar">A</div>
+      <div><div class="sb-name" id="sbName">Admin</div><div class="sb-role-txt">Administrator</div></div>
+      <a href="/logout" class="sb-logout" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></a>
+    </div>
+  </div>
+</aside>
+
+<!-- ─── MAIN ─── -->
+<div class="main">
+  <div class="topbar">
+    <div class="tb-title" id="tbTitle">Dashboard</div>
+    <div class="tb-actions">
+      <button class="tb-btn" id="alertBtn" title="Risk Alerts">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span class="tb-badge" id="alertBadge" style="display:none">0</span>
+      </button>
+      <button class="btn btn-gold btn-sm" onclick="openDrawer('user')"><i class="fa-solid fa-user-plus"></i>Add User</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ── DASHBOARD ── -->
+    <section class="section active" id="sec-dashboard">
+      <div class="stat-grid" id="statGrid">
+        <div class="stat-card"><div class="stat-icon blue"><i class="fa-solid fa-person"></i></div><div><div class="stat-val" id="s-active">—</div><div class="stat-label">Active Clients</div></div></div>
+        <div class="stat-card"><div class="stat-icon gold"><i class="fa-solid fa-calendar-check"></i></div><div><div class="stat-val" id="s-today">—</div><div class="stat-label">Today's Appointments</div></div></div>
+        <div class="stat-card"><div class="stat-icon orange"><i class="fa-solid fa-clock"></i></div><div><div class="stat-val" id="s-pending">—</div><div class="stat-label">Pending Assignment</div></div></div>
+        <div class="stat-card"><div class="stat-icon red"><i class="fa-solid fa-triangle-exclamation"></i></div><div><div class="stat-val pulse" id="s-alerts">—</div><div class="stat-label">Risk Alerts</div></div></div>
+        <div class="stat-card"><div class="stat-icon teal"><i class="fa-solid fa-user-doctor"></i></div><div><div class="stat-val" id="s-therapists">—</div><div class="stat-label">Active Therapists</div></div></div>
+        <div class="stat-card"><div class="stat-icon green"><i class="fa-solid fa-coins"></i></div><div><div class="stat-val" id="s-revenue">—</div><div class="stat-label">Revenue This Month (ETB)</div></div></div>
+        <div class="stat-card"><div class="stat-icon purple"><i class="fa-solid fa-file-invoice"></i></div><div><div class="stat-val" id="s-invoices">—</div><div class="stat-label">Pending Invoices</div></div></div>
+        <div class="stat-card"><div class="stat-icon indigo"><i class="fa-solid fa-user-plus"></i></div><div><div class="stat-val" id="s-new">—</div><div class="stat-label">New This Month</div></div></div>
+      </div>
+
+      <!-- Risk Alerts -->
+      <div class="panel" style="border:1.5px solid rgba(239,68,68,.18);margin-bottom:20px">
+        <div class="panel-hdr">
+          <div class="panel-title" style="color:var(--danger)"><i class="fa-solid fa-triangle-exclamation" style="color:var(--danger)"></i>Active Risk Alerts</div>
+          <button class="btn btn-ghost btn-sm" onclick="loadAlerts()"><i class="fa-solid fa-arrows-rotate"></i>Refresh</button>
+        </div>
+        <div id="alertsList"><div class="skel" style="height:50px"></div></div>
+      </div>
+
+      <!-- Charts -->
+      <div class="grid-2" style="margin-bottom:20px">
+        <div class="panel">
+          <div class="panel-hdr"><div class="panel-title"><i class="fa-solid fa-chart-line"></i>New Client Registrations</div></div>
+          <div class="chart-box"><canvas id="clientChart"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-hdr"><div class="panel-title"><i class="fa-solid fa-chart-pie"></i>Appointment Status</div></div>
+          <div class="chart-box"><canvas id="apptChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Caseload + Activity -->
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-hdr"><div class="panel-title"><i class="fa-solid fa-bars-progress"></i>Therapist Caseloads</div></div>
+          <div id="caseloadList"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-hdr"><div class="panel-title"><i class="fa-solid fa-clock-rotate-left"></i>Recent Activity</div></div>
+          <div id="activityFeed"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── USERS ── -->
+    <section class="section" id="sec-users">
+      <div class="panel">
+        <div class="panel-hdr">
+          <div class="panel-title"><i class="fa-solid fa-users"></i>User Management</div>
+          <button class="btn btn-primary btn-sm" onclick="openDrawer('user')"><i class="fa-solid fa-plus"></i>Add User</button>
+        </div>
+        <div style="margin-bottom:14px;display:flex;gap:10px">
+          <input class="form-control" placeholder="Search users..." id="userSearch" oninput="filterUsers()" style="max-width:320px">
+          <select class="form-control" id="userRoleFilter" onchange="filterUsers()" style="width:160px">
+            <option value="">All Roles</option>
+            <option>admin</option><option>receptionist</option><option>therapist</option><option>supervisor</option>
+          </select>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Email</th><th>Phone</th><th>Status</th><th>Last Login</th><th>Actions</th></tr></thead>
+            <tbody id="usersTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── CLIENTS ── -->
+    <section class="section" id="sec-clients">
+      <div class="panel">
+        <div class="panel-hdr">
+          <div class="panel-title"><i class="fa-solid fa-person"></i>Client Registry</div>
+          <a href="/portals/reception_portal.html" class="btn btn-ghost btn-sm"><i class="fa-solid fa-arrow-up-right-from-square"></i>Go to Reception</a>
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+          <input class="form-control" placeholder="Search by name, code, phone..." id="clientSearch" oninput="filterClients()" style="flex:1;min-width:200px">
+          <select class="form-control" id="clientStatusFilter" onchange="filterClients()" style="width:180px">
+            <option value="">All Statuses</option>
+            <option value="registered">Registered</option>
+            <option value="screening_completed">Screening Done</option>
+            <option value="assigned">Assigned</option>
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
+            <option value="terminated">Terminated</option>
+          </select>
+          <select class="form-control" id="clientRiskFilter" onchange="filterClients()" style="width:150px">
+            <option value="">All Risk Levels</option>
+            <option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
+          </select>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Code</th><th>Name</th><th>Gender</th><th>Phone</th><th>Status</th><th>Risk</th><th>Registered</th><th>Therapist</th><th>Actions</th></tr></thead>
+            <tbody id="clientsTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── APPOINTMENTS ── -->
+    <section class="section" id="sec-appointments">
+      <div class="panel">
+        <div class="panel-hdr">
+          <div class="panel-title"><i class="fa-solid fa-calendar-check"></i>All Appointments</div>
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+          <input type="date" class="form-control" id="apptStart" style="width:160px">
+          <input type="date" class="form-control" id="apptEnd" style="width:160px">
+          <select class="form-control" id="apptStatusFilter" style="width:160px">
+            <option value="">All Statuses</option>
+            <option>scheduled</option><option>completed</option><option>cancelled</option><option>no_show</option>
+          </select>
+          <button class="btn btn-outline btn-sm" onclick="loadAppointments()"><i class="fa-solid fa-filter"></i>Filter</button>
+          <div style="margin-left:auto;display:flex;gap:6px">
+            <button class="btn btn-ghost btn-sm" id="apptListBtn" onclick="setApptView('list')">List</button>
+            <button class="btn btn-gold btn-sm" id="apptCalBtn" onclick="setApptView('calendar')">Calendar</button>
+          </div>
+        </div>
+        <div id="adminApptCalendar" style="display:none;margin-bottom:14px"></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Date & Time</th><th>Client</th><th>Therapist</th><th>Type</th><th>Status</th><th>Location</th><th>Actions</th></tr></thead>
+            <tbody id="apptTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SERVICES ── -->
+    <div class="modal-wrap" id="apptEditorOverlay" onclick="closeAppointmentEditor()"></div>
+    <div class="modal-wrap" id="apptEditorModal">
+      <div class="modal appt-editor-modal" onclick="event.stopPropagation()">
+        <div class="modal-hdr">
+          <div class="modal-title"><i class="fa-solid fa-calendar-pen" style="color:var(--gold)"></i>Appointment Update</div>
+          <button class="drawer-close" onclick="closeAppointmentEditor()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="appt-editor-hero">
+            <div class="appt-editor-title" id="apptEditorTitle">Appointment</div>
+            <div class="appt-editor-sub" id="apptEditorSubtitle">Select an action to update the schedule.</div>
+          </div>
+          <div class="appt-mode-row">
+            <button type="button" class="appt-mode-btn" id="apptModeTemp" onclick="setApptEditorMode('temporary')">Temporary change</button>
+            <button type="button" class="appt-mode-btn" id="apptModePerm" onclick="setApptEditorMode('permanent')">Permanent change</button>
+            <button type="button" class="appt-mode-btn" id="apptModeCancel" onclick="setApptEditorMode('cancelled')">Cancel session</button>
+          </div>
+          <input type="hidden" id="apptEditorId">
+          <input type="hidden" id="apptEditorScope" value="temporary">
+          <input type="hidden" id="apptEditorStatus" value="scheduled">
+          <div class="appt-editor-grid appt-editor-time-group">
+            <div class="form-group"><label>New Start Date & Time</label><input type="datetime-local" class="form-control" id="apptEditorDateTime"></div>
+            <div class="form-group"><label>New End Date & Time</label><input type="datetime-local" class="form-control" id="apptEditorEndTime"></div>
+          </div>
+          <div class="form-group">
+            <label>Reason / Note</label>
+            <textarea class="form-control" id="apptEditorReason" placeholder="Explain the reason for the change or cancellation"></textarea>
+          </div>
+          <div class="appt-editor-note" id="apptEditorNote"><strong>Temporary change:</strong> updates only this appointment.</div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" onclick="closeAppointmentEditor()">Close</button>
+          <button class="btn btn-gold appt-editor-save" id="apptEditorSaveBtn" onclick="saveAppointmentEditor()">Save Temporary Change</button>
+        </div>
+      </div>
+    </div>
+
+    <section class="section" id="sec-rooms">
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-hdr">
+            <div class="panel-title"><i class="fa-solid fa-door-open"></i>Therapy Rooms</div>
+            <button class="btn btn-gold btn-sm" onclick="resetRoomForm()"><i class="fa-solid fa-plus"></i>Add Room</button>
+          </div>
+          <input type="hidden" id="roomEditId" value="">
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px">
+            <div class="form-group"><label>Room Name</label><input class="form-control" id="roomName" placeholder="e.g. Room 4"></div>
+            <div class="form-group"><label>Room Code</label><input class="form-control" id="roomCode" placeholder="e.g. R4"></div>
+            <div class="form-group"><label>Color</label><input class="form-control" id="roomColor" type="color" value="#043069"></div>
+            <div class="form-group"><label>Sort Order</label><input class="form-control" id="roomSort" type="number" value="0"></div>
+          </div>
+          <div class="form-group">
+            <label style="display:flex;align-items:center;gap:8px">
+              <input type="checkbox" id="roomActive" checked>
+              Active room
+            </label>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="addRoomFromForm()">Save Room</button>
+        </div>
+        <div class="panel">
+          <div class="panel-hdr"><div class="panel-title"><i class="fa-solid fa-list"></i>Current Rooms</div></div>
+          <div id="roomList" style="display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="sec-services">
+      <div class="panel">
+        <div class="panel-hdr">
+          <div class="panel-title"><i class="fa-solid fa-briefcase-medical"></i>Services</div>
+          <button class="btn btn-primary btn-sm" onclick="openServiceModal()"><i class="fa-solid fa-plus"></i>Add Service</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Service Name</th><th>Description</th><th>Duration</th><th>Price (ETB)</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="svcTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── FINANCE ── -->
+    <section class="section" id="sec-finance">
+      <div class="tabs">
+        <div class="tab active" onclick="switchFinTab('invoices',this)">Invoices</div>
+        <div class="tab" onclick="switchFinTab('revenue',this)">Revenue Summary</div>
+      </div>
+      <div id="finInvoices">
+        <div class="panel">
+          <div class="panel-hdr"><div class="panel-title"><i class="fa-solid fa-file-invoice"></i>Invoice Management</div></div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>Client</th><th>Service</th><th>Amount</th><th>Status</th><th>Issue Date</th><th>Due Date</th></tr></thead>
+              <tbody id="invoiceTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div id="finRevenue" style="display:none">
+        <div class="stat-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="stat-card"><div class="stat-icon green"><i class="fa-solid fa-coins"></i></div><div><div class="stat-val" id="finTotal">—</div><div class="stat-label">Total Revenue (ETB)</div></div></div>
+          <div class="stat-card"><div class="stat-icon blue"><i class="fa-solid fa-calendar-week"></i></div><div><div class="stat-val" id="finMonth">—</div><div class="stat-label">This Month (ETB)</div></div></div>
+          <div class="stat-card"><div class="stat-icon orange"><i class="fa-solid fa-hourglass"></i></div><div><div class="stat-val" id="finPending">—</div><div class="stat-label">Pending Invoices</div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SCREENING CONFIG ── -->
+    <section class="section" id="sec-screening">
+      <div class="panel">
+        <div class="panel-hdr"><div class="panel-title"><i class="fa-solid fa-clipboard-list"></i>Assessment Builder</div></div>
+        
+        <div class="tabs" style="margin-bottom:20px">
+          <div class="tab active" id="tab-assess-import" onclick="switchAssessTab('import',this)"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Import</div>
+          <div class="tab" id="tab-assess-library" onclick="switchAssessTab('library',this)"><i class="fa-solid fa-book-medical"></i> Assessment Library</div>
+          <div class="tab" id="tab-assess-editor" onclick="switchAssessTab('editor',this)" style="display:none"><i class="fa-solid fa-pen-ruler"></i> Template Editor</div>
+        </div>
+
+        <!-- TAB 1: AI Import -->
+        <div id="assessImport">
+          <div class="grid-2" style="margin-bottom:18px">
+            <div>
+              <div class="form-group">
+                <label>Upload Document (.docx, .txt)</label>
+                <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+                  <button class="btn btn-primary btn-sm" type="button" onclick="document.getElementById('assessmentFileInput').click()"><i class="fa-solid fa-file-arrow-up"></i> Select File</button>
+                  <span id="assessmentFileName" style="font-size:13px;color:var(--muted)">No file selected</span>
+                </div>
+                <input type="file" id="assessmentFileInput" accept=".docx,.txt,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none" onchange="handleAssessmentFile(this)">
+                
+                <label style="margin-top:12px">Or paste assessment text here</label>
+                <textarea class="form-control" id="assessmentSourceText" placeholder="Paste a questionnaire, scoring guide, or assessment instructions here." style="min-height:220px"></textarea>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn btn-gold btn-sm" type="button" onclick="runAssessmentImport()"><i class="fa-solid fa-wand-magic-sparkles"></i> Parse with AI</button>
+                <button class="btn btn-ghost btn-sm" type="button" onclick="clearAssessmentImport()"><i class="fa-solid fa-eraser"></i> Clear</button>
+              </div>
+            </div>
+            <div>
+              <div class="panel" style="padding:16px;background:#f8fafc;height:100%">
+                <div class="panel-title" style="margin-bottom:12px"><i class="fa-solid fa-clipboard-check"></i> Parsed Assessment Preview</div>
+                <div id="assessmentImportPreview" style="font-size:13px;color:var(--muted);line-height:1.7">Upload a file or paste text to see the AI parsed summary, category, and warnings.</div>
+                <div style="margin-top:16px;text-align:right" id="assessmentImportActions" style="display:none">
+                  <button class="btn btn-primary btn-sm" onclick="continueToEditor()"><i class="fa-solid fa-arrow-right"></i> Review in Editor</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: Assessment Library -->
+        <div id="assessLibrary" style="display:none">
+          <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+            <input type="text" class="form-control" id="assessSearch" placeholder="Search assessments..." style="max-width:300px" oninput="filterAssessmentLibrary()">
+            <select class="form-control" id="assessFilterCategory" style="max-width:200px" onchange="filterAssessmentLibrary()">
+              <option value="">All Categories</option>
+              <option value="Depression">Depression</option>
+              <option value="Anxiety">Anxiety</option>
+              <option value="Trauma">Trauma</option>
+              <option value="Substance Use">Substance Use</option>
+              <option value="Personality">Personality</option>
+              <option value="General Screening">General Screening</option>
+            </select>
+            <select class="form-control" id="assessFilterStatus" style="max-width:150px" onchange="filterAssessmentLibrary()">
+              <option value="">All Statuses</option>
+              <option value="published">Published</option>
+              <option value="draft">Draft</option>
+            </select>
+            <div style="flex:1"></div>
+            <button class="btn btn-primary btn-sm" onclick="newAssessmentTemplate()"><i class="fa-solid fa-plus"></i> Create Blank</button>
+            <button class="btn btn-ghost btn-sm" onclick="loadAssessmentTemplates()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+          </div>
+          <div id="assessmentTemplateGrid" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));gap:16px">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- TAB 3: Template Editor -->
+        <div id="assessEditor" style="display:none">
+          <div class="grid-2">
+            <div>
+              <div class="form-group"><label>Template Name</label><input class="form-control" id="assessName" placeholder="e.g. Trauma Intake"></div>
+              <div class="row-2">
+                <div class="form-group"><label>Category</label><input class="form-control" id="assessCat" placeholder="e.g. Trauma"></div>
+                <div class="form-group"><label>Tags (comma separated)</label><input class="form-control" id="assessTags" placeholder="e.g. ptsd, initial"></div>
+              </div>
+              <div class="row-2">
+                <div class="form-group"><label>Language</label><select class="form-control" id="assessLang"><option>English</option><option>Amharic</option><option>Both</option></select></div>
+                <div class="form-group"><label>Author</label><input class="form-control" id="assessAuthor" placeholder="Dr. Smith"></div>
+              </div>
+              <div class="form-group"><label>Description</label><textarea class="form-control" id="assessDesc" placeholder="What does this assessment measure?" style="height:60px"></textarea></div>
+              <div class="panel" style="padding:16px;background:#f8fafc">
+                <div class="panel-title" style="margin-bottom:12px"><i class="fa-solid fa-list-check"></i> Add / Edit Question</div>
+                <div class="row-2">
+                  <div class="form-group"><label>Question Key</label><input class="form-control" id="qKey" placeholder="q1"></div>
+                  <div class="form-group"><label>Type</label><select class="form-control" id="qType"><option value="text">Short Answer</option><option value="textarea">Long Answer</option><option value="single_choice">Single Choice</option><option value="multiple_choice">Multiple Choice</option><option value="scale">Scale</option><option value="date">Date</option><option value="number">Number</option><option value="boolean">Yes/No</option></select></div>
+                </div>
+                <div class="row-2">
+                  <div class="form-group"><label>Question (English)</label><input class="form-control" id="qEn" placeholder="What brings you here today?"></div>
+                  <div class="form-group"><label>Question (Amharic)</label><input class="form-control" id="qAm" placeholder="ወደ እኛ ምን አመጣዎት?"></div>
+                </div>
+                <div class="form-group"><label>Options (one per line for choice types)</label><textarea class="form-control" id="qOptions" placeholder="Option 1&#10;Option 2" style="height:60px"></textarea></div>
+                <div class="row-2">
+                  <div class="form-group"><label>Helper Text</label><input class="form-control" id="qHelp" placeholder="Shown below the question"></div>
+                  <div class="form-group"><label>Sort Order</label><input type="number" class="form-control" id="qSort" value="0"></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px">
+                  <label style="display:flex;align-items:center;gap:8px;font-size:13px"><input type="checkbox" id="qRequired"> Required</label>
+                  <button class="btn btn-gold btn-sm" onclick="addBuilderQuestion()"><i class="fa-solid fa-plus"></i> Add Question to List</button>
+                  <button class="btn btn-ghost btn-sm" onclick="clearQuestionForm()"><i class="fa-solid fa-eraser"></i> Clear Question</button>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+                <button class="btn btn-outline btn-sm" onclick="switchAssessTab('library')">Cancel</button>
+                <button class="btn btn-primary btn-sm" onclick="saveAssessmentTemplate()"><i class="fa-solid fa-floppy-disk"></i> Save Template</button>
+              </div>
+            </div>
+            <div>
+              <div class="panel-title" style="margin-bottom:10px"><i class="fa-solid fa-eye"></i> Questions Preview</div>
+              <div id="assessmentBuilderPreview" style="font-size:13px;color:var(--muted);line-height:1.7;max-height:800px;overflow-y:auto;padding-right:10px">
+                No questions added yet.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── ORG CHART ── -->
+    <section class="section" id="sec-telegram">
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-hdr">
+            <div class="panel-title"><i class="fa-brands fa-telegram"></i>Telegram Linking</div>
+            <button class="btn btn-ghost btn-sm" onclick="loadTelegramLinks()"><i class="fa-solid fa-arrows-rotate"></i>Refresh</button>
+          </div>
+          <p style="color:var(--muted);font-size:13px;margin-bottom:14px">Generate a one-time Telegram login code for a therapist or receptionist. When the code is used in the bot, the staff member becomes linked to that Telegram account for notifications.</p>
+          <div class="row-2">
+            <div class="form-group"><label>Staff Member</label><select class="form-control" id="tgUserSelect"></select></div>
+            <div class="form-group"><label>Expires In (Hours)</label><input type="number" class="form-control" id="tgExpires" value="48" min="1"></div>
+          </div>
+          <button class="btn btn-gold btn-sm" onclick="createTelegramCode()"><i class="fa-solid fa-key"></i>Generate Code</button>
+          <div id="tgCodeResult" style="margin-top:14px"></div>
+          <div id="tgStatusCard" class="tg-status-card" style="margin-top:14px">
+            <div class="tg-status-badge"><i class="fa-brands fa-telegram"></i></div>
+            <div>
+              <div class="tg-status-title">Telegram bot status</div>
+              <div class="tg-status-text" id="tgStatusText">Checking bot configuration...</div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-hdr">
+            <div class="panel-title"><i class="fa-solid fa-link"></i>Recent Link Codes</div>
+          </div>
+          <div id="tgLinkList" style="display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="sec-orgchart">
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-hdr"><div class="panel-title"><i class="fa-solid fa-sitemap"></i>Org Chart Members</div>
+            <button class="btn btn-primary btn-sm" onclick="openOrgDrawer()"><i class="fa-solid fa-plus"></i>Add Member</button></div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>Photo</th><th>Name</th><th>Role</th><th>Type</th><th>Actions</th></tr></thead>
+              <tbody id="orgTbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-hdr"><div class="panel-title"><i class="fa-solid fa-pen-to-square"></i>Add / Edit Member</div></div>
+          <form id="orgForm" onsubmit="submitOrgMember(event)">
+            <input type="hidden" id="org_id">
+            <div class="form-group"><label>Full Name *</label><input class="form-control" id="org_name" placeholder="Member name" required></div>
+            <div class="row-2">
+              <div class="form-group"><label>Role / Title *</label><input class="form-control" id="org_role" placeholder="e.g. Director" required></div>
+              <div class="form-group"><label>Node Type</label>
+                <select class="form-control" id="org_type">
+                  <option value="normal">Normal</option><option value="group">Group</option><option value="board">Board</option>
+                </select>
+              </div>
+            </div>
+            <div class="row-2">
+              <div class="form-group"><label>Parent ID</label><input class="form-control" id="org_parent" placeholder="Leave blank for root" type="number"></div>
+              <div class="form-group"><label>Sort Order</label><input class="form-control" id="org_sort" type="number" value="0"></div>
+            </div>
+            <div class="form-group"><label>Summary / Bio</label><textarea class="form-control" id="org_summary" placeholder="Brief biography..."></textarea></div>
+            <div class="form-group"><label>Photo</label>
+              <div class="photo-drop" onclick="document.getElementById('org_photo').click()">
+                <i class="fa-solid fa-cloud-arrow-up"></i>Click to upload photo<br><small>JPG or PNG, max 5MB</small>
+              </div>
+              <input type="file" id="org_photo" accept="image/*" style="display:none" onchange="previewOrgPhoto(this)">
+              <img id="org_photo_preview" style="display:none;max-height:80px;margin-top:8px;border-radius:8px">
+            </div>
+            <div style="display:flex;gap:8px">
+              <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i>Save Member</button>
+              <button type="button" class="btn btn-ghost" onclick="resetOrgForm()">Reset</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SLIDES ── -->
+    <section class="section" id="sec-slides">
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-hdr"><div class="panel-title"><i class="fa-solid fa-images"></i>Hero Slides</div>
+            <button class="btn btn-primary btn-sm" onclick="document.getElementById('slideFormPanel').scrollIntoView({behavior:'smooth'})"><i class="fa-solid fa-plus"></i>Add Slide</button>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>Image</th><th>Headline</th><th>Button</th><th>Actions</th></tr></thead>
+              <tbody id="slideTbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel" id="slideFormPanel">
+          <div class="panel-hdr"><div class="panel-title"><i class="fa-solid fa-plus-circle"></i>Add New Slide</div></div>
+          <form id="slideForm" onsubmit="submitSlide(event)">
+            <div class="form-group"><label>Slide Image *</label>
+              <div class="photo-drop" onclick="document.getElementById('slideImg').click()">
+                <i class="fa-solid fa-image"></i>Click to upload image<br><small>Recommended: 1920×1080px</small>
+              </div>
+              <input type="file" id="slideImg" accept="image/*" style="display:none" onchange="previewSlide(this)">
+              <img id="slidePreview" style="display:none;max-height:100px;margin-top:8px;border-radius:8px;width:100%;object-fit:cover">
+            </div>
+            <div class="form-group"><label>Headline</label><input class="form-control" id="sl_headline" placeholder="Slide headline text"></div>
+            <div class="form-group"><label>Summary Text</label><textarea class="form-control" id="sl_summary" placeholder="Brief description..." style="min-height:70px"></textarea></div>
+            <div class="row-2">
+              <div class="form-group"><label>Text Alignment</label>
+                <select class="form-control" id="sl_align"><option>center</option><option>left</option><option>right</option></select>
+              </div>
+            </div>
+            <div class="row-2">
+              <div class="form-group"><label>Button Label</label><input class="form-control" id="sl_btn_name" placeholder="e.g. Learn More"></div>
+              <div class="form-group"><label>Button Link</label><input class="form-control" id="sl_btn_link" placeholder="https://..."></div>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-cloud-arrow-up"></i>Upload Slide</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── AUDIT LOGS ── -->
+    <section class="section" id="sec-audit">
+      <div class="panel">
+        <div class="panel-hdr"><div class="panel-title"><i class="fa-solid fa-shield-halved"></i>Audit Logs</div>
+          <button class="btn btn-ghost btn-sm" onclick="loadAudit()"><i class="fa-solid fa-arrows-rotate"></i>Refresh</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Resource</th><th>Detail</th><th>IP</th></tr></thead>
+            <tbody id="auditTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── COMMS ── -->
+    <section class="section" id="sec-comms">
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-hdr"><div class="panel-title"><i class="fa-solid fa-inbox"></i>Received Messages</div></div>
+          <div id="commsList"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-hdr"><div class="panel-title"><i class="fa-solid fa-pen"></i>Compose Message</div></div>
+          <div class="form-group"><label>To</label><select class="form-control" id="msgTo"></select></div>
+          <div class="form-group"><label>Subject</label><input class="form-control" id="msgSubject" placeholder="Message subject..."></div>
+          <div class="form-group"><label>Message</label><textarea class="form-control" id="msgBody" style="min-height:160px" placeholder="Write your message..."></textarea></div>
+          <button class="btn btn-primary" onclick="sendMessage()"><i class="fa-solid fa-paper-plane"></i>Send</button>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ─── USER DRAWER ─── -->
+<div class="overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="userDrawer">
+  <div class="drawer-hdr">
+    <div class="drawer-title" id="drawerTitle">Add User</div>
+    <button class="drawer-close" onclick="closeDrawer()"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="drawer-body">
+    <input type="hidden" id="editUserId">
+    <div class="form-group"><label>Full Name *</label><input class="form-control" id="u_name" placeholder="Full name"></div>
+    <div class="row-2">
+      <div class="form-group"><label>Username *</label><input class="form-control" id="u_username" placeholder="username"></div>
+      <div class="form-group"><label>Email</label><input type="email" class="form-control" id="u_email" placeholder="email@example.com"></div>
+    </div>
+    <div class="row-2">
+      <div class="form-group"><label>Password *</label><input type="password" class="form-control" id="u_pass" placeholder="Min 8 characters"></div>
+      <div class="form-group"><label>Phone</label><input class="form-control" id="u_phone" placeholder="+251..."></div>
+    </div>
+    <div class="form-group"><label>Role *</label>
+      <select class="form-control" id="u_role" onchange="toggleTherapistFields()">
+        <option value="receptionist">Receptionist</option>
+        <option value="therapist">Therapist</option>
+        <option value="supervisor">Supervisor</option>
+        <option value="admin">Administrator</option>
+      </select>
+    </div>
+
+    <div class="therapist-fields" id="therapistFields">
+      <div style="background:rgba(4,48,105,.04);border-radius:10px;padding:16px;margin-bottom:16px">
+        <p style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px">Therapist-Specific Fields</p>
+        <div class="form-group"><label>Specialization</label><input class="form-control" id="u_spec" placeholder="e.g. Individual Counseling, Trauma Therapy"></div>
+        <div class="form-group"><label>Languages</label>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;padding:10px;border:1.5px solid var(--border);border-radius:8px">
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px"><input type="checkbox" class="lang-cb" value="English" checked> English</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px"><input type="checkbox" class="lang-cb" value="Amharic"> Amharic</label>
+            <label style="display:flex;align-items:center;gap=6px;font-size:13px"><input type="checkbox" class="lang-cb" value="Oromiffa"> Oromiffa</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px"><input type="checkbox" class="lang-cb" value="Tigrinya"> Tigrinya</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px"><input type="checkbox" class="lang-cb" value="Somali"> Somali</label>
+          </div>
+        </div>
+        <div class="row-2">
+          <div class="form-group"><label>Gender</label>
+            <select class="form-control" id="u_gender"><option value="">Not specified</option><option>Male</option><option>Female</option></select>
+          </div>
+          <div class="form-group"><label>Max Caseload</label><input type="number" class="form-control" id="u_caseload" value="20" min="1" max="100"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="drawer-footer">
+    <button class="btn btn-ghost" onclick="closeDrawer()">Cancel</button>
+    <button class="btn btn-primary" onclick="saveUser()"><i class="fa-solid fa-check"></i>Save User</button>
+  </div>
+</div>
+
+<!-- ─── CLIENT DETAIL DRAWER ─── -->
+<div class="overlay" id="clientOverlay" onclick="closeClientDrawer()"></div>
+<div class="drawer" id="clientDrawer">
+  <div class="drawer-hdr">
+    <div class="drawer-title" id="clientDrawerTitle">Client Profile</div>
+    <button class="drawer-close" onclick="closeClientDrawer()"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="drawer-body">
+    <div class="tabs" style="margin-bottom:18px">
+      <div class="tab active" onclick="switchClientTab('info',this)">Info</div>
+      <div class="tab" onclick="switchClientTab('journey',this)">Journey</div>
+      <div class="tab" onclick="switchClientTab('appts',this)">Appointments</div>
+      <div class="tab" onclick="switchClientTab('screening',this)">Screening</div>
+    </div>
+    <div id="clientDetailContent"></div>
+  </div>
+</div>
+
+<!-- ─── SERVICE MODAL ─── -->
+<div class="overlay" id="svcOverlay" onclick="closeSvcModal()"></div>
+<div class="modal-wrap" id="svcModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title" id="svcModalTitle">Add Service</div>
+      <button class="drawer-close" onclick="closeSvcModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="svc_id">
+      <div class="form-group"><label>Service Name *</label><input class="form-control" id="svc_name" placeholder="e.g. Individual Counseling"></div>
+      <div class="form-group"><label>Description</label><textarea class="form-control" id="svc_desc" placeholder="Brief description of the service..."></textarea></div>
+      <div class="row-2">
+        <div class="form-group"><label>Duration (minutes)</label><input type="number" class="form-control" id="svc_dur" value="60"></div>
+        <div class="form-group"><label>Price (ETB)</label><input type="number" class="form-control" id="svc_price" value="500" step="0.01"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeSvcModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveService()"><i class="fa-solid fa-check"></i>Save Service</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+// ─── Globals ───
+let currentUser=null, allUsers=[], allClients=[], allAppointments=[], allServices=[], allInvoices=[];
+let adminRooms=[];
+let clientChart=null, apptChart=null;
+let currentClientId=null, currentClientTab='info', currentClientData=null;
+
+// ─── Init ───
+async function init() {
+  document.querySelectorAll('.nav-item').forEach(el=>el.addEventListener('click',()=>showSection(el.dataset.sec)));
+  try {
+    const r=await apiFetch('/api/me'); if(r.ok){ currentUser=await r.json();
+      document.getElementById('sbName').textContent=currentUser.full_name||currentUser.username;
+      document.getElementById('sbAvatar').textContent=(currentUser.full_name||currentUser.username)[0].toUpperCase();
+    }
+  } catch(e){}
+  await Promise.all([loadDashboard(),loadUsers(),loadClients(),loadServices()]);
+  await loadRoomsAdmin();
+  loadOrg(); loadSlides(); loadComms();
+  setInterval(loadAlerts,60000);
+}
+
+function showSection(sec) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('sec-'+sec).classList.add('active');
+  document.querySelector(`.nav-item[data-sec="${sec}"]`)?.classList.add('active');
+  const titles={dashboard:'Dashboard',users:'User Management',clients:'Clients',appointments:'Appointments',
+    rooms:'Therapy Rooms',services:'Services',finance:'Finance',screening:'Screening Configuration',orgchart:'Org Chart',
+    telegram:'Telegram Linking',slides:'Hero Slides',audit:'Audit Logs',comms:'Communications'};
+  document.getElementById('tbTitle').textContent=titles[sec]||sec;
+  if(sec==='appointments') loadAppointments();
+  if(sec==='rooms') loadRoomsAdmin();
+  if(sec==='finance') loadInvoices();
+  if(sec==='audit') loadAudit();
+  if(sec==='comms') loadComms();
+  if(sec==='telegram') loadTelegramLinks();
+}
+
+// ─── Dashboard ───
+async function loadDashboard() {
+  try {
+    const r=await apiFetch('/api/analytics/dashboard'); const d=await r.json(); const s=d.stats;
+    document.getElementById('s-active').textContent=s.active_clients;
+    document.getElementById('s-today').textContent=s.today_appointments;
+    document.getElementById('s-pending').textContent=s.pending_assignment;
+    document.getElementById('s-alerts').textContent=s.active_alerts;
+    document.getElementById('s-therapists').textContent=s.therapist_count;
+    document.getElementById('s-revenue').textContent=(s.revenue_this_month||0).toLocaleString();
+    document.getElementById('s-invoices').textContent=s.pending_invoices;
+    document.getElementById('s-new').textContent=s.new_this_month;
+    updateAlertBadge(s.active_alerts);
+    document.getElementById('finTotal').textContent=(s.total_revenue||0).toLocaleString();
+    document.getElementById('finMonth').textContent=(s.revenue_this_month||0).toLocaleString();
+    document.getElementById('finPending').textContent=s.pending_invoices;
+    renderCharts(d);
+    renderCaseloads(d.caseloads);
+    renderActivity(d.recent_activity);
+  } catch(e){}
+  loadAlerts();
+}
+
+function updateAlertBadge(count) {
+  const b=document.getElementById('alertBadge');
+  if(count>0){b.style.display='flex';b.textContent=count;}else b.style.display='none';
+}
+
+async function loadAlerts() {
+  try {
+    const r=await apiFetch('/api/alerts'); const alerts=await r.json();
+    updateAlertBadge(alerts.length);
+    const el=document.getElementById('alertsList');
+    if(!alerts.length){el.innerHTML=`<div style="display:flex;align-items:center;gap:10px;color:var(--success);padding:10px"><i class="fa-solid fa-circle-check" style="font-size:20px"></i><span style="font-weight:600">No active risk alerts — all clear</span></div>`;return;}
+    el.innerHTML=alerts.map(a=>`<div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(239,68,68,.04);border-radius:8px;margin-bottom:8px;border:1px solid rgba(239,68,68,.12)">
+      <i class="fa-solid fa-user-shield" style="color:var(--danger);font-size:18px"></i>
+      <div style="flex:1"><div style="font-weight:700;font-size:13px">${a.client_name} <span style="color:var(--muted);font-size:11px">${a.client_code||''}</span></div>
+        <div style="font-size:12px;color:var(--muted)">${a.alert_type?.replace(/_/g,' ')} · ${a.severity} severity · ${fmtDate(a.triggered_at)}</div></div>
+      <span class="badge badge-red">${a.severity}</span>
+      <button class="btn btn-xs btn-ghost" onclick="resolveAlert(${a.id})">Resolve</button>
+    </div>`).join('');
+  } catch(e){}
+}
+
+async function resolveAlert(id) {
+  await apiFetch(`/api/alerts/${id}/resolve`,{method:'POST'});
+  toast('Alert resolved'); loadAlerts(); loadDashboard();
+}
+
+function renderCharts(data) {
+  const mc=data.monthly_clients||[], as=data.appt_status||[];
+  if(clientChart) clientChart.destroy();
+  const ctx1=document.getElementById('clientChart').getContext('2d');
+  clientChart=new Chart(ctx1,{type:'line',data:{labels:mc.map(m=>m.month),datasets:[{label:'New Clients',data:mc.map(m=>m.count),borderColor:'#043069',backgroundColor:'rgba(4,48,105,.08)',fill:true,tension:.4,pointBackgroundColor:'#043069',pointRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}});
+  if(apptChart) apptChart.destroy();
+  const ctx2=document.getElementById('apptChart').getContext('2d');
+  const colors=['#3b82f6','#10b981','#ef4444','#f59e0b','#8b5cf6'];
+  apptChart=new Chart(ctx2,{type:'doughnut',data:{labels:as.map(a=>a.status),datasets:[{data:as.map(a=>a.count),backgroundColor:colors.slice(0,as.length),borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:12},padding:12}}}}});
+}
+
+function renderCaseloads(caseloads) {
+  const el=document.getElementById('caseloadList');
+  if(!caseloads?.length){el.innerHTML='<p style="color:var(--muted);text-align:center;padding:20px">No therapists found</p>';return;}
+  el.innerHTML=caseloads.map(t=>{
+    const pct=Math.min(100,((t.current_caseload||0)/Math.max(t.max_caseload||20,1))*100);
+    const color=pct>=90?'var(--danger)':pct>=70?'var(--warning)':'var(--success)';
+    return `<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:6px">
+      <span style="font-size:13px;font-weight:600">${t.full_name}</span>
+      <span style="font-size:12px;color:var(--muted)">${t.current_caseload||0}/${t.max_caseload} clients</span></div>
+      <div class="caseload-bar"><div class="caseload-fill" style="width:${pct}%;background:${color}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderActivity(activity) {
+  const el=document.getElementById('activityFeed');
+  if(!activity?.length){el.innerHTML='<p style="color:var(--muted);padding:10px">No recent activity</p>';return;}
+  el.innerHTML=activity.map(a=>`<div class="activity-item">
+    <div class="act-icon"><i class="fa-solid fa-bolt"></i></div>
+    <div style="flex:1"><div class="act-text">${a.action?.replace(/_/g,' ')||'Action'}</div>
+      <div class="act-sub">${a.full_name||'System'} · ${a.resource||''}</div></div>
+    <div class="act-time">${fmtDate(a.timestamp)}</div>
+  </div>`).join('');
+}
+
+// ─── Users ───
+async function loadUsers() {
+  try{ const r=await apiFetch('/api/users'); allUsers=await r.json(); renderUsers(); }catch(e){}
+}
+function filterUsers() { renderUsers(); }
+function renderUsers() {
+  const q=(document.getElementById('userSearch')?.value||'').toLowerCase();
+  const rf=document.getElementById('userRoleFilter')?.value||'';
+  const filtered=allUsers.filter(u=>(!q||u.full_name?.toLowerCase().includes(q)||u.username?.includes(q))&&(!rf||u.role===rf));
+  const tb=document.getElementById('usersTbody');
+  tb.innerHTML=filtered.map(u=>`<tr>
+    <td><div style="display:flex;align-items:center;gap:10px">
+      <div style="width:34px;height:34px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">${(u.full_name||u.username)[0]}</div>
+      <div><strong style="font-size:13.5px">${u.full_name||'—'}</strong></div></div></td>
+    <td style="font-family:monospace;font-size:12.5px">${u.username}</td>
+    <td>${roleBadge(u.role)}</td>
+    <td style="font-size:13px;color:var(--muted)">${u.email||'—'}</td>
+    <td style="font-size:13px">${u.phone||'—'}</td>
+    <td><label class="toggle"><input type="checkbox" ${u.is_active?'checked':''} onchange="toggleUser(${u.id},this.checked)"><span class="toggle-slider"></span></label></td>
+    <td style="font-size:12px;color:var(--muted)">${u.last_login?fmtDate(u.last_login):'Never'}</td>
+    <td><div style="display:flex;gap:4px">
+      <button class="btn btn-xs btn-outline" onclick='editUser(${JSON.stringify(u).replace(/'/g,"&#39;")})'>Edit</button>
+      <button class="btn btn-xs btn-danger" onclick="deleteUser(${u.id})">Delete</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+function openDrawer(type) {
+  document.getElementById('drawerOverlay').classList.add('open');
+  document.getElementById('userDrawer').classList.add('open');
+  document.getElementById('editUserId').value='';
+  document.getElementById('drawerTitle').textContent='Add User';
+  ['u_name','u_username','u_email','u_pass','u_phone','u_spec'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('u_role').value='receptionist';
+  document.getElementById('u_caseload').value='20';
+  toggleTherapistFields();
+}
+function editUser(u) {
+  document.getElementById('drawerOverlay').classList.add('open');
+  document.getElementById('userDrawer').classList.add('open');
+  document.getElementById('drawerTitle').textContent='Edit User';
+  document.getElementById('editUserId').value=u.id;
+  document.getElementById('u_name').value=u.full_name||'';
+  document.getElementById('u_username').value=u.username||'';
+  document.getElementById('u_email').value=u.email||'';
+  document.getElementById('u_phone').value=u.phone||'';
+  document.getElementById('u_role').value=u.role||'receptionist';
+  document.getElementById('u_spec').value=u.specialization||'';
+  document.getElementById('u_gender').value=u.gender||'';
+  document.getElementById('u_caseload').value=u.max_caseload||20;
+  const langs=(u.languages||'').split(',');
+  document.querySelectorAll('.lang-cb').forEach(cb=>{cb.checked=langs.includes(cb.value);});
+  toggleTherapistFields();
+}
+function closeDrawer() {
+  document.getElementById('drawerOverlay').classList.remove('open');
+  document.getElementById('userDrawer').classList.remove('open');
+}
+function toggleTherapistFields() {
+  const role=document.getElementById('u_role').value;
+  document.getElementById('therapistFields').style.display=role==='therapist'?'block':'none';
+}
+async function saveUser() {
+  const eid=document.getElementById('editUserId').value;
+  const langs=[...document.querySelectorAll('.lang-cb:checked')].map(c=>c.value).join(',');
+  const body={full_name:document.getElementById('u_name').value,username:document.getElementById('u_username').value,
+    email:document.getElementById('u_email').value,password:document.getElementById('u_pass').value,
+    phone:document.getElementById('u_phone').value,role:document.getElementById('u_role').value,
+    specialization:document.getElementById('u_spec').value,languages:langs,
+    gender:document.getElementById('u_gender').value,max_caseload:document.getElementById('u_caseload').value};
+  const url=eid?`/api/users/${eid}`:'/api/users';
+  const method=eid?'PUT':'POST';
+  const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.success){closeDrawer();toast(eid?'User updated!':'User created!');loadUsers();}
+  else toast(d.error||'Failed',true);
+}
+async function toggleUser(id,active) {
+  await apiFetch(`/api/users/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({is_active:active?1:0})});
+  toast(active?'User activated':'User deactivated'); loadUsers();
+}
+async function deleteUser(id) {
+  if(!confirm('Deactivate this user?')) return;
+  await apiFetch(`/api/users/${id}`,{method:'DELETE'});
+  toast('User deactivated'); loadUsers();
+}
+
+// ─── Clients ───
+async function loadClients() {
+  try{ const r=await apiFetch('/api/clients'); allClients=await r.json(); renderClients(); }catch(e){}
+}
+function filterClients() { renderClients(); }
+function renderClients() {
+  const q=(document.getElementById('clientSearch')?.value||'').toLowerCase();
+  const st=document.getElementById('clientStatusFilter')?.value||'';
+  const rsk=document.getElementById('clientRiskFilter')?.value||'';
+  const filtered=allClients.filter(c=>(!q||c.full_name?.toLowerCase().includes(q)||c.client_code?.includes(q)||c.phone?.includes(q))&&(!st||c.status===st)&&(!rsk||c.risk_level===rsk));
+  const tb=document.getElementById('clientsTbody');
+  tb.innerHTML=filtered.map(c=>`<tr style="cursor:pointer" onclick="openClientDrawer(${c.id})">
+    <td><span style="font-family:monospace;font-size:12px;font-weight:700;color:var(--navy)">${c.client_code||'—'}</span></td>
+    <td><strong>${c.full_name}</strong></td>
+    <td style="font-size:13px">${c.gender||'—'}</td>
+    <td style="font-size:13px">${c.phone||'—'}</td>
+    <td>${statusBadge(c.status)}</td>
+    <td>${riskBadge(c.risk_level)}</td>
+    <td style="font-size:12px;color:var(--muted)">${fmtDate(c.registration_date)}</td>
+    <td style="font-size:13px">${c.therapist_name||'<span style="color:var(--muted)">Unassigned</span>'}</td>
+    <td onclick="event.stopPropagation()"><button class="btn btn-xs btn-outline" onclick="openClientDrawer(${c.id})">View</button></td>
+  </tr>`).join('');
+}
+
+async function openClientDrawer(cid) {
+  currentClientId=cid; currentClientTab='info';
+  document.getElementById('clientOverlay').classList.add('open');
+  document.getElementById('clientDrawer').classList.add('open');
+  document.getElementById('clientDrawerTitle').textContent='Loading...';
+  document.getElementById('clientDetailContent').innerHTML=`<div class="skel" style="height:200px"></div>`;
+  try {
+    const r=await apiFetch(`/api/clients/${cid}`); currentClientData=await r.json();
+    document.getElementById('clientDrawerTitle').textContent=currentClientData.client.full_name;
+    renderClientTab('info');
+  } catch(e){}
+}
+function closeClientDrawer() {
+  document.getElementById('clientOverlay').classList.remove('open');
+  document.getElementById('clientDrawer').classList.remove('open');
+}
+function switchClientTab(tab,el) {
+  document.querySelectorAll('#clientDrawer .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active'); renderClientTab(tab);
+}
+function renderClientTab(tab) {
+  if(!currentClientData) return;
+  const c=currentClientData.client, el=document.getElementById('clientDetailContent');
+  if(tab==='info') {
+    el.innerHTML=`<div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding:16px;background:var(--bg);border-radius:12px">
+      <div style="width:52px;height:52px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800">${c.full_name[0]}</div>
+      <div><div style="font-size:16px;font-weight:800">${c.full_name}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">${c.client_code} · ${fmtDate(c.registration_date)}</div>
+        <div style="margin-top:6px;display:flex;gap:6px">${statusBadge(c.status)}${riskBadge(c.risk_level)}</div></div></div>
+      ${infoRow('Phone',c.phone)}${infoRow('Email',c.email)}${infoRow('Gender',c.gender)}${infoRow('Date of Birth',c.date_of_birth)}${infoRow('Address',c.address)}
+      <div style="margin:14px 0;border-top:1px solid var(--border);padding-top:12px;font-size:11px;font-weight:700;color:var(--muted)">EMERGENCY CONTACT</div>
+      ${infoRow('Name',c.emergency_contact_name)}${infoRow('Phone',c.emergency_contact_phone)}
+      <div style="margin:14px 0;border-top:1px solid var(--border);padding-top:12px;font-size:11px;font-weight:700;color:var(--muted)">PREFERENCES</div>
+      ${infoRow('Language',c.language_pref)}${infoRow('Therapist Gender Pref',c.therapist_gender_pref)}${infoRow('Assigned Therapist',c.therapist_name||'Unassigned')}`;
+  } else if(tab==='journey') {
+    const j=currentClientData.journey;
+    el.innerHTML=j.length?`<div>${j.map(e=>`<div style="display:flex;gap:12px;padding-bottom:14px;border-left:2px solid var(--border);padding-left:14px;margin-left:8px">
+      <div><div style="font-size:12px;color:var(--muted);margin-bottom:3px">${fmtDate(e.changed_at)} · ${e.changed_by_name||'System'}</div>
+      <div style="font-weight:700;font-size:13px">${e.stage?.replace(/_/g,' ').toUpperCase()}</div>
+      ${e.notes?`<div style="font-size:12px;color:var(--muted);margin-top:3px">${e.notes}</div>`:''}</div></div>`).join('')}</div>`:'<p style="color:var(--muted)">No journey records.</p>';
+  } else if(tab==='appts') {
+    const a=currentClientData.appointments;
+    el.innerHTML=a.length?a.map(ap=>`<div style="padding:12px;border-radius:8px;background:var(--bg);margin-bottom:8px;display:flex;align-items:center;gap:10px">
+      <i class="fa-solid fa-calendar" style="color:var(--navy)"></i>
+      <div><div style="font-size:13px;font-weight:700">${fmtDate(ap.start_time)}</div>
+        <div style="font-size:12px;color:var(--muted)">${ap.type} · ${ap.therapist_name||'TBA'} · ${ap.location}</div></div>
+      <div style="margin-left:auto">${statusBadge(ap.status)}</div>
+    </div>`).join(''):'<p style="color:var(--muted)">No appointments yet.</p>';
+  } else if(tab==='screening') {
+    const s=currentClientData.screening;
+    el.innerHTML=s.length?s.map(sc=>`<div style="padding:14px;border-radius:10px;background:var(--bg);margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <strong>${sc.questionnaire_type}</strong><span class="badge badge-${sc.severity==='severe'||sc.severity==='moderately_severe'?'red':sc.severity==='moderate'?'orange':sc.severity==='mild'?'indigo':'green'}">${sc.severity}</span></div>
+      <div style="font-size:13px">Score: <strong>${sc.total_score}</strong> · ${fmtDate(sc.submitted_at)}</div>
+    </div>`).join(''):'<p style="color:var(--muted)">No screening data yet.</p>';
+  }
+}
+function infoRow(label,val) {
+  return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+    <span style="font-size:11.5px;font-weight:700;color:var(--muted)">${label.toUpperCase()}</span>
+    <span style="font-size:13px;font-weight:600">${val||'—'}</span></div>`;
+}
+
+// ─── Appointments ───
+async function loadAppointments() {
+  const start=document.getElementById('apptStart')?.value, end=document.getElementById('apptEnd')?.value;
+  const st=document.getElementById('apptStatusFilter')?.value||'';
+  let url='/api/appointments?';
+  if(start) url+=`start=${start}&`; if(end) url+=`end=${end}&`;
+  try{const r=await fetch(url); allAppointments=await r.json();
+    const f=st?allAppointments.filter(a=>a.status===st):allAppointments;
+    const tb=document.getElementById('apptTbody');
+    tb.innerHTML=f.map(a=>`<tr><td>${fmtDate(a.start_time)} <span style="font-size:11px;color:var(--muted)">${fmtTime(a.start_time)}</span></td>
+      <td><strong>${a.client_name||'—'}</strong></td><td>${a.therapist_name||'—'}</td>
+      <td><span class="badge badge-blue">${a.type}</span></td><td>${statusBadge(a.status)}</td><td>${a.location}</td>
+      <td><button class="btn btn-xs btn-danger" onclick="cancelAppt(${a.id})"><i class="fa-solid fa-ban"></i></button></td></tr>`).join('');
+  }catch(e){}
+}
+async function cancelAppt(id){
+  await apiFetch(`/api/appointments/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'cancelled'})});
+  toast('Appointment cancelled'); loadAppointments();
+}
+
+// â”€â”€â”€ Rooms â”€â”€â”€
+async function loadRoomsAdmin(){
+  try{
+    const r = await apiFetch('/api/rooms');
+    const rooms = await r.json();
+    adminRooms = rooms;
+    const el = document.getElementById('roomList');
+    if(!el) return;
+    if(!rooms.length){
+      el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted)">No rooms configured yet.</div>';
+      return;
+    }
+    el.innerHTML = rooms.map(room => `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border:1px solid var(--border);border-radius:12px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:14px;height:42px;border-radius:999px;background:${room.color||'var(--navy)'}"></div>
+          <div>
+            <div style="font-weight:800;font-size:14px">${room.name}</div>
+            <div style="font-size:12px;color:var(--muted)">${room.code || ''} · ${room.is_active ? 'Active' : 'Inactive'} · order ${room.sort_order ?? 0}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-xs btn-ghost" onclick="fillRoomForm(${room.id})">Edit</button>
+          <button class="btn btn-xs btn-danger" onclick="deleteRoom(${room.id})">Delete</button>
+        </div>
+      </div>
+    `).join('');
+  }catch(e){}
+}
+
+function fillRoomForm(roomId){
+  const room = adminRooms.find(r => String(r.id) === String(roomId));
+  if(!room) return;
+  document.getElementById('roomName').value = room.name || '';
+  document.getElementById('roomCode').value = room.code || '';
+  document.getElementById('roomColor').value = room.color || '#043069';
+  document.getElementById('roomSort').value = room.sort_order ?? 0;
+  document.getElementById('roomActive').checked = !!room.is_active;
+  document.getElementById('roomEditId').value = room.id;
+  document.getElementById('roomName').focus();
+}
+
+function resetRoomForm(){
+  document.getElementById('roomEditId').value = '';
+  document.getElementById('roomName').value = '';
+  document.getElementById('roomCode').value = '';
+  document.getElementById('roomColor').value = '#043069';
+  document.getElementById('roomSort').value = 0;
+  document.getElementById('roomActive').checked = true;
+  document.getElementById('roomName').focus();
+  toast('Ready to add a new room');
+}
+
+async function addRoomFromForm(){
+  const roomId = document.getElementById('roomEditId').value || '';
+  const body = {
+    name: document.getElementById('roomName').value.trim(),
+    code: document.getElementById('roomCode').value.trim(),
+    color: document.getElementById('roomColor').value,
+    sort_order: document.getElementById('roomSort').value,
+    is_active: document.getElementById('roomActive').checked,
+  };
+  if(!body.name){ toast('Room name is required', true); return; }
+  const url = roomId ? `/api/rooms/${roomId}` : '/api/rooms';
+  const method = roomId ? 'PUT' : 'POST';
+  const r = await fetch(url, {method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  const d = await r.json();
+  if(d.success){
+    toast('Room saved');
+    resetRoomForm();
+    loadRoomsAdmin();
+  } else {
+    toast(d.error || 'Failed to save room', true);
+  }
+}
+
+async function deleteRoom(id){
+  if(!confirm('Delete this room?')) return;
+  const r = await apiFetch(`/api/rooms/${id}`, {method:'DELETE'});
+  const d = await r.json();
+  if(d.success){ toast('Room deleted'); loadRoomsAdmin(); }
+  else toast(d.error || 'Failed to delete room', true);
+}
+
+// ─── Services ───
+async function loadServices() {
+  try{const r=await apiFetch('/api/services'); allServices=await r.json(); renderServices();}catch(e){}
+}
+function renderServices() {
+  const tb=document.getElementById('svcTbody');
+  tb.innerHTML=allServices.map(s=>`<tr>
+    <td><strong>${s.name}</strong></td><td style="font-size:13px;color:var(--muted)">${s.description||'—'}</td>
+    <td>${s.duration_minutes} min</td><td style="font-weight:700">ETB ${(s.price||0).toLocaleString()}</td>
+    <td><span class="badge ${s.is_active?'badge-green':'badge-gray'}">${s.is_active?'Active':'Inactive'}</span></td>
+    <td style="display:flex;gap:4px">
+      <button class="btn btn-xs btn-outline" onclick='editService(${JSON.stringify(s)})'>Edit</button>
+      <button class="btn btn-xs btn-danger" onclick="deleteService(${s.id})">Remove</button>
+    </td></tr>`).join('');
+}
+function openServiceModal(){ document.getElementById('svc_id').value=''; document.getElementById('svcModalTitle').textContent='Add Service';
+  ['svc_name','svc_desc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('svc_dur').value=60; document.getElementById('svc_price').value=500;
+  document.getElementById('svcOverlay').classList.add('open'); document.getElementById('svcModal').classList.add('open'); }
+function editService(s){ document.getElementById('svc_id').value=s.id; document.getElementById('svcModalTitle').textContent='Edit Service';
+  document.getElementById('svc_name').value=s.name||''; document.getElementById('svc_desc').value=s.description||'';
+  document.getElementById('svc_dur').value=s.duration_minutes||60; document.getElementById('svc_price').value=s.price||0;
+  document.getElementById('svcOverlay').classList.add('open'); document.getElementById('svcModal').classList.add('open'); }
+function closeSvcModal(){ document.getElementById('svcOverlay').classList.remove('open'); document.getElementById('svcModal').classList.remove('open'); }
+async function saveService(){
+  const id=document.getElementById('svc_id').value;
+  const body={name:document.getElementById('svc_name').value,description:document.getElementById('svc_desc').value,
+    duration_minutes:document.getElementById('svc_dur').value,price:document.getElementById('svc_price').value,is_active:1};
+  const url=id?`/api/services/${id}`:'/api/services'; const method=id?'PUT':'POST';
+  const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json(); if(d.success){closeSvcModal();toast('Service saved!');loadServices();}else toast('Failed',true);
+}
+async function deleteService(id){
+  await apiFetch(`/api/services/${id}`,{method:'DELETE'}); toast('Service removed'); loadServices();
+}
+
+// ─── Finance ───
+function switchFinTab(tab,el){
+  document.querySelectorAll('#sec-finance .tab').forEach(t=>t.classList.remove('active')); el.classList.add('active');
+  document.getElementById('finInvoices').style.display=tab==='invoices'?'block':'none';
+  document.getElementById('finRevenue').style.display=tab==='revenue'?'block':'none';
+}
+async function loadInvoices(){
+  try{const r=await apiFetch('/api/invoices'); allInvoices=await r.json();
+    const tb=document.getElementById('invoiceTbody');
+    tb.innerHTML=allInvoices.map(i=>`<tr><td><strong>${i.client_name||'—'}</strong><br><span style="font-size:11px;color:var(--muted)">${i.client_code||''}</span></td>
+      <td style="font-size:13px">${i.service_name||'—'}</td><td style="font-weight:700">ETB ${(i.amount||0).toLocaleString()}</td>
+      <td>${invBadge(i.status)}</td><td style="font-size:12px;color:var(--muted)">${fmtDate(i.issue_date)}</td>
+      <td style="font-size:12px;color:var(--muted)">${fmtDate(i.due_date)}</td></tr>`).join('');
+  }catch(e){}
+}
+
+// ─── Org Chart ───
+let orgMembers=[];
+async function loadOrg(){
+  try{const r=await apiFetch('/api/org'); orgMembers=await r.json(); renderOrg();}catch(e){}
+}
+function renderOrg(){
+  const tb=document.getElementById('orgTbody');
+  tb.innerHTML=orgMembers.map(m=>`<tr>
+    <td>${m.photo_path?`<img src="${m.photo_path}" style="width:36px;height:36px;border-radius:50%;object-fit:cover">`:`<div style="width:36px;height:36px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">${m.name[0]}</div>`}</td>
+    <td><strong>${m.name}</strong></td><td style="font-size:13px">${m.role}</td>
+    <td><span class="badge badge-blue">${m.node_type}</span></td>
+    <td style="display:flex;gap:4px">
+      <button class="btn btn-xs btn-outline" onclick="editOrgMember(${m.id})">Edit</button>
+      <button class="btn btn-xs btn-danger" onclick="deleteOrgMember(${m.id})">Delete</button>
+    </td></tr>`).join('');
+}
+function openOrgDrawer(){ resetOrgForm(); }
+function editOrgMember(id){
+  const m=orgMembers.find(x=>x.id===id); if(!m) return;
+  document.getElementById('org_id').value=m.id;
+  document.getElementById('org_name').value=m.name||'';
+  document.getElementById('org_role').value=m.role||'';
+  document.getElementById('org_type').value=m.node_type||'normal';
+  document.getElementById('org_parent').value=m.parent_id||'';
+  document.getElementById('org_sort').value=m.sort_order||0;
+  document.getElementById('org_summary').value=m.summary||'';
+  document.getElementById('org_photo_preview').style.display=m.photo_path?'block':'none';
+  document.getElementById('org_photo_preview').src=m.photo_path||'';
+}
+function resetOrgForm(){
+  document.getElementById('orgForm').reset();
+  document.getElementById('org_id').value='';
+  document.getElementById('org_photo_preview').style.display='none';
+}
+async function submitOrgMember(e){
+  e.preventDefault();
+  const fd=new FormData();
+  const id=document.getElementById('org_id').value;
+  if(id) fd.append('id',id);
+  fd.append('name',document.getElementById('org_name').value);
+  fd.append('role',document.getElementById('org_role').value);
+  fd.append('node_type',document.getElementById('org_type').value);
+  fd.append('parent_id',document.getElementById('org_parent').value);
+  fd.append('sort_order',document.getElementById('org_sort').value);
+  fd.append('summary',document.getElementById('org_summary').value);
+  const photo=document.getElementById('org_photo').files[0];
+  if(photo) fd.append('photo',photo);
+  const r=await apiFetch('/api/org',{method:'POST',body:fd});
+  const d=await r.json(); if(d.success){toast('Member saved!');resetOrgForm();loadOrg();}else toast('Failed',true);
+}
+async function deleteOrgMember(id){
+  if(!confirm('Delete this member?')) return;
+  await apiFetch(`/api/org/${id}`,{method:'DELETE'}); toast('Member deleted'); loadOrg();
+}
+function previewOrgPhoto(inp){
+  const f=inp.files[0]; if(!f) return;
+  const reader=new FileReader(); reader.onload=e=>{const img=document.getElementById('org_photo_preview');img.src=e.target.result;img.style.display='block';};
+  reader.readAsDataURL(f);
+}
+
+// ─── Slides ───
+let slides=[];
+async function loadSlides(){
+  try{const r=await apiFetch('/api/slides'); slides=await r.json(); renderSlides();}catch(e){}
+}
+function renderSlides(){
+  const tb=document.getElementById('slideTbody');
+  tb.innerHTML=slides.map(s=>`<tr>
+    <td><img src="${s.image_path}" style="width:60px;height:40px;object-fit:cover;border-radius:6px"></td>
+    <td style="font-size:13px"><strong>${s.headline||'—'}</strong><br><span style="color:var(--muted);font-size:12px">${(s.summary||'').substring(0,50)}${s.summary?.length>50?'...':''}</span></td>
+    <td style="font-size:12px">${s.button_name||'—'}</td>
+    <td><button class="btn btn-xs btn-danger" onclick="deleteSlide(${s.id})"><i class="fa-solid fa-trash"></i></button></td>
+  </tr>`).join('');
+}
+async function submitSlide(e){
+  e.preventDefault();
+  const fd=new FormData();
+  const img=document.getElementById('slideImg').files[0];
+  if(!img){toast('Please select an image',true);return;}
+  fd.append('image',img);
+  fd.append('headline',document.getElementById('sl_headline').value);
+  fd.append('summary',document.getElementById('sl_summary').value);
+  fd.append('alignment',document.getElementById('sl_align').value);
+  fd.append('button_name',document.getElementById('sl_btn_name').value);
+  fd.append('button_link',document.getElementById('sl_btn_link').value);
+  const r=await apiFetch('/api/slides',{method:'POST',body:fd});
+  const d=await r.json(); if(d.success){toast('Slide uploaded!');document.getElementById('slideForm').reset();document.getElementById('slidePreview').style.display='none';loadSlides();}else toast('Failed',true);
+}
+function previewSlide(inp){
+  const f=inp.files[0]; if(!f) return;
+  const reader=new FileReader(); reader.onload=e=>{const img=document.getElementById('slidePreview');img.src=e.target.result;img.style.display='block';};
+  reader.readAsDataURL(f);
+}
+async function deleteSlide(id){
+  if(!confirm('Delete this slide?')) return;
+  await apiFetch(`/api/slides/${id}`,{method:'DELETE'}); toast('Slide deleted'); loadSlides();
+}
+
+// ─── Audit ───
+async function loadAudit(){
+  try{const r=await apiFetch('/api/analytics/dashboard'); const d=await r.json();
+    const tb=document.getElementById('auditTbody');
+    tb.innerHTML=(d.recent_activity||[]).map(a=>`<tr>
+      <td style="font-size:12px;color:var(--muted);white-space:nowrap">${fmtDate(a.timestamp)}</td>
+      <td style="font-size:13px">${a.full_name||'System'}</td>
+      <td><span class="badge badge-blue">${a.action||'—'}</span></td>
+      <td style="font-size:13px">${a.resource||'—'}</td>
+      <td style="font-size:12px;color:var(--muted)">${a.detail||'—'}</td>
+      <td style="font-size:12px;font-family:monospace">${a.ip_address||'—'}</td>
+    </tr>`).join('');
+  }catch(e){}
+}
+
+// ─── Comms ───
+async function loadComms(){
+  try{const r=await apiFetch('/api/messages'); const msgs=await r.json();
+    document.getElementById('commsList').innerHTML=msgs.map(m=>`<div style="padding:12px;border-radius:8px;background:var(--bg);margin-bottom:8px">
+      <div style="font-size:13px;font-weight:700">${m.sender_name||'System'}</div>
+      <div style="font-size:13px;margin:4px 0">${m.subject}</div>
+      <div style="font-size:12px;color:var(--muted)">${fmtDate(m.sent_at)}</div>
+    </div>`).join('')||'<p style="color:var(--muted);text-align:center;padding:20px">No messages</p>';
+    const r2=await apiFetch('/api/users'); const users=await r2.json();
+    document.getElementById('msgTo').innerHTML='<option value="">Select recipient...</option>'+users.filter(u=>u.id!==currentUser?.id).map(u=>`<option value="${u.id}">${u.full_name} (${u.role})</option>`).join('');
+  }catch(e){}
+}
+async function sendMessage(){
+  const body={recipient_id:document.getElementById('msgTo').value,subject:document.getElementById('msgSubject').value,body:document.getElementById('msgBody').value};
+  if(!body.recipient_id||!body.subject){toast('Fill all required fields',true);return;}
+  const r=await apiFetch('/api/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json(); if(d.success){toast('Message sent!');document.getElementById('msgSubject').value='';document.getElementById('msgBody').value='';}
+}
+
+async function loadTelegramLinks(){
+  try{
+    const [uRes,lRes] = await Promise.all([apiFetch('/api/users'), apiFetch('/api/telegram/link-codes')]);
+    const users = await uRes.json();
+    const links = await lRes.json();
+    document.getElementById('tgUserSelect').innerHTML = '<option value="">Select staff member...</option>' + users
+      .filter(u=>['therapist','receptionist'].includes(u.role))
+      .map(u=>`<option value="${u.id}">${u.full_name} (${u.role}) ${u.telegram_chat_id? ' - linked':''}</option>`).join('');
+    document.getElementById('tgLinkList').innerHTML = links.length ? links.map(l=>`
+      <div style="padding:12px;border:1px solid var(--border);border-radius:10px;background:#fff">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+          <div>
+            <div style="font-weight:800">${l.user_name||'Unknown user'}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:3px">Code: <span style="font-family:monospace;font-weight:800">${l.code}</span></div>
+            <div style="font-size:12px;color:var(--muted);margin-top:3px">Expires: ${fmtDate(l.expires_at)}</div>
+          </div>
+          <span class="badge ${l.used_at ? 'badge-green' : 'badge-orange'}">${l.used_at ? 'Used' : 'Pending'}</span>
+        </div>
+      </div>`).join('') : '<p style="color:var(--muted)">No Telegram link codes yet.</p>';
+    document.getElementById('tgCodeResult').innerHTML = '';
+    loadTelegramStatus();
+  }catch(e){ toast('Failed to load Telegram links', true); }
+}
+
+async function loadTelegramStatus(){
+  const el = document.getElementById('tgStatusText');
+  if(!el) return;
+  try{
+    const r = await apiFetch('/api/telegram/status');
+    const d = await r.json();
+    if(!d.success){ throw new Error(d.error || 'status unavailable'); }
+    el.innerHTML = d.configured
+      ? `Bot <strong>@${d.username || 'unknown'}</strong> is configured. Polling is <strong>${d.polling_active ? 'active' : 'idle'}</strong>. <a href="${d.bot_url}" target="_blank" style="color:var(--teal);font-weight:700">Open bot</a>`
+      : 'Telegram bot token is not configured yet. Set the bot token, then use /start with the generated link code.';
+  }catch(e){
+    el.textContent = 'Telegram status unavailable right now.';
+  }
+}
+
+async function createTelegramCode(){
+  const userId = document.getElementById('tgUserSelect').value;
+  const expiresHours = document.getElementById('tgExpires').value || 48;
+  if(!userId){ toast('Select a staff member', true); return; }
+  const r = await apiFetch('/api/telegram/link-codes', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({user_id:userId, expires_hours:expiresHours})
+  });
+  const d = await r.json();
+  if(d.success){
+    document.getElementById('tgCodeResult').innerHTML = `<div style="padding:14px;border:1px solid rgba(13,148,136,.15);border-radius:10px;background:rgba(13,148,136,.05)">
+      <div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:4px">ONE-TIME CODE</div>
+      <div style="font-family:monospace;font-size:24px;font-weight:800;color:var(--navy)">${d.code}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">Expires at ${fmtDate(d.expires_at)}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px;word-break:break-all">Deep link: <a href="${d.deep_link}" target="_blank" style="color:var(--teal);font-weight:700">${d.deep_link}</a></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <button class="btn btn-teal btn-sm" onclick="navigator.clipboard.writeText('${d.deep_link}')"><i class="fa-solid fa-copy"></i>Copy Link</button>
+        <a class="btn btn-gold btn-sm" href="${d.deep_link}" target="_blank"><i class="fa-brands fa-telegram"></i>Open Telegram</a>
+      </div>
+    </div>`;
+    toast('Telegram link code generated');
+    loadTelegramLinks();
+  }else{
+    toast(d.error || 'Failed to generate code', true);
+  }
+}
+
+// ─── Helpers ───
+function statusBadge(s){const map={registered:'blue',screening_completed:'indigo',awaiting_assignment:'orange',assigned:'teal',active:'green',completed:'gray',terminated:'red',scheduled:'blue',cancelled:'red',no_show:'orange',completed:'green'};return `<span class="badge badge-${map[s]||'gray'}">${(s||'unknown').replace(/_/g,' ')}</span>`;}
+function riskBadge(r){const map={low:'green',medium:'orange',high:'red'};return `<span class="badge badge-${map[r]||'gray'}">${r||'low'}</span>`;}
+function roleBadge(r){const map={admin:'navy',therapist:'teal',receptionist:'gold',supervisor:'purple'};return `<span class="badge badge-${map[r]||'gray'}">${r}</span>`;}
+function invBadge(s){const map={pending:'orange',paid:'green',partial:'indigo',overdue:'red'};return `<span class="badge badge-${map[s]||'gray'}">${s||'pending'}</span>`;}
+function fmtDate(d){if(!d)return '—';try{return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}catch(e){return d;}}
+function fmtTime(d){if(!d)return '';try{return new Date(d).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});}catch(e){return '';}}
+
+function toast(msg,isErr=false){
+  const c=document.getElementById('toastWrap');
+  const t=document.createElement('div'); t.className='toast'+(isErr?' err':'');
+  t.innerHTML=`<i class="fa-solid ${isErr?'fa-circle-xmark':'fa-circle-check'}"></i><span>${msg}</span>`;
+  c.appendChild(t); setTimeout(()=>t.classList.add('show'),50);
+  setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),400);},3500);
+}
+
+let adminApptView='list';
+let currentAssessmentTemplateId=null;
+let pendingAssessmentQuestions=[];
+let assessmentTemplatesCache=[];
+let assessmentImportFile=null;
+let assessmentImportPreviewData=null;
+
+const adminShowSection = showSection;
+showSection = function(sec){
+  adminShowSection(sec);
+  if(sec==='appointments'){ setApptView(adminApptView); loadAppointments(); }
+  if(sec==='screening') loadAssessmentTemplates();
+};
+
+function setApptView(view){
+  adminApptView=view;
+  document.getElementById('apptListBtn')?.classList.toggle('btn-gold', view==='list');
+  document.getElementById('apptListBtn')?.classList.toggle('btn-ghost', view!=='list');
+  document.getElementById('apptCalBtn')?.classList.toggle('btn-gold', view==='calendar');
+  document.getElementById('apptCalBtn')?.classList.toggle('btn-ghost', view!=='calendar');
+  loadAppointments();
+}
+
+function renderAdminApptCalendar(appts){
+  const anchor = document.getElementById('apptStart')?.value || new Date().toISOString().split('T')[0];
+  const base = new Date(anchor + 'T00:00:00');
+  const y = base.getFullYear(), m = base.getMonth();
+  const firstDay = new Date(y, m, 1).getDay();
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const map = {};
+  appts.forEach(a=>{
+    const key = (a.start_time || '').split('T')[0];
+    if(!map[key]) map[key] = [];
+    map[key].push(a);
+  });
+  let html = `<div class="cal-grid">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="cal-day-header">${d}</div>`).join('')}`;
+  for(let i=0;i<firstDay;i++) html += `<div class="cal-day other-month"><div class="cal-day-num"></div></div>`;
+  for(let d=1; d<=daysInMonth; d++){
+    const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dayAppts = map[dateStr] || [];
+    html += `<div class="cal-day" onclick="document.getElementById('apptStart').value='${dateStr}';document.getElementById('apptEnd').value='${dateStr}';loadAppointments()">
+      <div class="cal-day-num">${d}</div>
+      ${dayAppts.slice(0,3).map(a=>`<span class="cal-appt-dot">${(a.client_name||'Appt').split(' ')[0]} ${fmtTime(a.start_time)}</span>`).join('')}
+      ${dayAppts.length>3?`<span style="font-size:10px;color:var(--muted)">+${dayAppts.length-3} more</span>`:''}
+    </div>`;
+  }
+  html += '</div>';
+  document.getElementById('adminApptCalendar').innerHTML = html;
+}
+
+async function loadAppointments() {
+  const start=document.getElementById('apptStart')?.value, end=document.getElementById('apptEnd')?.value;
+  const st=document.getElementById('apptStatusFilter')?.value||'';
+  let url='/api/appointments?';
+  if(start) url+=`start=${start}&`; if(end) url+=`end=${end}&`;
+  try{
+    const r=await fetch(url); allAppointments=await r.json();
+    const f=st?allAppointments.filter(a=>a.status===st):allAppointments;
+    if(adminApptView==='calendar'){
+      document.getElementById('adminApptCalendar').style.display='block';
+      document.querySelector('#sec-appointments .tbl-wrap').style.display='none';
+      renderAdminApptCalendar(f);
+      return;
+    }
+    document.getElementById('adminApptCalendar').style.display='none';
+    document.querySelector('#sec-appointments .tbl-wrap').style.display='block';
+    const tb=document.getElementById('apptTbody');
+    tb.innerHTML=f.map(a=>`<tr><td>${fmtDate(a.start_time)} <span style="font-size:11px;color:var(--muted)">${fmtTime(a.start_time)}</span></td>
+      <td><strong>${a.client_name||'â€”'}</strong></td><td>${a.therapist_name||'â€”'}</td>
+      <td><span class="badge badge-blue">${a.type}</span></td><td>${statusBadge(a.status)}</td><td>${a.location}</td>
+      <td style="display:flex;gap:4px;flex-wrap:wrap">
+        <button class="btn btn-xs btn-outline" onclick="changeAppt(${a.id})"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn btn-xs btn-danger" onclick="cancelAppt(${a.id})"><i class="fa-solid fa-ban"></i></button>
+      </td></tr>`).join('');
+  }catch(e){}
+}
+
+async function cancelAppt(id){
+  openAppointmentEditor(id, 'cancelled');
+}
+
+async function changeAppt(id){
+  openAppointmentEditor(id, 'temporary');
+}
+
+function setApptEditorMode(mode){
+  const scope = mode === 'permanent' ? 'permanent' : 'temporary';
+  document.getElementById('apptEditorScope').value = scope;
+  document.getElementById('apptEditorStatus').value = mode === 'cancelled' ? 'cancelled' : 'scheduled';
+  document.getElementById('apptModeTemp').classList.toggle('active', mode === 'temporary');
+  document.getElementById('apptModePerm').classList.toggle('active', mode === 'permanent');
+  document.getElementById('apptModeCancel').classList.toggle('active', mode === 'cancelled');
+  const dtGroup = document.querySelector('.appt-editor-time-group');
+  const note = document.getElementById('apptEditorNote');
+  const saveBtn = document.getElementById('apptEditorSaveBtn');
+  if(mode === 'cancelled'){
+    dtGroup.classList.add('appt-editor-hidden');
+    note.innerHTML = '<strong>Cancellation:</strong> record the reason so the therapist receives the same update in Telegram.';
+    saveBtn.textContent = 'Cancel Session';
+    saveBtn.className = 'btn btn-danger appt-editor-save';
+  }else if(mode === 'permanent'){
+    dtGroup.classList.remove('appt-editor-hidden');
+    note.innerHTML = '<strong>Permanent change:</strong> this updates the recurring series and notifies the therapist.';
+    saveBtn.textContent = 'Save Permanent Change';
+    saveBtn.className = 'btn btn-gold appt-editor-save';
+  }else{
+    dtGroup.classList.remove('appt-editor-hidden');
+    note.innerHTML = '<strong>Temporary change:</strong> updates only this appointment.';
+    saveBtn.textContent = 'Save Temporary Change';
+    saveBtn.className = 'btn btn-gold appt-editor-save';
+  }
+}
+
+function openAppointmentEditor(apptId, mode='temporary'){
+  const openWith = (appt) => {
+    if(!appt){ toast('Appointment not found', true); return; }
+    if(!allAppointments.find(a => String(a.id) === String(appt.id))) {
+      allAppointments = [appt, ...allAppointments.filter(a => String(a.id) !== String(appt.id))];
+    }
+    document.getElementById('apptEditorId').value = appt.id;
+    document.getElementById('apptEditorDateTime').value = appt.start_time ? new Date(appt.start_time).toISOString().slice(0,16) : '';
+    document.getElementById('apptEditorEndTime').value = appt.end_time ? new Date(appt.end_time).toISOString().slice(0,16) : '';
+    document.getElementById('apptEditorReason').value = appt.change_reason || appt.cancel_reason || '';
+    document.getElementById('apptEditorOverlay').classList.add('open');
+    document.getElementById('apptEditorModal').classList.add('open');
+    setApptEditorMode(mode);
+    document.getElementById('apptEditorTitle').textContent = `${appt.client_name || 'Appointment'}${appt.client_code ? ' · ' + appt.client_code : ''}`;
+    document.getElementById('apptEditorSubtitle').textContent = `${fmtDate(appt.start_time)} ${fmtTime(appt.start_time)} · ${appt.therapist_name || 'Therapist'} · ${appt.location || 'Location not set'}`;
+  };
+  const appt = allAppointments.find(a => String(a.id) === String(apptId));
+  if(appt){ openWith(appt); return; }
+  apiFetch(`/api/appointments/${apptId}`)
+    .then(r => r.ok ? r.json() : null)
+    .then(d => {
+      if(!d || d.error){ toast('Appointment not found', true); return; }
+      openWith(d);
+    })
+    .catch(() => toast('Appointment not found', true));
+}
+
+function closeAppointmentEditor(){
+  document.getElementById('apptEditorOverlay').classList.remove('open');
+  document.getElementById('apptEditorModal').classList.remove('open');
+}
+
+async function saveAppointmentEditor(){
+  const id = document.getElementById('apptEditorId').value;
+  const mode = document.getElementById('apptEditorStatus').value;
+  const scope = document.getElementById('apptEditorScope').value || 'temporary';
+  const reason = document.getElementById('apptEditorReason').value.trim();
+  const body = { reason };
+  if(mode === 'cancelled'){
+    if(!reason){ toast('Please add a cancellation reason', true); return; }
+    body.status = 'cancelled';
+    body.cancel_reason = reason;
+    body.action = 'cancelled';
+  }else{
+    const dt = document.getElementById('apptEditorDateTime').value;
+    if(!dt){ toast('Please choose a new date and time', true); return; }
+    body.start_time = new Date(dt).toISOString();
+    const end = document.getElementById('apptEditorEndTime').value;
+    if(end) body.end_time = new Date(end).toISOString();
+    body.change_reason = reason;
+    body.change_scope = scope;
+    body.action = 'changed';
+  }
+  const r = await apiFetch(`/api/appointments/${id}`, {
+    method:'PUT',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  });
+  const d = await r.json();
+  if(d.success){
+    closeAppointmentEditor();
+    toast(mode === 'cancelled' ? 'Appointment cancelled' : (scope === 'permanent' ? 'Permanent change saved' : 'Temporary change saved'));
+    loadAppointments();
+  }else{
+    toast(d.error || 'Update failed', true);
+  }
+}
+
+
+// ── Assessment Builder Logic ──
+function switchAssessTab(tab, el) {
+  document.getElementById('assessImport').style.display = 'none';
+  document.getElementById('assessLibrary').style.display = 'none';
+  document.getElementById('assessEditor').style.display = 'none';
+  
+  if(tab === 'import') document.getElementById('assessImport').style.display = 'block';
+  else if(tab === 'library') document.getElementById('assessLibrary').style.display = 'block';
+  else if(tab === 'editor') document.getElementById('assessEditor').style.display = 'block';
+
+  if(el) {
+    document.querySelectorAll('#sec-screening .tab').forEach(t=>t.classList.remove('active'));
+    el.classList.add('active');
+  } else {
+    document.querySelectorAll('#sec-screening .tab').forEach(t=>t.classList.remove('active'));
+    if(tab === 'import') document.getElementById('tab-assess-import').classList.add('active');
+    else if(tab === 'library') document.getElementById('tab-assess-library').classList.add('active');
+    else if(tab === 'editor') {
+      const edTab = document.getElementById('tab-assess-editor');
+      edTab.style.display = 'inline-block';
+      edTab.classList.add('active');
+    }
+  }
+}
+
+function continueToEditor() {
+  document.getElementById('tab-assess-editor').style.display = 'inline-block';
+  switchAssessTab('editor');
+}
+
+function clearQuestionForm() {
+  document.getElementById('qKey').value = '';
+  document.getElementById('qEn').value = '';
+  document.getElementById('qAm').value = '';
+  document.getElementById('qType').value = 'text';
+  document.getElementById('qRequired').checked = false;
+  document.getElementById('qOptions').value = '';
+  document.getElementById('qHelp').value = '';
+  document.getElementById('qSort').value = '0';
+}
+
+function filterAssessmentLibrary() {
+  const search = document.getElementById('assessSearch').value.toLowerCase();
+  const cat = document.getElementById('assessFilterCategory').value;
+  const status = document.getElementById('assessFilterStatus').value;
+  
+  const cards = document.querySelectorAll('.assess-card-item');
+  cards.forEach(card => {
+    const text = card.dataset.search;
+    const itemCat = card.dataset.category;
+    const itemStatus = card.dataset.status; // 'published' or 'draft'
+    
+    let match = true;
+    if(search && !text.includes(search)) match = false;
+    if(cat && itemCat !== cat) match = false;
+    if(status && itemStatus !== status) match = false;
+    
+    card.style.display = match ? 'block' : 'none';
+  });
+}
+
+function renderAssessmentTemplateGrid(data) {
+  const el = document.getElementById('assessmentTemplateGrid');
+  if(!data || !data.length) {
+    el.innerHTML = '<p style="color:var(--muted)">No assessments found in the library.</p>';
+    return;
+  }
+  
+  el.innerHTML = data.map(t => {
+    const isPub = t.published === 1;
+    const catBadge = t.category ? `<span class="badge badge-indigo">${t.category}</span>` : '';
+    const statusBadge = isPub ? '<span class="badge badge-green">Published</span>' : '<span class="badge badge-orange">Draft</span>';
+    
+    return `
+      <div class="assess-card-item" data-search="${(t.name||'').toLowerCase()} ${(t.description||'').toLowerCase()}" data-category="${t.category||''}" data-status="${isPub ? 'published' : 'draft'}" style="padding:16px;border:1px solid var(--border);border-radius:12px;background:#fff;position:relative">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;margin-bottom:8px">
+          <div style="font-weight:800;font-size:15px;color:var(--navy)">${t.name}</div>
+          ${statusBadge}
+        </div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:12px;min-height:38px">${t.description||'No description provided.'}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+          ${catBadge}
+          <span class="badge badge-gray">v${t.version||1}</span>
+          ${t.tags ? t.tags.split(',').map(tag=>`<span class="badge badge-teal">${tag.trim()}</span>`).join('') : ''}
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:14px">
+          <div><i class="fa-solid fa-user"></i> ${t.author || 'Unknown'}</div>
+          <div><i class="fa-regular fa-clock"></i> ${formatDate(t.created_at)}</div>
+        </div>
+        <div style="display:flex;gap:8px;border-top:1px solid var(--border);padding-top:12px">
+          <button class="btn btn-outline btn-xs" onclick="openAssessmentTemplate(${t.id})"><i class="fa-solid fa-pen"></i> Edit</button>
+          <button class="btn btn-outline btn-xs" onclick="duplicateAssessmentTemplate(${t.id})"><i class="fa-regular fa-copy"></i> Duplicate</button>
+          <button class="btn btn-outline btn-xs" onclick="togglePublishAssessment(${t.id}, ${isPub ? 0 : 1})">${isPub ? '<i class="fa-solid fa-eye-slash"></i> Unpublish' : '<i class="fa-solid fa-eye"></i> Publish'}</button>
+          <div style="flex:1"></div>
+          <button class="btn btn-danger btn-xs" onclick="deleteAssessmentTemplate(${t.id})"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function duplicateAssessmentTemplate(id) {
+  try {
+    const r = await apiFetch(`/api/assessment-templates/${id}/duplicate`, {method:'POST'});
+    const d = await r.json();
+    if(d.success) {
+      toast('Template duplicated successfully');
+      loadAssessmentTemplates();
+    } else {
+      toast(d.error || 'Failed to duplicate', true);
+    }
+  } catch(e) { toast('Error duplicating', true); }
+}
+
+async function togglePublishAssessment(id, publishedStatus) {
+  try {
+    const r = await apiFetch(`/api/assessment-templates/${id}/publish`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({published: publishedStatus})
+    });
+    const d = await r.json();
+    if(d.success) {
+      toast(`Template ${publishedStatus ? 'published' : 'unpublished'}`);
+      loadAssessmentTemplates();
+    } else {
+      toast(d.error || 'Failed to update status', true);
+    }
+  } catch(e) { toast('Error updating status', true); }
+}
+
+
+function renderAssessmentPreview(){
+  const list = pendingAssessmentQuestions.map((q, i)=>`<div style="padding:12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:#fff;position:relative">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><strong>${i+1}. ${q.label_en||'Untitled question'}</strong><span class="badge badge-gray">${q.question_type}</span></div>
+    <div style="font-size:12px;color:var(--muted);margin-top:4px">${q.label_am||''}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+      ${q.required ? '<span class="badge badge-red">Required</span>' : '<span class="badge badge-gray">Optional</span>'}
+      <span class="badge badge-indigo">Key: ${q.question_key||'—'}</span>
+      ${q.options?.length?`<span class="badge badge-teal">${q.options.length} option(s)</span>`:''}
+    </div>
+    ${q.options?.length?`<div style="font-size:12px;color:var(--muted);margin-top:6px">Options: ${q.options.join(', ')}</div>`:''}
+    <button class="btn btn-danger btn-xs" style="position:absolute;top:10px;right:10px" onclick="removeBuilderQuestion(${i})"><i class="fa-solid fa-xmark"></i></button>
+  </div>`).join('');
+  const empty = 'No questions added yet.';
+  document.getElementById('assessmentBuilderPreview').innerHTML = list || empty;
+  renderAssessmentImportPreview();
+}
+
+function removeBuilderQuestion(idx){
+  pendingAssessmentQuestions.splice(idx, 1);
+  renderAssessmentPreview();
+}
+
+function newAssessmentTemplate(){
+  currentAssessmentTemplateId = null;
+  pendingAssessmentQuestions = [];
+  assessmentImportPreviewData = null;
+  document.getElementById('assessName').value = '';
+  document.getElementById('assessCat').value = '';
+  document.getElementById('assessTags').value = '';
+  document.getElementById('assessLang').value = 'English';
+  document.getElementById('assessAuthor').value = currentUser?.full_name || '';
+  document.getElementById('assessDesc').value = '';
+  renderAssessmentPreview();
+  clearQuestionForm();
+  document.getElementById('tab-assess-editor').style.display = 'inline-block';
+  switchAssessTab('editor');
+}
+
+function clearAssessmentImport(){
+  assessmentImportFile = null;
+  assessmentImportPreviewData = null;
+  const fileEl = document.getElementById('assessmentFileInput');
+  if(fileEl) fileEl.value = '';
+  document.getElementById('assessmentFileName').textContent = 'No file selected';
+  const textEl = document.getElementById('assessmentSourceText');
+  if(textEl) textEl.value = '';
+  renderAssessmentImportPreview();
+}
+
+function handleAssessmentFile(input){
+  assessmentImportFile = input.files && input.files[0] ? input.files[0] : null;
+  if(assessmentImportFile){
+    document.getElementById('assessmentFileName').textContent = assessmentImportFile.name;
+    runAssessmentImport();
+  } else {
+    document.getElementById('assessmentFileName').textContent = 'No file selected';
+  }
+}
+
+function renderAssessmentImportPreview(){
+  const el = document.getElementById('assessmentImportPreview');
+  const actionEl = document.getElementById('assessmentImportActions');
+  if(!el) return;
+  const parsed = assessmentImportPreviewData;
+  if(!parsed){
+    el.innerHTML = 'Upload a file or paste text to see the AI parsed summary, category, and warnings.';
+    if(actionEl) actionEl.style.display = 'none';
+    return;
+  }
+  const warnings = (parsed.warnings || []).map(w=>`<div style="padding:8px 10px;border-radius:8px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.18);margin-top:8px;color:#92400e"><i class="fa-solid fa-triangle-exclamation"></i> ${w}</div>`).join('');
+  el.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div><strong style="color:var(--navy);font-size:16px">${parsed.title || 'Untitled assessment'}</strong></div>
+      <div><span class="badge badge-indigo">${parsed.category || 'General Screening'}</span> <span class="badge badge-gray">${(parsed.questions || []).length} question(s)</span></div>
+      <div style="font-size:12.5px;line-height:1.7;color:var(--text-muted)">${parsed.description || 'No description detected.'}</div>
+      <div style="font-size:12.5px;line-height:1.7;color:var(--text-muted)"><strong style="color:var(--navy)">Instructions:</strong> ${parsed.instructions || 'Not detected'}</div>
+      ${parsed.author ? `<div style="font-size:12.5px;line-height:1.7;color:var(--text-muted)"><strong style="color:var(--navy)">Author:</strong> ${parsed.author}</div>` : ''}
+      ${warnings || '<div style="font-size:12.5px;color:var(--success);margin-top:8px"><i class="fa-solid fa-circle-check"></i> No major warnings detected.</div>'}
+    </div>`;
+  if(actionEl) actionEl.style.display = 'block';
+}
+
+function applyAssessmentImport(parsed){
+  if(!parsed) return;
+  currentAssessmentTemplateId = null;
+  document.getElementById('assessName').value = parsed.title || '';
+  document.getElementById('assessDesc').value = parsed.description || '';
+  document.getElementById('assessCat').value = parsed.category || '';
+  document.getElementById('assessLang').value = 'English';
+  document.getElementById('assessAuthor').value = parsed.author || currentUser?.full_name || '';
+  
+  pendingAssessmentQuestions = (parsed.questions || []).map((q, idx)=>({
+    question_key: q.question_key || `q${idx+1}`,
+    label_en: q.label_en || q.question || '',
+    label_am: q.label_am || '',
+    question_type: q.question_type || 'text',
+    required: q.required ? 1 : 0,
+    options: Array.isArray(q.options) ? q.options : [],
+    helper_text: q.helper_text || '',
+    sort_order: q.sort_order ?? (idx + 1),
+    scoring: q.scoring || {},
+    logic: q.logic || {}
+  }));
+  assessmentImportPreviewData = parsed;
+  renderAssessmentPreview();
+}
+
+async function runAssessmentImport(){
+  const text = (document.getElementById('assessmentSourceText')?.value || '').trim();
+  if(!assessmentImportFile && !text){
+    toast('Paste assessment text or choose a file first', true);
+    return;
+  }
+  const form = new FormData();
+  if(assessmentImportFile) form.append('file', assessmentImportFile);
+  if(text) form.append('text', text);
+  try{
+    const btn = document.querySelector('#assessImport .btn-gold');
+    if(btn) { btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Parsing...'; btn.disabled = true; }
+    
+    const r = await apiFetch('/api/assessment-import', {method:'POST', body: form});
+    const d = await r.json();
+    
+    if(btn) { btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Parse with AI'; btn.disabled = false; }
+    
+    if(!d.success){
+      toast(d.error || 'Import failed', true);
+      return;
+    }
+    applyAssessmentImport(d.parsed);
+    toast('Assessment parsed successfully');
+  }catch(e){
+    const btn = document.querySelector('#assessImport .btn-gold');
+    if(btn) { btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Parse with AI'; btn.disabled = false; }
+    toast('Import failed', true);
+  }
+}
+
+function addBuilderQuestion(){
+  const options = (document.getElementById('qOptions').value||'').split('\n').map(x=>x.trim()).filter(Boolean);
+  pendingAssessmentQuestions.push({
+    question_key: document.getElementById('qKey').value || `q${pendingAssessmentQuestions.length+1}`,
+    label_en: document.getElementById('qEn').value,
+    label_am: document.getElementById('qAm').value,
+    question_type: document.getElementById('qType').value,
+    required: document.getElementById('qRequired').checked ? 1 : 0,
+    options,
+    helper_text: document.getElementById('qHelp').value,
+    sort_order: parseInt(document.getElementById('qSort').value||'0',10) || (pendingAssessmentQuestions.length + 1)
+  });
+  renderAssessmentPreview();
+  clearQuestionForm();
+}
+
+async function saveAssessmentTemplate(){
+  const body = {
+    name: document.getElementById('assessName').value,
+    description: document.getElementById('assessDesc').value,
+    category: document.getElementById('assessCat').value,
+    tags: document.getElementById('assessTags').value,
+    form_language: document.getElementById('assessLang').value,
+    author: document.getElementById('assessAuthor').value,
+    questions: pendingAssessmentQuestions,
+    config: { question_count: pendingAssessmentQuestions.length }
+  };
+  if(!body.name){ toast('Template name is required', true); return; }
+  
+  try {
+    let tplId = currentAssessmentTemplateId;
+    if(tplId){
+      await apiFetch(`/api/assessment-templates/${tplId}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+    }else{
+      const r = await apiFetch('/api/assessment-templates', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+      const d = await r.json();
+      if(!d.success){ toast('Failed to create template', true); return; }
+      tplId = d.id;
+      currentAssessmentTemplateId = tplId;
+    }
+    toast('Assessment template saved!');
+    loadAssessmentTemplates();
+    switchAssessTab('library');
+  } catch(e) {
+    toast('Failed to save template', true);
+  }
+}
+
+async function loadAssessmentTemplates(){
+  try{
+    const r = await apiFetch('/api/assessment-templates');
+    assessmentTemplatesCache = await r.json();
+    renderAssessmentTemplateGrid(assessmentTemplatesCache);
+  }catch(e){
+    console.error(e);
+  }
+}
+
+async function openAssessmentTemplate(id){
+  try {
+    const r = await apiFetch(`/api/assessment-templates/${id}`);
+    const d = await r.json();
+    currentAssessmentTemplateId = id;
+    document.getElementById('assessName').value = d.template.name || '';
+    document.getElementById('assessCat').value = d.template.category || '';
+    document.getElementById('assessTags').value = d.template.tags || '';
+    document.getElementById('assessLang').value = d.template.form_language || 'English';
+    document.getElementById('assessAuthor').value = d.template.author || '';
+    document.getElementById('assessDesc').value = d.template.description || '';
+    
+    pendingAssessmentQuestions = (d.questions || []).map(q=>({
+      question_key: q.question_key,
+      label_en: q.label_en,
+      label_am: q.label_am,
+      question_type: q.question_type,
+      required: q.required,
+      options: q.options_json ? JSON.parse(q.options_json) : [],
+      helper_text: q.helper_text,
+      sort_order: q.sort_order || 0
+    }));
+    renderAssessmentPreview();
+    clearQuestionForm();
+    
+    document.getElementById('tab-assess-editor').style.display = 'inline-block';
+    switchAssessTab('editor');
+  } catch(e) {
+    toast('Failed to load template', true);
+  }
+}
+
+async function deleteAssessmentTemplate(id){
+  if(!confirm('Delete this assessment template?')) return;
+  try {
+    await apiFetch(`/api/assessment-templates/${id}`, {method:'DELETE'});
+    toast('Template deleted');
+    loadAssessmentTemplates();
+  } catch(e) { toast('Delete failed', true); }
+}
+
+init();
+</script>
+</body>
+</html>
+

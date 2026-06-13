@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/api_config.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — Aha Psychological Services</title>
+    <link href="https://fonts.googleapis.com/css?family=Poppins:400,500,600,700|Raleway:700,800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Blurred background — uses the hero image */
+        .bg-blur {
+            position: fixed;
+            inset: 0;
+            background: url('./index_files/aha-new-3.jpg') center/cover no-repeat;
+            filter: blur(14px) brightness(0.55);
+            transform: scale(1.08);
+            z-index: 0;
+        }
+
+        /* Dark gradient overlay on top of blur */
+        .bg-overlay {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(4,48,105,0.75) 0%, rgba(0,0,0,0.5) 100%);
+            z-index: 1;
+        }
+
+        /* Card */
+        .login-card {
+            position: relative;
+            z-index: 10;
+            background: linear-gradient(160deg, #043069 0%, #052850 100%);
+            border: 1px solid rgba(255,191,0,0.25);
+            border-radius: 16px;
+            padding: 48px 44px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,191,0,0.08);
+            animation: cardIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(28px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Logo area */
+        .logo-wrap {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .logo-wrap img {
+            max-width: 130px;
+            filter: brightness(0) invert(1);
+            opacity: 0.92;
+        }
+        .logo-divider {
+            width: 40px;
+            height: 3px;
+            background: #ffbf00;
+            border-radius: 2px;
+            margin: 14px auto 0;
+        }
+
+        /* Title */
+        .login-title {
+            font-family: 'Raleway', sans-serif;
+            font-size: 22px;
+            font-weight: 800;
+            color: #fff;
+            text-align: center;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        .login-subtitle {
+            text-align: center;
+            font-size: 13px;
+            color: rgba(255,255,255,0.45);
+            margin-bottom: 32px;
+            letter-spacing: 0.3px;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.55);
+            margin-bottom: 8px;
+        }
+        .input-wrap {
+            position: relative;
+        }
+        .input-wrap i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255,191,0,0.6);
+            font-size: 15px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 13px 14px 13px 42px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Poppins', sans-serif;
+            color: #fff;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+        .form-group input::placeholder { color: rgba(255,255,255,0.3); }
+        .form-group input:focus {
+            border-color: rgba(255,191,0,0.7);
+            background: rgba(255,255,255,0.09);
+            box-shadow: 0 0 0 3px rgba(255,191,0,0.12);
+        }
+
+        /* Submit button */
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #ffbf00 0%, #e6a800 100%);
+            border: none;
+            border-radius: 8px;
+            font-family: 'Raleway', sans-serif;
+            font-size: 15px;
+            font-weight: 800;
+            color: #043069;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(255,191,0,0.3);
+        }
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(255,191,0,0.45);
+        }
+        .btn-login:active { transform: translateY(0); }
+
+        /* Back link */
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 22px;
+            font-size: 13px;
+            color: rgba(255,255,255,0.4);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .back-link:hover { color: #ffbf00; }
+        .back-link span { margin-right: 5px; }
+
+        /* Error message */
+        .error-msg {
+            background: rgba(255,71,87,0.15);
+            border: 1px solid rgba(255,71,87,0.35);
+            border-radius: 6px;
+            padding: 10px 14px;
+            color: #ff6b78;
+            font-size: 13px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .error-msg.show { display: block; }
+    </style>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="bg-blur"></div>
+    <div class="bg-overlay"></div>
+
+    <div class="login-card">
+        <div class="logo-wrap">
+            <img src="index_files/aha-logo-2.png" alt="Aha Psychological Services">
+            <div class="logo-divider"></div>
+        </div>
+
+        <h1 class="login-title">Welcome Back</h1>
+        <p class="login-subtitle">Sign in to access the portal</p>
+
+        <div class="error-msg" id="errorMsg">
+            <i class="fa fa-exclamation-circle"></i> Invalid username or password.
+        </div>
+
+        <form method="POST" action="/login" id="loginForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <div class="input-wrap">
+                    <i class="fa fa-user"></i>
+                    <input type="text" id="username" name="username" placeholder="Enter your username" required autocomplete="off">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-wrap">
+                    <i class="fa fa-lock"></i>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                </div>
+            </div>
+            <button type="submit" class="btn-login">Sign In &rarr;</button>
+        </form>
+
+        <a href="index.html" class="back-link"><span>&#8592;</span> Back to Website</a>
+    </div>
+
+    <script>
+        // Update form action dynamically to point to the correct API base
+        document.getElementById('loginForm').action = window.API_BASE + '/login';
+
+        // Show error if URL has ?error=1
+        if (window.location.search.includes('error')) {
+            document.getElementById('errorMsg').classList.add('show');
+        }
+    </script>
+</body>
+</html>
+

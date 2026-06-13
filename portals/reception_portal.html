@@ -1,0 +1,2968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/api_config.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reception Portal - Aha Psychological Services</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+:root {
+  --navy: #043069; --navy-light: #0a4b9c; --navy-dark: #021e45;
+  --gold: #ffbf00; --gold-light: #ffd84d;
+  --bg: #f4f7fc; --surface: #ffffff;
+  --success: #10b981; --warning: #f59e0b; --danger: #ef4444; --info: #3b82f6;
+  --teal: #0d9488; --purple: #7c3aed; --indigo: #4f46e5;
+  --text: #1e293b; --text-muted: #64748b; --border: #e2e8f0;
+  --sidebar-w: 240px; --topbar-h: 64px;
+  --shadow: 0 4px 24px rgba(4,48,105,0.08);
+  --shadow-lg: 0 12px 40px rgba(4,48,105,0.14);
+  --radius: 14px; --radius-sm: 8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;overflow:hidden}
+
+/* â”€â”€ Sidebar â”€â”€ */
+.sidebar{width:var(--sidebar-w);background:var(--navy);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:width .3s ease}
+.sidebar-logo{padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sidebar-logo .logo-mark{font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.5px}
+.sidebar-logo .logo-mark span{color:var(--gold)}
+.sidebar-logo .logo-sub{font-size:10px;color:rgba(255,255,255,.5);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+.sidebar-role{margin:12px 16px;background:rgba(255,191,0,.15);border:1px solid rgba(255,191,0,.3);border-radius:6px;padding:8px 12px;display:flex;align-items:center;gap:8px}
+.sidebar-role i{color:var(--gold);font-size:13px}
+.sidebar-role span{color:rgba(255,255,255,.85);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.nav{flex:1;padding:8px 0;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:12px;padding:11px 20px;color:rgba(255,255,255,.65);cursor:pointer;transition:all .2s;font-size:14px;font-weight:500;border-left:3px solid transparent;margin:1px 0}
+.nav-item:hover{color:#fff;background:rgba(255,255,255,.07)}
+.nav-item.active{color:#fff;background:rgba(255,255,255,.1);border-left-color:var(--gold)}
+.nav-item i{width:18px;text-align:center;font-size:15px}
+.nav-section{padding:14px 20px 6px;font-size:10px;color:rgba(255,255,255,.35);font-weight:700;letter-spacing:1.5px;text-transform:uppercase}
+.sidebar-footer{padding:16px;border-top:1px solid rgba(255,255,255,.08)}
+.user-card{display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,.07);border-radius:8px}
+.user-avatar{width:36px;height:36px;border-radius:50%;background:var(--gold);color:var(--navy);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+.user-info .name{color:#fff;font-size:13px;font-weight:600}
+.user-info .role{color:rgba(255,255,255,.45);font-size:11px}
+.logout-btn{margin-left:auto;color:rgba(255,255,255,.4);cursor:pointer;transition:.2s;font-size:16px}
+.logout-btn:hover{color:var(--danger)}
+
+/* â”€â”€ Main â”€â”€ */
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;overflow:hidden}
+.topbar{height:var(--topbar-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:16px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(4,48,105,.04)}
+.topbar-title{font-size:18px;font-weight:700;color:var(--navy);flex:1}
+.topbar-clock{font-size:13px;color:var(--text-muted);font-weight:500}
+.topbar-actions{display:flex;align-items:center;gap:12px}
+.notif-btn{position:relative;width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);font-size:16px;transition:.2s}
+.notif-btn:hover{background:var(--bg);color:var(--navy)}
+.notif-badge{position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center}
+.content{flex:1;overflow-y:auto;padding:28px}
+.section{display:none}
+.section.active{display:block}
+#sec-calendar .panel,#sec-appointments .panel{max-height:calc(100vh - 152px);overflow:auto}
+#sec-calendar,#sec-appointments{padding-bottom:120px}
+
+/* â”€â”€ Cards â”€â”€ */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:var(--surface);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);display:flex;align-items:center;gap:16px;transition:.3s}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.stat-icon{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.stat-val{font-size:28px;font-weight:800;line-height:1}
+.stat-label{font-size:13px;color:var(--text-muted);margin-top:4px}
+.stat-icon.blue{background:rgba(59,130,246,.1);color:var(--info)}
+.stat-icon.gold{background:rgba(255,191,0,.1);color:var(--gold)}
+.stat-icon.orange{background:rgba(245,158,11,.1);color:var(--warning)}
+.stat-icon.red{background:rgba(239,68,68,.1);color:var(--danger)}
+.stat-icon.green{background:rgba(16,185,129,.1);color:var(--success)}
+.pulse-red{animation:pulse-red 2s infinite}
+@keyframes pulse-red{0%,100%{color:var(--danger)}50%{color:#fca5a5}}
+
+/* â”€â”€ Grid Layouts â”€â”€ */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:1100px){.grid-2{grid-template-columns:1fr}.grid-3{grid-template-columns:1fr 1fr}}
+
+/* â”€â”€ Panel Cards â”€â”€ */
+.panel{background:var(--surface);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);margin-bottom:20px}
+.panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.panel-title{font-size:15px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:8px}
+.panel-title i{color:var(--gold)}
+
+/* â”€â”€ Buttons â”€â”€ */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;font-weight:600;font-size:13px;border:none;cursor:pointer;transition:.2s;text-decoration:none}
+.btn-primary{background:var(--navy);color:#fff}
+.btn-primary:hover{background:var(--navy-light)}
+.btn-gold{background:var(--gold);color:var(--navy)}
+.btn-gold:hover{background:var(--gold-light)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-ghost{background:transparent;color:var(--text-muted);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--bg);color:var(--text)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-success{background:var(--success);color:#fff}
+.btn-warning{background:var(--warning);color:#fff}
+.btn-outline{background:transparent;border:1.5px solid var(--navy);color:var(--navy)}
+.btn-outline:hover{background:var(--navy);color:#fff}
+
+/* â”€â”€ Badges â”€â”€ */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-blue{background:rgba(59,130,246,.1);color:var(--info)}
+.badge-green{background:rgba(16,185,129,.1);color:var(--success)}
+.badge-red{background:rgba(239,68,68,.1);color:var(--danger)}
+.badge-orange{background:rgba(245,158,11,.12);color:var(--warning)}
+.badge-teal{background:rgba(13,148,136,.1);color:var(--teal)}
+.badge-indigo{background:rgba(79,70,229,.1);color:var(--indigo)}
+.badge-purple{background:rgba(124,58,237,.1);color:var(--purple)}
+.badge-gray{background:rgba(100,116,139,.1);color:var(--text-muted)}
+
+/* â”€â”€ Table â”€â”€ */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;padding:10px 14px;border-bottom:2px solid var(--border);white-space:nowrap}
+td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:13.5px}
+tr:hover td{background:var(--bg)}
+tr:last-child td{border-bottom:none}
+
+/* â”€â”€ Forms â”€â”€ */
+.form-group{margin-bottom:18px}
+.form-group label{display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px}
+.form-control{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;color:var(--text);background:var(--surface);transition:.2s}
+.form-control:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(4,48,105,.08)}
+textarea.form-control{resize:vertical;min-height:100px}
+select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M7 7l3 3 3-3' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:20px;padding-right:36px}
+
+/* â”€â”€ Modal / Drawer â”€â”€ */
+.overlay{display:none;position:fixed;inset:0;background:rgba(4,48,105,.4);backdrop-filter:blur(4px);z-index:200}
+.overlay.active{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:500px;background:var(--surface);box-shadow:-8px 0 40px rgba(4,48,105,.15);z-index:201;transform:translateX(100%);transition:.35s cubic-bezier(.2,.8,.2,1);overflow-y:auto}
+.drawer.open{transform:translateX(0)}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;padding:22px 24px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1}
+.drawer-title{font-size:17px;font-weight:700;color:var(--navy)}
+.drawer-close{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:16px}
+.drawer-close:hover{background:var(--danger);color:#fff;border-color:var(--danger)}
+.drawer-body{padding:24px}
+.modal-wrap{display:none;position:fixed;inset:0;z-index:300;align-items:center;justify-content:center}
+.modal-wrap.active{display:flex}
+.modal{background:var(--surface);border-radius:20px;width:90%;max-width:580px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg)}
+.modal-header{padding:22px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1}
+.modal-title{font-size:17px;font-weight:700;color:var(--navy)}
+.modal-body{padding:24px}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px}
+
+/* â”€â”€ Toast â”€â”€ */
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:10px}
+.toast{background:var(--surface);border-radius:12px;padding:14px 20px;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:12px;min-width:300px;transform:translateX(400px);transition:.4s cubic-bezier(.2,.8,.2,1);border-left:4px solid var(--success)}
+.toast.show{transform:translateX(0)}
+.toast.error{border-left-color:var(--danger)}
+.toast-icon{font-size:18px;color:var(--success)}
+.toast.error .toast-icon{color:var(--danger)}
+.toast-text{font-size:14px;font-weight:600}
+
+/* â”€â”€ Calendar â”€â”€ */
+.cal-nav{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.cal-nav h2{font-size:18px;font-weight:700;flex:1;text-align:center}
+.cal-views{display:flex;gap:4px;background:var(--bg);border-radius:8px;padding:4px}
+.cal-view-btn{padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600;color:var(--text-muted);background:transparent;transition:.2s}
+.cal-view-btn.active{background:var(--surface);color:var(--navy);box-shadow:0 2px 6px rgba(0,0,0,.08)}
+.calendar-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:linear-gradient(180deg,#fff,#fbfdff)}
+.legend-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:var(--bg);font-size:11px;font-weight:700;color:var(--text)}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.legend-dot.therapist{background:var(--navy)}
+.legend-dot.cancelled{background:var(--danger)}
+.legend-dot.temporary{background:var(--warning)}
+.legend-dot.permanent{background:var(--gold)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-day-header{text-align:center;font-size:12px;font-weight:700;color:var(--text-muted);padding:8px;text-transform:uppercase}
+.cal-day{min-height:80px;background:var(--surface);border-radius:8px;padding:6px;cursor:pointer;transition:.2s;border:1px solid var(--border)}
+.cal-day:hover{border-color:var(--navy)}
+.cal-day.other-month .cal-day-num{color:var(--border)}
+.cal-day.today .cal-day-num{background:var(--navy);color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700}
+.cal-day-num{font-size:13px;font-weight:600;margin-bottom:4px;width:24px;height:24px;display:flex;align-items:center;justify-content:center}
+.cal-appt-dot{font-size:11px;background:var(--info);color:#fff;border-radius:4px;padding:1px 5px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.week-grid{display:grid;grid-template-columns:60px repeat(7,1fr);gap:1px;background:var(--border);border-radius:8px;overflow:hidden}
+.week-header{text-align:center;padding:10px 4px;background:var(--surface);font-size:12px;font-weight:600}
+.week-time{background:var(--surface);padding:4px 8px;font-size:11px;color:var(--text-muted);border-bottom:1px solid var(--border)}
+.week-cell{background:var(--surface);min-height:44px;border-bottom:1px solid var(--border);position:relative}
+.week-appt{background:var(--info);color:#fff;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:600;margin:2px;cursor:pointer;overflow:hidden}
+
+.appt-color-chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:700;color:#fff;white-space:nowrap}
+.appt-muted{opacity:.56;filter:grayscale(.2);backdrop-filter:blur(1px);box-shadow:inset 0 0 0 999px rgba(255,255,255,.12)}
+.appt-temporary{opacity:.68;filter:saturate(.72);backdrop-filter:blur(.8px);box-shadow:inset 0 0 0 999px rgba(255,255,255,.18)}
+.appt-cancelled{opacity:.42;filter:grayscale(.3) blur(.25px);backdrop-filter:blur(1.1px)}
+#dayDetailPanel{max-height:68vh;display:flex;flex-direction:column}
+#dayDetailList{max-height:58vh;overflow-y:auto;padding-right:6px;flex:1}
+
+.appt-editor-modal{max-width:760px}
+.appt-editor-hero{padding:16px 18px;border-radius:16px;background:linear-gradient(135deg,rgba(4,48,105,.06),rgba(255,191,0,.12));border:1px solid rgba(4,48,105,.08);margin-bottom:16px}
+.appt-editor-title{font-size:20px;font-weight:800;color:var(--navy);margin-bottom:6px}
+.appt-editor-sub{font-size:13px;color:var(--text-muted);line-height:1.6}
+.appt-mode-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.appt-mode-btn{padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);font-size:12px;font-weight:700;cursor:pointer;transition:.2s}
+.appt-mode-btn.active.temp{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.28);color:#92400e}
+.appt-mode-btn.active.perm{background:rgba(255,191,0,.18);border-color:rgba(255,191,0,.32);color:var(--navy)}
+.appt-mode-btn.active.cancel{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.28);color:var(--danger)}
+.appt-editor-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.appt-editor-note{padding:12px 14px;border-radius:12px;background:rgba(255,191,0,.08);border:1px solid rgba(255,191,0,.18);font-size:12.5px;line-height:1.6;color:var(--text)}
+.appt-editor-note strong{color:var(--navy)}
+.appt-editor-hidden{display:none}
+.appt-editor-save{min-width:160px}
+.appt-editor-time-group{display:flex;flex-direction:column;gap:14px}
+.appt-room-panel{margin-top:14px;padding:14px;border:1px solid var(--border);border-radius:14px;background:linear-gradient(180deg,#fff,#fbfdff)}
+.appt-room-panel h4{font-size:13px;font-weight:800;color:var(--navy);margin-bottom:10px}
+.room-chip-row{display:flex;flex-wrap:wrap;gap:8px}
+.room-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;font-size:11px;font-weight:800;border:1px solid transparent}
+.room-chip.available{background:rgba(16,185,129,.08);color:#065f46;border-color:rgba(16,185,129,.18)}
+.room-chip.busy{background:rgba(239,68,68,.08);color:#991b1b;border-color:rgba(239,68,68,.16)}
+.room-chip.neutral{background:var(--bg);color:var(--text-muted);border-color:var(--border)}
+.room-chip.selected{box-shadow:0 0 0 2px rgba(4,48,105,.12);transform:translateY(-1px)}
+.client-picker-results{display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;margin-top:10px;padding-right:4px}
+.client-picker-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff;cursor:pointer;transition:.2s}
+.client-picker-item:hover{border-color:var(--navy);box-shadow:0 6px 18px rgba(4,48,105,.06);transform:translateY(-1px)}
+.client-picker-item.selected{border-color:var(--gold);background:rgba(255,191,0,.04)}
+.client-picker-main{flex:1;min-width:0}
+.client-picker-name{font-size:13.5px;font-weight:800;color:var(--navy);line-height:1.3}
+.client-picker-code{font-size:11.5px;color:var(--text-muted);margin-top:2px}
+.client-picker-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.client-picker-empty{padding:12px;border-radius:12px;background:var(--bg);border:1px dashed var(--border);font-size:12.5px;color:var(--text-muted);text-align:center}
+.client-picker-selected{margin-top:10px;padding:10px 12px;border-radius:12px;background:rgba(4,48,105,.05);border:1px solid rgba(4,48,105,.08);font-size:12.5px;font-weight:700;color:var(--navy)}
+.book-scheduler-shell{padding:14px;border:1px solid var(--border);border-radius:14px;background:linear-gradient(180deg,#fff,#fbfdff)}
+.book-scheduler-shell .vc-grid-wrap{max-height:360px}
+.book-scheduler-shell .vc-grid{min-width:680px}
+
+/* â”€â”€ Timeline â”€â”€ */
+.timeline{display:flex;flex-direction:column;gap:0}
+.timeline-item{display:flex;gap:16px;padding-bottom:20px;position:relative}
+.timeline-item::before{content:'';position:absolute;left:15px;top:32px;bottom:0;width:2px;background:var(--border)}
+.timeline-item:last-child::before{display:none}
+.timeline-dot{width:32px;height:32px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;z-index:1}
+.timeline-content{flex:1}
+.timeline-date{font-size:12px;color:var(--text-muted);margin-bottom:4px}
+.timeline-text{font-size:14px;font-weight:600}
+
+/* â”€â”€ Step Form â”€â”€ */
+.steps-bar{display:flex;align-items:center;margin-bottom:32px;gap:0}
+.step-dot{width:32px;height:32px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--text-muted);background:var(--surface);flex-shrink:0;transition:.3s}
+.step-dot.active{border-color:var(--navy);color:var(--navy);background:rgba(4,48,105,.08)}
+.step-dot.done{border-color:var(--success);background:var(--success);color:#fff}
+.step-line{flex:1;height:2px;background:var(--border);transition:.3s}
+.step-line.done{background:var(--success)}
+.step-label{font-size:12px;font-weight:600;color:var(--text-muted);margin-top:6px;text-align:center}
+.step-panel{display:none}
+.step-panel.active{display:block}
+
+/* â”€â”€ Recommendation Cards â”€â”€ */
+.rec-card{background:var(--surface);border-radius:var(--radius);padding:18px;border:2px solid var(--border);transition:.3s;display:flex;flex-direction:column;gap:12px}
+.rec-card:hover{border-color:var(--gold);box-shadow:var(--shadow)}
+.rec-header{display:flex;align-items:center;gap:12px}
+.rec-avatar{width:48px;height:48px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0}
+.match-badge{padding:6px 12px;border-radius:8px;font-size:16px;font-weight:800;margin-left:auto}
+.match-high{background:rgba(16,185,129,.1);color:var(--success)}
+.match-mid{background:rgba(245,158,11,.1);color:var(--warning)}
+.match-low{background:rgba(239,68,68,.1);color:var(--danger)}
+.caseload-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:4px}
+.caseload-fill{height:100%;border-radius:3px;transition:width .5s}
+
+/* â”€â”€ Day view â”€â”€ */
+.day-event{background:linear-gradient(135deg,var(--navy),var(--navy-light));color:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:flex-start;gap:14px;cursor:pointer;transition:.2s;box-shadow:0 8px 20px rgba(4,48,105,.12)}
+.day-event:hover{transform:translateY(-2px)}
+.event-time{font-size:12px;font-weight:700;opacity:.82;min-width:84px;padding-top:2px}
+.event-info{flex:1;min-width:0}
+.event-info .ev-name{font-size:14px;font-weight:800;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.event-info .ev-sub{font-size:12px;opacity:.82;margin-top:3px;line-height:1.45}
+.event-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.event-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;margin-left:auto}
+.event-status{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.appt-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.12);font-size:11px;font-weight:700}
+.appt-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow);margin-bottom:12px}
+.appt-card.active{border-color:rgba(4,48,105,.18)}
+.appt-card-head{display:flex;align-items:flex-start;gap:12px}
+.appt-card-title{font-size:15px;font-weight:800;color:var(--navy);cursor:pointer}
+.appt-card-sub{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.4}
+.appt-card-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.appt-card-actions .btn{padding:7px 10px}
+
+/* â”€â”€ Skeletons â”€â”€ */
+.skel{background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);background-size:200% 100%;animation:skel 1.5s infinite;border-radius:6px}
+@keyframes skel{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* â”€â”€ Client Queue Cards â”€â”€ */
+.queue-card{background:var(--surface);border-radius:var(--radius);padding:16px;border:2px solid var(--border);cursor:pointer;transition:.3s}
+.queue-card:hover{border-color:var(--navy)}
+.queue-card.selected{border-color:var(--gold);background:rgba(255,191,0,.04)}
+.queue-name{font-size:14px;font-weight:700;margin-bottom:6px}
+.queue-code{font-size:11px;color:var(--text-muted);font-weight:600}
+
+/* Scrollable Sections Fix */
+#calContainer{max-height:60vh;overflow-y:auto;overflow-x:hidden;padding-right:8px;padding-bottom:10px}
+#calContainer::-webkit-scrollbar{width:6px}
+#calContainer::-webkit-scrollbar-track{background:transparent}
+#calContainer::-webkit-scrollbar-thumb{background:rgba(4,48,105,.2);border-radius:3px}
+#calContainer::-webkit-scrollbar-thumb:hover{background:rgba(4,48,105,.35)}
+.table-wrap{overflow-x:auto;overflow-y:auto;max-height:60vh;padding-bottom:10px}
+.table-wrap::-webkit-scrollbar{width:6px}
+.table-wrap::-webkit-scrollbar-track{background:transparent}
+.table-wrap::-webkit-scrollbar-thumb{background:rgba(4,48,105,.2);border-radius:3px}
+.table-wrap::-webkit-scrollbar-thumb:hover{background:rgba(4,48,105,.35)}
+
+.notify-card{background:linear-gradient(180deg,#fff,#fbfdff);border:1px solid var(--border);border-radius:16px;padding:16px 16px 14px;box-shadow:0 8px 26px rgba(4,48,105,.06);margin-bottom:12px;transition:.2s}
+.notify-card:hover{transform:translateY(-1px);box-shadow:0 12px 32px rgba(4,48,105,.09)}
+.notify-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}
+.notify-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.notify-main{flex:1;min-width:0}
+.notify-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.notify-title{font-size:14px;font-weight:800;color:var(--navy);line-height:1.4}
+.notify-time{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.notify-body{font-size:12.5px;line-height:1.7;color:var(--text)}
+.notify-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-top:12px}
+.notify-field{padding:10px 12px;border-radius:12px;background:var(--bg);border:1px solid rgba(4,48,105,.06)}
+.notify-field-label{font-size:10.5px;font-weight:800;letter-spacing:.9px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.notify-field-value{font-size:13px;font-weight:700;color:var(--navy);line-height:1.4}
+.notify-footer{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.notify-status{display:inline-flex;align-items:center;gap:6px}
+.notify-status-dot{width:10px;height:10px;border-radius:50%}
+
+
+/* ── VISUAL CALENDAR ── */
+.vc-container {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+}
+.vc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: rgba(4,48,105,0.02);
+  border-bottom: 1px solid var(--border);
+}
+.vc-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.vc-nav button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--navy);
+  font-size: 14px;
+  padding: 4px;
+}
+.vc-date-label {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--navy);
+  min-width: 140px;
+  text-align: center;
+}
+.vc-view-toggle {
+  display: flex;
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 3px;
+  border: 1px solid var(--border);
+}
+.vc-view-toggle button {
+  background: transparent;
+  border: none;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.vc-view-toggle button.active {
+  background: #fff;
+  color: var(--navy);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.vc-grid-wrap {
+  position: relative;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.vc-grid {
+  display: flex;
+  position: relative;
+  min-width: 100%;
+}
+.vc-time-col {
+  width: 60px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  background: #fdfdfd;
+}
+.vc-time-slot {
+  height: 40px;
+  border-bottom: 1px dashed var(--border);
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+  padding-right: 8px;
+  padding-top: 4px;
+  box-sizing: border-box;
+}
+.vc-days {
+  flex: 1;
+  display: flex;
+  position: relative;
+}
+.vc-day-col {
+  flex: 1;
+  border-right: 1px solid var(--border);
+  position: relative;
+  min-width: 100px;
+}
+.vc-day-col:last-child {
+  border-right: none;
+}
+.vc-day-header {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--navy);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  background: #f8fafc;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.vc-slot {
+  height: 40px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: 0.2s;
+  box-sizing: border-box;
+  position: relative;
+}
+.vc-slot:hover {
+  background: rgba(16,185,129,0.05);
+}
+.vc-slot.available {
+  background: rgba(16,185,129,0.02);
+}
+.vc-slot.busy {
+  background: rgba(100,116,139,0.05);
+  cursor: not-allowed;
+}
+.vc-slot.selected {
+  background: rgba(59,130,246,0.15) !important;
+  border: 1px solid var(--info);
+  z-index: 1;
+}
+.vc-appt {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  border-radius: 4px;
+  font-size: 10px;
+  padding: 4px;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  z-index: 1;
+  pointer-events: none;
+}
+.vc-current-time {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--danger);
+  z-index: 2;
+  pointer-events: none;
+}
+.vc-current-time::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <img src="https://www.ahaethiopia.com/site/wp-content/uploads/2021/03/aha-logo-2.png" style="height:32px;">
+    <div class="logo-sub">Psychological Services</div>
+  </div>
+  <div class="sidebar-role">
+    <i class="fa-solid fa-headset"></i>
+    <span>Reception Portal</span>
+  </div>
+  <nav class="nav">
+    <div class="nav-section">Main</div>
+    <div class="nav-item active" data-section="dashboard"><i class="fa-solid fa-gauge-high"></i>Dashboard</div>
+    <div class="nav-item" data-section="calendar"><i class="fa-solid fa-calendar-days"></i>Calendar</div>
+    <div class="nav-section">Clients</div>
+    <div class="nav-item" data-section="clients"><i class="fa-solid fa-users"></i>Client Registry</div>
+    <div class="nav-item" data-section="new-client"><i class="fa-solid fa-user-plus"></i>Register Client</div>
+    <div class="nav-item" data-section="assignment"><i class="fa-solid fa-wand-magic-sparkles"></i>Smart Assignment</div>
+    <div class="nav-section">Operations</div>
+    <div class="nav-item" data-section="appointments"><i class="fa-solid fa-calendar-plus"></i>Appointments</div>
+    <div class="nav-item" data-section="finance"><i class="fa-solid fa-file-invoice-dollar"></i>Finance</div>
+    <div class="nav-item" data-section="messages"><i class="fa-solid fa-comments"></i>Messages</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar" id="sidebarAvatar">R</div>
+      <div class="user-info">
+        <div class="name" id="sidebarName">Loading...</div>
+        <div class="role" id="sidebarRole">Receptionist</div>
+      </div>
+      <a href="/logout" class="logout-btn" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></a>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">Dashboard</div>
+    <div class="topbar-clock" id="topbarClock"></div>
+    <div class="topbar-actions">
+      <button class="notif-btn" id="alertBtn" title="Risk Alerts">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span class="notif-badge" id="alertBadge" style="display:none">0</span>
+      </button>
+      <button class="btn btn-gold btn-sm" onclick="openBookModal()"><i class="fa-solid fa-plus"></i>Book Appointment</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- â”€â”€ DASHBOARD â”€â”€ -->
+    <section class="section active" id="sec-dashboard">
+      <div style="margin-bottom:20px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <h1 style="font-size:22px;font-weight:800;color:var(--navy)" id="dashGreeting">Good morning</h1>
+          <p style="color:var(--text-muted);font-size:14px" id="dashDate"></p>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="loadDashboard()"><i class="fa-solid fa-arrows-rotate"></i>Refresh</button>
+      </div>
+
+      <div class="stats-grid" id="dashStats">
+        <div class="stat-card"><div class="stat-icon gold"><i class="fa-solid fa-calendar-check"></i></div><div><div class="stat-val" id="statToday">-</div><div class="stat-label">Today's Appointments</div></div></div>
+        <div class="stat-card"><div class="stat-icon orange"><i class="fa-solid fa-clock"></i></div><div><div class="stat-val" id="statPending">-</div><div class="stat-label">Awaiting Assignment</div></div></div>
+        <div class="stat-card"><div class="stat-icon red"><i class="fa-solid fa-triangle-exclamation"></i></div><div><div class="stat-val pulse-red" id="statAlerts">-</div><div class="stat-label">Active Risk Alerts</div></div></div>
+        <div class="stat-card"><div class="stat-icon blue"><i class="fa-solid fa-person"></i></div><div><div class="stat-val" id="statClients">-</div><div class="stat-label">Active Clients</div></div></div>
+        <div class="stat-card"><div class="stat-icon green"><i class="fa-solid fa-file-invoice-dollar"></i></div><div><div class="stat-val" id="statInvoices">-</div><div class="stat-label">Pending Invoices</div></div></div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Today's Schedule -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="fa-solid fa-calendar-day"></i>Today's Schedule</div>
+            <button class="btn btn-ghost btn-sm" onclick="showSection('calendar')">View Calendar</button>
+          </div>
+          <div id="todaySchedule"><div class="skel" style="height:60px;margin-bottom:10px"></div><div class="skel" style="height:60px;margin-bottom:10px"></div><div class="skel" style="height:60px"></div></div>
+        </div>
+
+        <!-- Pending Assignment Queue -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="fa-solid fa-inbox"></i>Pending Assignment</div>
+            <button class="btn btn-ghost btn-sm" onclick="showSection('assignment')">Smart Assign</button>
+          </div>
+          <div id="pendingQueue"><div class="skel" style="height:50px;margin-bottom:8px"></div><div class="skel" style="height:50px"></div></div>
+        </div>
+      </div>
+
+      <!-- Risk Alerts -->
+      <div class="panel" style="border:1.5px solid rgba(239,68,68,.2)">
+        <div class="panel-header">
+          <div class="panel-title" style="color:var(--danger)"><i class="fa-solid fa-triangle-exclamation"></i>Active Risk Alerts</div>
+        </div>
+        <div id="riskAlertsList"><div class="skel" style="height:50px"></div></div>
+      </div>
+    </section>
+
+    <!-- â”€â”€ CALENDAR â”€â”€ -->
+    <section class="section" id="sec-calendar">
+      <div class="panel">
+        <div class="cal-nav">
+          <button class="btn btn-ghost btn-sm" id="calPrev"><i class="fa-solid fa-chevron-left"></i></button>
+          <h2 id="calTitle"></h2>
+          <button class="btn btn-ghost btn-sm" id="calNext"><i class="fa-solid fa-chevron-right"></i></button>
+          <div class="cal-views">
+            <button class="cal-view-btn active" id="viewMonth" onclick="switchView('month')">Month</button>
+            <button class="cal-view-btn" id="viewWeek" onclick="switchView('week')">Week</button>
+            <button class="cal-view-btn" id="viewDay" onclick="switchView('day')">Day</button>
+          </div>
+        </div>
+        <div class="calendar-legend">
+          <span class="legend-chip"><span class="legend-dot therapist"></span>Therapist color = appointment owner</span>
+          <span class="legend-chip"><span class="legend-dot temporary"></span>Temporary change</span>
+          <span class="legend-chip"><span class="legend-dot permanent"></span>Permanent change</span>
+          <span class="legend-chip"><span class="legend-dot cancelled"></span>Cancelled / no-show</span>
+          <span class="legend-chip"><span class="legend-dot therapist" style="background:var(--navy)"></span>Room badges show the assigned therapy room</span>
+          <span class="legend-chip">Faded cards mean a change has already been applied</span>
+        </div>
+        <div id="calContainer"></div>
+      </div>
+      <!-- Day detail panel -->
+      <div class="panel" id="dayDetailPanel" style="display:none">
+        <div class="panel-header">
+          <div class="panel-title" id="dayDetailTitle"></div>
+          <button class="btn btn-gold btn-sm" onclick="openBookModal()"><i class="fa-solid fa-plus"></i>Book Here</button>
+        </div>
+        <div id="dayDetailList"></div>
+      </div>
+    </section>
+
+    <!-- â”€â”€ CLIENTS â”€â”€ -->
+    <section class="section" id="sec-clients">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-users"></i>Client Registry</div>
+          <button class="btn btn-primary btn-sm" onclick="showSection('new-client')"><i class="fa-solid fa-user-plus"></i>Register New Client</button>
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+          <input type="text" class="form-control" placeholder="Search by name, code, phone..." id="clientSearch" style="flex:1;min-width:200px" oninput="filterClients()">
+          <select class="form-control" id="filterStatus" style="width:180px" onchange="filterClients()">
+            <option value="">All Statuses</option>
+            <option value="registered">Registered</option>
+            <option value="screening_completed">Screening Done</option>
+            <option value="assigned">Assigned</option>
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
+          </select>
+          <select class="form-control" id="filterRisk" style="width:150px" onchange="filterClients()">
+            <option value="">All Risk Levels</option>
+            <option value="low">Low Risk</option>
+            <option value="medium">Medium Risk</option>
+            <option value="high">High Risk</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Code</th><th>Name</th><th>Phone</th><th>Status</th><th>Risk</th>
+              <th>Registered</th><th>Therapist</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="clientsTableBody"><tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- â”€â”€ NEW CLIENT â”€â”€ -->
+    <section class="section" id="sec-new-client">
+      <div class="panel" style="max-width:720px;margin:0 auto">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-user-plus"></i>Register New Client</div>
+        </div>
+        <!-- Steps bar -->
+        <div class="steps-bar">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div class="step-dot active" id="step1dot">1</div>
+            <div class="step-label">Personal Info</div>
+          </div>
+          <div class="step-line" id="line1"></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div class="step-dot" id="step2dot">2</div>
+            <div class="step-label">Preferences</div>
+          </div>
+          <div class="step-line" id="line2"></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div class="step-dot" id="step3dot">3</div>
+            <div class="step-label">Review & Register</div>
+          </div>
+        </div>
+
+        <!-- Step 1 -->
+        <div class="step-panel active" id="step1">
+          <h3 style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:18px">Personal Information</h3>
+          <div class="grid-2">
+            <div class="form-group"><label>Full Name *</label><input type="text" class="form-control" id="nc_name" placeholder="Enter full name"></div>
+            <div class="form-group"><label>Date of Birth *</label><input type="date" class="form-control" id="nc_dob"></div>
+            <div class="form-group"><label>Gender *</label><select class="form-control" id="nc_gender"><option value="">Select gender</option><option>Male</option><option>Female</option><option>Other</option><option>Prefer not to say</option></select></div>
+            <div class="form-group"><label>Phone Number *</label><input type="tel" class="form-control" id="nc_phone" placeholder="+251 9XX XXX XXXX"></div>
+            <div class="form-group"><label>Email Address</label><input type="email" class="form-control" id="nc_email" placeholder="Optional"></div>
+            <div class="form-group"><label>Address</label><input type="text" class="form-control" id="nc_address" placeholder="City, Sub-city, Woreda"></div>
+          </div>
+          <div class="grid-2">
+            <div class="form-group"><label>Emergency Contact Name *</label><input type="text" class="form-control" id="nc_ecname" placeholder="Emergency contact person"></div>
+            <div class="form-group"><label>Emergency Contact Phone *</label><input type="tel" class="form-control" id="nc_ecphone" placeholder="+251 9XX XXX XXXX"></div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:8px">
+            <button class="btn btn-primary" onclick="nextStep(2)">Next: Preferences <i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step-panel" id="step2">
+          <h3 style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:18px">Service Preferences</h3>
+          <div class="grid-2">
+            <div class="form-group"><label>Intake Source</label><select class="form-control" id="nc_source"><option>Walk-in</option><option>Referral</option><option>Online</option><option>Phone</option><option>Other</option></select></div>
+            <div class="form-group"><label>Preferred Language</label><select class="form-control" id="nc_lang"><option>English</option><option>Amharic</option><option>Oromiffa</option><option>Tigrinya</option><option>Somali</option></select></div>
+            <div class="form-group"><label>Therapist Gender Preference</label><select class="form-control" id="nc_genderpref"><option>No Preference</option><option>Male</option><option>Female</option></select></div>
+          </div>
+          <div class="form-group"><label>Presenting Concerns</label><textarea class="form-control" id="nc_concerns" placeholder="Briefly describe why the client is seeking services..."></textarea></div>
+          <div class="form-group"><label>Additional Notes</label><textarea class="form-control" id="nc_notes" style="min-height:80px" placeholder="Any other relevant information..."></textarea></div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px">
+            <button class="btn btn-ghost" onclick="nextStep(1)"><i class="fa-solid fa-arrow-left"></i> Back</button>
+            <button class="btn btn-primary" onclick="nextStep(3)">Review <i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step-panel" id="step3">
+          <h3 style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:18px">Review & Register</h3>
+          <div id="reviewContent" style="background:var(--bg);border-radius:12px;padding:20px;margin-bottom:20px"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+            <button class="btn btn-ghost" onclick="nextStep(2)"><i class="fa-solid fa-arrow-left"></i> Back</button>
+            <button class="btn btn-success" id="registerBtn" onclick="registerClient()"><i class="fa-solid fa-user-check"></i> Register Client</button>
+          </div>
+        </div>
+
+        <!-- Success -->
+        <div class="step-panel" id="step4">
+          <div style="text-align:center;padding:40px 0">
+            <div style="width:64px;height:64px;background:rgba(16,185,129,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px;color:var(--success)"><i class="fa-solid fa-circle-check"></i></div>
+            <h2 style="font-size:20px;font-weight:800;color:var(--navy);margin-bottom:8px">Client Registered!</h2>
+            <p style="color:var(--text-muted);margin-bottom:6px">Client has been successfully registered.</p>
+            <div style="font-size:24px;font-weight:800;color:var(--navy);background:rgba(4,48,105,.06);border-radius:10px;padding:12px 24px;display:inline-block;margin:16px 0" id="newClientCode"></div>
+            <div style="display:flex;gap:12px;justify-content:center;margin-top:8px">
+              <button class="btn btn-gold" onclick="showSection('assignment')"><i class="fa-solid fa-wand-magic-sparkles"></i>Assign Therapist</button>
+              <button class="btn btn-outline" onclick="resetClientForm()"><i class="fa-solid fa-plus"></i>Register Another</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- â”€â”€ SMART ASSIGNMENT â”€â”€ -->
+    <section class="section" id="sec-assignment">
+      <div style="display:grid;grid-template-columns:340px 1fr;gap:20px;height:calc(100vh - 130px);overflow:hidden">
+        <!-- Left: Client Queue -->
+        <div class="panel" style="overflow-y:auto">
+          <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-inbox"></i>Unassigned Clients</div></div>
+          <div id="assignQueue" style="display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+        <!-- Right: Recommendations -->
+        <div class="panel" style="overflow-y:auto">
+          <div id="recPlaceholder" style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-muted);text-align:center">
+            <i class="fa-solid fa-wand-magic-sparkles" style="font-size:48px;color:var(--border);margin-bottom:16px"></i>
+            <p style="font-size:16px;font-weight:600">Select a client from the left panel</p>
+            <p style="font-size:13px;margin-top:6px">The system will recommend the most suitable therapists based on match criteria.</p>
+          </div>
+          <div id="recResults" style="display:none">
+            <div class="panel-header" style="margin-bottom:18px">
+              <div class="panel-title"><i class="fa-solid fa-ranking-star"></i>Therapist Recommendations</div>
+              <div id="selectedClientBadge"></div>
+            </div>
+            <div id="recList" style="display:flex;flex-direction:column;gap:14px"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- â”€â”€ APPOINTMENTS â”€â”€ -->
+    <section class="section" id="sec-appointments">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-calendar-check"></i>Appointments</div>
+          <button class="btn btn-gold btn-sm" onclick="openBookModal()"><i class="fa-solid fa-plus"></i>Book Appointment</button>
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+          <input type="date" class="form-control" id="apptFilterStart" style="width:160px">
+          <input type="date" class="form-control" id="apptFilterEnd" style="width:160px">
+          <select class="form-control" id="apptFilterStatus" style="width:160px">
+            <option value="">All Statuses</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="no_show">No Show</option>
+          </select>
+          <button class="btn btn-outline btn-sm" onclick="loadAppointments()"><i class="fa-solid fa-filter"></i>Filter</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date & Time</th><th>Client</th><th>Therapist</th><th>Type</th><th>Status</th><th>Location</th><th>Actions</th></tr></thead>
+            <tbody id="apptTableBody"><tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- â”€â”€ FINANCE â”€â”€ -->
+    <section class="section" id="sec-finance">
+      <div style="display:flex;gap:12px;margin-bottom:20px">
+        <button class="btn btn-primary" onclick="switchFinTab('invoices')">Invoices</button>
+        <button class="btn btn-ghost" onclick="switchFinTab('revenue')">Revenue Summary</button>
+      </div>
+      <div id="finInvoices">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="fa-solid fa-file-invoice"></i>Invoices</div>
+            <button class="btn btn-gold btn-sm" onclick="openInvoiceModal()"><i class="fa-solid fa-plus"></i>Create Invoice</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Client</th><th>Service</th><th>Amount</th><th>Status</th><th>Due Date</th><th>Actions</th></tr></thead>
+              <tbody id="invoiceTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div id="finRevenue" style="display:none">
+        <div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+          <div class="stat-card"><div class="stat-icon green"><i class="fa-solid fa-coins"></i></div><div><div class="stat-val" id="revTotal">-</div><div class="stat-label">Total Revenue (ETB)</div></div></div>
+          <div class="stat-card"><div class="stat-icon blue"><i class="fa-solid fa-calendar-week"></i></div><div><div class="stat-val" id="revMonth">-</div><div class="stat-label">This Month (ETB)</div></div></div>
+          <div class="stat-card"><div class="stat-icon orange"><i class="fa-solid fa-hourglass-half"></i></div><div><div class="stat-val" id="revPending">-</div><div class="stat-label">Outstanding (ETB)</div></div></div>
+          <div class="stat-card"><div class="stat-icon teal"><i class="fa-solid fa-circle-check"></i></div><div><div class="stat-val" id="revPaidCount">-</div><div class="stat-label">Paid Invoices</div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- â”€â”€ MESSAGES â”€â”€ -->
+    <section class="section" id="sec-messages">
+      <div style="display:grid;grid-template-columns:320px 1fr;gap:20px;height:calc(100vh-130px)">
+        <div class="panel" style="overflow-y:auto">
+          <div class="panel-header">
+            <div class="panel-title"><i class="fa-solid fa-envelope"></i>Messages</div>
+            <button class="btn btn-gold btn-sm" onclick="showCompose()"><i class="fa-solid fa-pen"></i>Compose</button>
+          </div>
+          <div id="msgList" style="display:flex;flex-direction:column;gap:2px"></div>
+        </div>
+        <div class="panel">
+          <div id="composePanel">
+            <h3 style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:16px">New Message</h3>
+            <div class="form-group"><label>To</label><select class="form-control" id="msgTo"></select></div>
+            <div class="form-group"><label>Subject</label><input type="text" class="form-control" id="msgSubject" placeholder="Message subject..."></div>
+            <div class="form-group"><label>Message</label><textarea class="form-control" id="msgBody" style="min-height:200px" placeholder="Write your message..."></textarea></div>
+            <button class="btn btn-primary" onclick="sendMsg()"><i class="fa-solid fa-paper-plane"></i>Send Message</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- â”€â”€â”€ MODALS â”€â”€â”€ -->
+
+<!-- Book Appointment Modal -->
+<div class="overlay" id="bookOverlay" onclick="closeBookModal()"></div>
+<div class="modal-wrap" id="bookModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa-solid fa-calendar-plus" style="color:var(--gold)"></i> Book Appointment</div>
+      <button class="drawer-close" onclick="closeBookModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>Client *</label>
+        <input type="text" class="form-control" id="bookClientSearch" placeholder="Search active clients by name or code..." oninput="filterBookClients()">
+        <input type="hidden" id="bookClient">
+        <div id="bookClientResults" class="client-picker-results"></div>
+        <div id="bookClientSelected" class="client-picker-selected" style="display:none"></div>
+      </div>
+      <div class="form-group"><label>Therapist *</label>
+        <select class="form-control" id="bookTherapist"><option value="">Select a therapist...</option></select>
+      </div>
+      <div class="grid-2">
+        <div class="form-group"><label>Date *</label><input type="date" class="form-control" id="bookDate"></div>
+        <div class="form-group"><label>Start Time *</label><input type="time" class="form-control" id="bookStart" value="09:00"></div>
+        <div class="form-group"><label>End Time</label><input type="time" class="form-control" id="bookEnd" value="10:00"></div>
+        <div class="form-group"><label>Type</label>
+          <select class="form-control" id="bookType"><option>individual</option><option>group</option><option>assessment</option><option>couples</option><option>crisis</option></select>
+        </div>
+      </div>
+      <div class="form-group"><label>Location</label>
+        <select class="form-control" id="bookLocation"><option>In-Person</option><option>Online</option><option>Phone</option></select>
+      </div>
+      <div class="form-group"><label>Therapy room</label>
+        <select class="form-control" id="bookRoom"><option value="">Auto-assign best available room</option></select>
+      </div>
+      <div class="form-group">
+        <div class="book-scheduler-shell">
+          <div class="vc-container" id="bookVcContainer">
+            <div class="vc-header">
+              <div class="vc-nav">
+                <button type="button" onclick="bookVcNav(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                <div class="vc-date-label" id="bookVcDateLabel">Loading...</div>
+                <button type="button" onclick="bookVcNav(1)"><i class="fa-solid fa-chevron-right"></i></button>
+              </div>
+              <div class="vc-view-toggle">
+                <button type="button" id="bookVcBtnDay" class="active" onclick="bookVcSetView('day')">Day</button>
+                <button type="button" id="bookVcBtnWeek" onclick="bookVcSetView('week')">Week</button>
+              </div>
+            </div>
+            <div class="vc-grid-wrap" id="bookVcGridWrap">
+              <div class="vc-grid" id="bookVcGrid"></div>
+            </div>
+          </div>
+          <input type="hidden" id="bookVcDateTime">
+          <input type="hidden" id="bookVcEndTime">
+          <div id="bookVcSelectedLabel" style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:12px;text-align:center;padding:8px;background:rgba(59,130,246,.05);border-radius:8px;display:none"></div>
+          <div class="appt-room-panel" style="margin-top:0">
+            <h4>Available rooms</h4>
+            <div id="bookRoomChips" class="room-chip-row">
+              <span class="room-chip neutral">Pick a date and time to see room availability</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:10px;margin-top:10px">
+        <input type="checkbox" id="bookRecurring" style="width:18px;height:18px;accent-color:var(--navy)">
+        <label for="bookRecurring" style="margin:0;font-size:14px;color:var(--navy);font-weight:700">Make this a recurring weekly session <span style="font-weight:400;color:var(--text-muted)">(generates 6 months of slots)</span></label>
+      </div>
+      <div class="form-group"><label>Notes</label><textarea class="form-control" id="bookNotes" style="min-height:70px" placeholder="Optional notes..."></textarea></div>
+      <div id="conflictWarning" style="display:none;background:rgba(245,158,11,.1);border:1px solid var(--warning);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--warning);margin-bottom:12px">
+        <i class="fa-solid fa-triangle-exclamation"></i> <strong>Conflict Warning:</strong> Selected therapist may have another appointment in this time slot.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeBookModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="bookAppointment()"><i class="fa-solid fa-check"></i>Confirm Booking</button>
+    </div>
+  </div>
+</div>
+
+<!-- Invoice Modal -->
+<div class="overlay" id="invoiceOverlay" onclick="closeInvoiceModal()"></div>
+<div class="modal-wrap" id="invoiceModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Create Invoice</div>
+      <button class="drawer-close" onclick="closeInvoiceModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>Client *</label><select class="form-control" id="invClient"><option value="">Select client...</option></select></div>
+      <div class="form-group"><label>Service *</label><select class="form-control" id="invService"><option value="">Select service...</option></select></div>
+      <div class="form-group"><label>Amount (ETB) *</label><input type="number" class="form-control" id="invAmount" placeholder="0.00"></div>
+      <div class="form-group"><label>Notes</label><textarea class="form-control" id="invNotes" style="min-height:70px"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeInvoiceModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="createInvoice()"><i class="fa-solid fa-file-invoice"></i>Create Invoice</button>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="overlay" id="paymentOverlay" onclick="closePaymentModal()"></div>
+<div class="modal-wrap" id="paymentModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Record Payment</div>
+      <button class="drawer-close" onclick="closePaymentModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="payInvoiceId">
+      <input type="hidden" id="payClientId">
+      <div class="form-group"><label>Amount Paid (ETB) *</label><input type="number" class="form-control" id="payAmount" placeholder="0.00"></div>
+      <div class="form-group"><label>Payment Method *</label>
+        <select class="form-control" id="payMethod"><option>Cash</option><option>Bank Transfer</option><option>Telebirr</option><option>Other</option></select>
+      </div>
+      <div class="form-group"><label>Invoice Status</label>
+        <select class="form-control" id="payStatus"><option value="paid">Paid in Full</option><option value="partial">Partial Payment</option></select>
+      </div>
+      <div class="form-group"><label>Notes</label><textarea class="form-control" id="payNotes" style="min-height:70px"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closePaymentModal()">Cancel</button>
+      <button class="btn btn-success" onclick="submitPayment()"><i class="fa-solid fa-circle-check"></i>Record Payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- Appointment Editor -->
+<div class="overlay" id="apptEditorOverlay" onclick="closeAppointmentEditor()"></div>
+<div class="modal-wrap" id="apptEditorModal">
+  <div class="modal appt-editor-modal">
+    <div class="modal-header">
+      <div class="modal-title" id="apptEditorHeader"><i class="fa-solid fa-sliders" style="color:var(--gold)"></i> Update Appointment</div>
+      <button class="drawer-close" onclick="closeAppointmentEditor()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="appt-editor-hero">
+        <div class="appt-editor-title" id="apptEditorTitle">Edit appointment details</div>
+        <div class="appt-editor-sub" id="apptEditorSubtitle">Choose a change type, enter the new time if needed, and add the reason so the therapist receives a clear Telegram update.</div>
+      </div>
+      <input type="hidden" id="apptEditorId">
+      <input type="hidden" id="apptEditorScope" value="temporary">
+      <input type="hidden" id="apptEditorStatus" value="scheduled">
+      <div class="appt-mode-row">
+        <button type="button" class="appt-mode-btn active temp" id="apptModeTemp" onclick="setApptEditorMode('temporary')">Temporary change</button>
+        <button type="button" class="appt-mode-btn" id="apptModePerm" onclick="setApptEditorMode('permanent')">Permanent change</button>
+        <button type="button" class="appt-mode-btn" id="apptModeCancel" onclick="setApptEditorMode('cancelled')">Cancel session</button>
+        <button type="button" class="appt-mode-btn" id="apptModeNoShow" onclick="setApptEditorMode('no_show')">No-show</button>
+      </div>
+      <div class="appt-editor-time-group">
+        <!-- VISUAL CALENDAR COMPONENT -->
+        <div class="vc-container" id="vcContainer">
+          <div class="vc-header">
+            <div class="vc-nav">
+              <button type="button" onclick="vcNav(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+              <div class="vc-date-label" id="vcDateLabel">Loading...</div>
+              <button type="button" onclick="vcNav(1)"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+            <div class="vc-view-toggle">
+              <button type="button" id="vcBtnDay" class="active" onclick="vcSetView('day')">Day</button>
+              <button type="button" id="vcBtnWeek" onclick="vcSetView('week')">Week</button>
+            </div>
+          </div>
+          <div class="vc-grid-wrap" id="vcGridWrap">
+            <div class="vc-grid" id="vcGrid"></div>
+          </div>
+        </div>
+
+        <input type="hidden" id="apptEditorDateTime">
+        <input type="hidden" id="apptEditorEndTime">
+        <div id="vcSelectedLabel" style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:12px;text-align:center;padding:8px;background:rgba(59,130,246,.05);border-radius:8px;display:none"></div>
+
+        <div class="form-group" style="margin-bottom:16px">
+          <label>Therapy room</label>
+          <select class="form-control" id="apptEditorRoom"></select>
+        </div>
+
+        <div class="appt-room-panel">
+          <h4>Room availability</h4>
+          <div id="apptRoomChips" class="room-chip-row">
+            <span class="room-chip neutral">Pick a date and time to check availability</span>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Reason</label>
+        <textarea class="form-control" id="apptEditorReason" placeholder="Write the reason here so the therapist and reception teams get the same message..."></textarea>
+      </div>
+      <div class="appt-editor-note" id="apptEditorNote">
+        <strong>Temporary change:</strong> updates this appointment only. <strong>Permanent change:</strong> updates the recurring pattern when the appointment belongs to a repeated series. <strong>Cancel:</strong> marks the session cancelled and sends the reason to the therapist Telegram account.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeAppointmentEditor()">Cancel</button>
+      <button class="btn btn-danger appt-editor-save" id="apptEditorSaveBtn" onclick="saveAppointmentEditor()">Save Change</button>
+    </div>
+  </div>
+</div>
+
+<!-- Client Drawer -->
+<div class="overlay" id="clientDrawerOverlay" onclick="closeClientDrawer()"></div>
+<div class="drawer" id="clientDrawer">
+  <div class="drawer-header">
+    <div class="drawer-title" id="drawerClientName">Client Profile</div>
+    <button class="drawer-close" onclick="closeClientDrawer()"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="drawer-body">
+    <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap" id="drawerTabs">
+      <button class="btn btn-primary btn-sm" onclick="switchDrawerTab('info')">Info</button>
+      <button class="btn btn-ghost btn-sm" onclick="switchDrawerTab('journey')">Journey</button>
+      <button class="btn btn-ghost btn-sm" onclick="switchDrawerTab('appointments')">Appointments</button>
+      <button class="btn btn-ghost btn-sm" onclick="switchDrawerTab('finance')">Finance</button>
+    </div>
+    <div id="drawerContent"></div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// â”€â”€â”€ Globals â”€â”€â”€
+let currentUser = null;
+let allClients = [];
+let allAppointments = [];
+let allRooms = [];
+let allInvoices = [];
+let calDate = new Date();
+let calView = 'month';
+let selectedAssignClient = null;
+let currentDrawerClient = null;
+let currentDrawerTab = 'info';
+let currentClientData = null;
+let currentClientView = null;
+let bookVcCurrentDate = new Date();
+let bookVcView = 'day';
+let bookVcAppointments = [];
+let bookVcSelectedStart = null;
+let bookVcSelectedEnd = null;
+let bookClientSearch = '';
+
+// â”€â”€â”€ Init â”€â”€â”€
+async function init() {
+  // Clock
+  setInterval(() => {
+    const now = new Date();
+    document.getElementById('topbarClock').textContent = now.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }, 1000);
+
+  // Date / greeting
+  const now = new Date();
+  const h = now.getHours();
+  const greeting = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('dashGreeting').textContent = greeting + '!';
+  document.getElementById('dashDate').textContent = now.toLocaleDateString('en-US', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  // Fetch current user
+  try {
+    const res = await apiFetch('/api/me');
+    if (res.ok) {
+      currentUser = await res.json();
+      document.getElementById('sidebarName').textContent = currentUser.full_name || currentUser.username;
+      document.getElementById('sidebarRole').textContent = currentUser.role;
+      document.getElementById('sidebarAvatar').textContent = (currentUser.full_name || currentUser.username)[0].toUpperCase();
+    }
+  } catch(e){}
+
+  // Nav items
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => showSection(item.dataset.section));
+  });
+
+  await loadRooms();
+  await loadDashboard();
+  await loadAllClients();
+  loadCalendar();
+  loadInvoices();
+  loadMessages();
+  setInterval(() => loadAlerts(), 60000);
+}
+
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+  document.querySelector(`.nav-item[data-section="${name}"]`)?.classList.add('active');
+  const titles = {
+    'dashboard':'Dashboard','calendar':'Calendar','clients':'Client Registry',
+    'new-client':'Register New Client','assignment':'Smart Assignment',
+    'appointments':'Appointments','finance':'Finance','messages':'Messages'
+  };
+  document.getElementById('topbarTitle').textContent = titles[name] || name;
+  if(name==='clients') renderClientsTable();
+  if(name==='calendar') renderCalendar();
+  if(name==='assignment') loadAssignQueue();
+  if(name==='appointments') loadAppointments();
+  if(name==='finance') loadInvoices();
+  if(name==='messages') loadMessages();
+}
+
+// â”€â”€â”€ Dashboard â”€â”€â”€
+async function loadDashboard() {
+  try {
+    const res = await apiFetch('/api/analytics/dashboard');
+    const data = await res.json();
+    const s = data.stats;
+    document.getElementById('statToday').textContent = s.today_appointments;
+    document.getElementById('statPending').textContent = s.pending_assignment;
+    document.getElementById('statAlerts').textContent = s.active_alerts;
+    document.getElementById('statClients').textContent = s.active_clients;
+    document.getElementById('statInvoices').textContent = s.pending_invoices;
+    updateAlertBadge(s.active_alerts);
+
+    // Revenue for finance
+    document.getElementById('revTotal').textContent = (s.total_revenue||0).toLocaleString();
+    document.getElementById('revMonth').textContent = (s.revenue_this_month||0).toLocaleString();
+    document.getElementById('revPaidCount').textContent = s.pending_invoices;
+  } catch(e){}
+
+  await loadAlerts();
+  await loadTodaySchedule();
+  await loadPendingQueue();
+}
+
+async function loadAlerts() {
+  try {
+    const res = await apiFetch('/api/alerts');
+    const alerts = await res.json();
+    updateAlertBadge(alerts.length);
+    const el = document.getElementById('riskAlertsList');
+    if (!alerts.length) {
+      el.innerHTML = `<div style="display:flex;align-items:center;gap:10px;color:var(--success);padding:10px">
+        <i class="fa-solid fa-circle-check" style="font-size:20px"></i>
+        <span style="font-weight:600">No active risk alerts</span></div>`;
+    } else {
+      el.innerHTML = alerts.map(a => `
+        <div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(239,68,68,.04);border-radius:8px;margin-bottom:8px;border:1px solid rgba(239,68,68,.1)">
+          <i class="fa-solid fa-user-shield" style="color:var(--danger);font-size:18px"></i>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:13px">${a.client_name} <span style="color:var(--text-muted);font-size:11px">${a.client_code}</span></div>
+            <div style="font-size:12px;color:var(--text-muted)">${a.alert_type} - ${a.severity} severity - ${formatTime(a.triggered_at)}</div>
+          </div>
+          <span class="badge badge-red">${a.severity}</span>
+          <button class="btn btn-sm btn-ghost" onclick="resolveAlert(${a.id})">Resolve</button>
+        </div>`).join('');
+    }
+  } catch(e){}
+}
+
+function updateAlertBadge(count) {
+  const badge = document.getElementById('alertBadge');
+  if (count > 0) { badge.style.display='flex'; badge.textContent = count; }
+  else badge.style.display='none';
+}
+
+async function resolveAlert(id) {
+  await apiFetch(`/api/alerts/${id}/resolve`, {method:'POST'});
+  loadAlerts();
+  toast('Alert resolved');
+}
+
+async function loadTodaySchedule() {
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    const res = await apiFetch(`/api/appointments?start=${today}&end=${today}`);
+    const appts = await res.json();
+    const el = document.getElementById('todaySchedule');
+    if (!appts.length) {
+      el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-muted)"><i class="fa-regular fa-calendar-xmark" style="font-size:24px;margin-bottom:8px"></i><p>No appointments today</p></div>`;
+    } else {
+      el.innerHTML = appts.slice(0,6).map(a => `
+        <div class="day-event" onclick="openClientDrawer(${a.client_id})">
+          <div class="event-time"><div>${formatApptTime(a.start_time)}</div><div style="font-size:10px;opacity:.7;margin-top:2px">${formatDate(a.start_time)}</div></div>
+          <div class="event-info">
+            <div class="ev-name"><span>${a.client_name}</span><span class="appt-chip">${a.client_code||'Code'}</span></div>
+            <div class="ev-sub">${a.therapist_name || '-'} - ${a.type}</div>
+          </div>
+          <div class="event-status">${statusBadge(a.status)}</div>
+          <div style="display:flex;gap:4px;margin-left:4px">
+            <button class="btn btn-sm btn-success" onclick="updateApptStatus(${a.id},'completed')" title="Complete"><i class="fa-solid fa-check"></i></button>
+            <button class="btn btn-sm btn-danger" onclick="updateApptStatus(${a.id},'no_show')" title="No Show"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+        </div>`).join('');
+    }
+  } catch(e){ document.getElementById('todaySchedule').innerHTML='<p style="color:var(--text-muted)">Failed to load</p>'; }
+}
+
+async function loadPendingQueue() {
+  try {
+    const res = await apiFetch('/api/clients');
+    const clients = await res.json();
+    const pending = clients.filter(c => ['registered','screening_completed'].includes(c.status) && !c.assigned_therapist_id);
+    const el = document.getElementById('pendingQueue');
+    if (!pending.length) {
+      el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--success);font-size:13px;font-weight:600"><i class="fa-solid fa-circle-check"></i> All clients assigned</div>`;
+    } else {
+      el.innerHTML = pending.slice(0,5).map(c => `
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:var(--bg);cursor:pointer;margin-bottom:6px"
+             onclick="showSection('assignment');setTimeout(()=>selectAssignClient(${c.id}),400)">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px">${c.full_name[0]}</div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:700">${c.full_name}</div>
+            <div style="font-size:11px;color:var(--text-muted)">${c.client_code} - ${c.status.replace('_',' ')}</div>
+          </div>
+          <span class="badge badge-orange">${c.risk_level}</span>
+        </div>`).join('');
+    }
+  } catch(e){}
+}
+
+// â”€â”€â”€ Calendar â”€â”€â”€
+function isClientBookable(client) {
+  if (!client) return false;
+  const status = String(client.status || '').toLowerCase();
+  return client.is_active !== 0 && ['registered', 'screening_completed', 'awaiting_assignment', 'assigned', 'active'].includes(status);
+}
+
+function getBookableClients() {
+  const busyClientIds = new Set((bookVcAppointments || [])
+    .filter(a => !isFinalAppointmentStatus(a.status))
+    .map(a => String(a.client_id)));
+  return (allClients || [])
+    .filter(c => isClientBookable(c) && !busyClientIds.has(String(c.id)))
+    .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
+}
+
+function renderBookClientPicker() {
+  const list = document.getElementById('bookClientResults');
+  const selected = document.getElementById('bookClientSelected');
+  const hidden = document.getElementById('bookClient');
+  const searchEl = document.getElementById('bookClientSearch');
+  if (!list || !selected || !hidden) return;
+  const q = String(bookClientSearch || searchEl?.value || '').trim().toLowerCase();
+  const clients = getBookableClients().filter(c => {
+    if (!q) return true;
+    return String(c.full_name || '').toLowerCase().includes(q) || String(c.client_code || '').toLowerCase().includes(q);
+  });
+  if (!clients.length) {
+    list.innerHTML = '<div class="client-picker-empty">No active clients match this search, or they already have an appointment.</div>';
+  } else {
+    list.innerHTML = clients.slice(0, 12).map(c => `
+      <div class="client-picker-item ${String(hidden.value) === String(c.id) ? 'selected' : ''}" onclick="selectBookClient(${c.id})">
+        <div class="client-picker-main">
+          <div class="client-picker-name">${c.full_name || '-'}</div>
+          <div class="client-picker-code">${c.client_code || '-'}</div>
+          <div class="client-picker-meta">
+            ${statusBadge(c.status)}
+            ${riskBadge(c.risk_level || 'low')}
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);font-weight:700">Active</div>
+      </div>`).join('');
+  }
+  const selectedClient = (allClients || []).find(c => String(c.id) === String(hidden.value));
+  if (selectedClient) {
+    selected.style.display = 'block';
+    selected.textContent = `${selectedClient.full_name}  ${selectedClient.client_code || 'No code'}  ${String(selectedClient.status || '').replace(/_/g, ' ')}`;
+  } else {
+    selected.style.display = 'none';
+    selected.textContent = '';
+  }
+}
+
+function selectBookClient(id) {
+  const client = (allClients || []).find(c => String(c.id) === String(id));
+  if (!client) return;
+  const searchEl = document.getElementById('bookClientSearch');
+  const hidden = document.getElementById('bookClient');
+  if (hidden) hidden.value = client.id;
+  if (searchEl) searchEl.value = `${client.full_name || ''}${client.client_code ? ` (${client.client_code})` : ''}`.trim();
+  bookClientSearch = searchEl?.value || '';
+  renderBookClientPicker();
+}
+
+function filterBookClients() {
+  bookClientSearch = document.getElementById('bookClientSearch')?.value || '';
+  const hidden = document.getElementById('bookClient');
+  if (hidden && hidden.value && !bookClientSearch.trim()) hidden.value = '';
+  renderBookClientPicker();
+}
+
+function bookVcInit() {
+  bookVcCurrentDate = new Date();
+  bookVcSelectedStart = null;
+  bookVcSelectedEnd = null;
+  const lbl = document.getElementById('bookVcSelectedLabel');
+  if (lbl) lbl.style.display = 'none';
+  bookVcFetchData();
+}
+
+async function bookVcFetchData() {
+  try {
+    const r = await apiFetch('/api/appointments');
+    bookVcAppointments = await r.json();
+    renderBookClientPicker();
+    bookVcRender();
+  } catch (e) {}
+}
+
+function bookVcNav(dir) {
+  if (bookVcView === 'day') bookVcCurrentDate.setDate(bookVcCurrentDate.getDate() + dir);
+  else bookVcCurrentDate.setDate(bookVcCurrentDate.getDate() + (dir * 7));
+  bookVcSelectedStart = null;
+  bookVcSelectedEnd = null;
+  const lbl = document.getElementById('bookVcSelectedLabel');
+  if (lbl) lbl.style.display = 'none';
+  bookVcRender();
+}
+
+function bookVcSetView(view) {
+  bookVcView = view;
+  document.getElementById('bookVcBtnDay')?.classList.toggle('active', view === 'day');
+  document.getElementById('bookVcBtnWeek')?.classList.toggle('active', view === 'week');
+  bookVcRender();
+}
+
+function bookVcGetWeekDays(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(d.setDate(diff));
+  const days = [];
+  for (let i = 0; i < 5; i++) {
+    const nd = new Date(monday);
+    nd.setDate(monday.getDate() + i);
+    days.push(nd);
+  }
+  return days;
+}
+
+function bookVcRender() {
+  const grid = document.getElementById('bookVcGrid');
+  const label = document.getElementById('bookVcDateLabel');
+  if (!grid || !label) return;
+  const days = bookVcView === 'day' ? [bookVcCurrentDate] : bookVcGetWeekDays(bookVcCurrentDate);
+  label.textContent = bookVcView === 'day'
+    ? days[0].toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric', year:'numeric'})
+    : `${days[0].toLocaleDateString('en-US', {month:'short', day:'numeric'})} - ${days[4].toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}`;
+  let html = `<div class="vc-time-col"><div class="vc-day-header">Time</div>`;
+  for (let h = 8; h <= 19; h++) {
+    const hour = h > 12 ? h - 12 : h;
+    html += `<div class="vc-time-slot">${hour} ${h >= 12 ? 'PM' : 'AM'}</div>`;
+  }
+  html += `</div><div class="vc-days">`;
+  days.forEach(day => {
+    html += `<div class="vc-day-col"><div class="vc-day-header">${day.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'})}</div>`;
+    for (let h = 8; h <= 19; h++) {
+      const slotStart = new Date(day);
+      slotStart.setHours(h, 0, 0, 0);
+      const slotEnd = new Date(day);
+      slotEnd.setHours(h + 1, 0, 0, 0);
+      const slotStartStr = slotStart.toISOString();
+      const slotEndStr = slotEnd.toISOString();
+      const isBusy = bookVcAppointments.some(a => {
+        if (['cancelled', 'no_show', 'terminated'].includes(String(a.status || '').toLowerCase())) return false;
+        const aStart = new Date(a.start_time);
+        const aEnd = new Date(a.end_time || a.start_time);
+        return aStart < slotEnd && aEnd > slotStart;
+      });
+      let cls = 'vc-slot available';
+      if (isBusy) cls = 'vc-slot busy';
+      if (bookVcSelectedStart === slotStartStr) cls += ' selected';
+      html += `<div class="${cls}" data-start="${slotStartStr}" data-end="${slotEndStr}" onclick="bookVcSlotClick(this, ${isBusy})"></div>`;
+    }
+    html += `</div>`;
+  });
+  html += `</div>`;
+  grid.innerHTML = html;
+}
+
+function bookVcSlotClick(el, isBusy) {
+  if (isBusy) return;
+  const start = el.dataset.start;
+  const end = el.dataset.end;
+  bookVcSelectedStart = start;
+  bookVcSelectedEnd = end;
+  const dateEl = document.getElementById('bookDate');
+  const startEl = document.getElementById('bookStart');
+  const endEl = document.getElementById('bookEnd');
+  const dtEl = document.getElementById('bookVcDateTime');
+  const endHiddenEl = document.getElementById('bookVcEndTime');
+  if (dateEl) dateEl.value = start.slice(0, 10);
+  if (startEl) startEl.value = start.slice(11, 16);
+  if (endEl) endEl.value = end.slice(11, 16);
+  if (dtEl) dtEl.value = start;
+  if (endHiddenEl) endHiddenEl.value = end;
+  const lbl = document.getElementById('bookVcSelectedLabel');
+  if (lbl) {
+    lbl.textContent = `Selected: ${new Date(start).toLocaleString('en-US', {weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})} - ${new Date(end).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+    lbl.style.display = 'block';
+  }
+  loadBookingRoomAvailability();
+  bookVcRender();
+}
+
+function loadCalendar() { renderCalendar(); }
+
+function switchView(v) {
+  calView = v;
+  document.querySelectorAll('.cal-view-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1)).classList.add('active');
+  renderCalendar();
+}
+
+function renderCalendar() {
+  if (calView === 'month') renderMonthView();
+  else if (calView === 'week') renderWeekView();
+  else renderDayView();
+}
+
+async function renderMonthView() {
+  const y = calDate.getFullYear(), m = calDate.getMonth();
+  document.getElementById('calTitle').textContent = new Date(y,m,1).toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  document.getElementById('calPrev').onclick = () => { calDate = new Date(y, m-1, 1); renderCalendar(); };
+  document.getElementById('calNext').onclick = () => { calDate = new Date(y, m+1, 1); renderCalendar(); };
+
+  // Fetch appointments for this month
+  const start = new Date(y,m,1).toISOString().split('T')[0];
+  const end = new Date(y,m+1,0).toISOString().split('T')[0];
+  let appts = [];
+  try { const r = await apiFetch(`/api/appointments?start=${start}&end=${end}`); appts = await r.json(); } catch(e){}
+
+  const apptMap = {};
+  appts.forEach(a => {
+    const d = a.start_time ? a.start_time.split('T')[0] : a.start_time?.split(' ')[0];
+    if (!apptMap[d]) apptMap[d] = [];
+    apptMap[d].push(a);
+  });
+
+  const firstDay = new Date(y,m,1).getDay();
+  const daysInMonth = new Date(y,m+1,0).getDate();
+  const today = new Date().toDateString();
+
+  let html = `<div class="cal-grid">
+    ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="cal-day-header">${d}</div>`).join('')}`;
+
+  for (let i = 0; i < firstDay; i++) html += `<div class="cal-day other-month"><div class="cal-day-num"></div></div>`;
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = new Date(y,m,d).toDateString() === today;
+    const dayAppts = apptMap[dateStr] || [];
+    html += `<div class="cal-day${isToday?' today':''}" onclick="showDayDetail('${dateStr}','${new Date(y,m,d).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}')">
+      <div class="cal-day-num">${d}</div>
+      ${dayAppts.slice(0,2).map(a=>{ const visual = appointmentVisual(a); return `<span class="cal-appt-dot ${visual.cls}" style="background:${visual.palette.base};color:#fff">${a.client_name?.split(' ')[0]||'Appt'}</span>`; }).join('')}
+      ${dayAppts.length>2?`<span style="font-size:10px;color:var(--text-muted)">+${dayAppts.length-2} more</span>`:''}
+    </div>`;
+  }
+  html += '</div>';
+  document.getElementById('calContainer').innerHTML = html;
+}
+
+async function renderWeekView() {
+  const d = new Date(calDate);
+  d.setDate(d.getDate() - d.getDay());
+  const weekStart = new Date(d);
+  const weekEnd = new Date(d); weekEnd.setDate(weekEnd.getDate()+6);
+
+  document.getElementById('calTitle').textContent = `${weekStart.toLocaleDateString('en-US',{month:'short',day:'numeric'})} - ${weekEnd.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+  document.getElementById('calPrev').onclick = () => { calDate = new Date(calDate); calDate.setDate(calDate.getDate()-7); renderCalendar(); };
+  document.getElementById('calNext').onclick = () => { calDate = new Date(calDate); calDate.setDate(calDate.getDate()+7); renderCalendar(); };
+
+  const days = [];
+  for(let i=0;i<7;i++) { const dd=new Date(weekStart); dd.setDate(dd.getDate()+i); days.push(dd); }
+
+  const start = weekStart.toISOString().split('T')[0];
+  const end = weekEnd.toISOString().split('T')[0];
+  let appts = [];
+  try { const r = await apiFetch(`/api/appointments?start=${start}&end=${end}`); appts = await r.json(); } catch(e){}
+
+  const apptMap = {};
+  appts.forEach(a => {
+    const dt = a.start_time || '';
+    const dateKey = dt.includes('T') ? dt.split('T')[0] : dt.split(' ')[0];
+    if (!apptMap[dateKey]) apptMap[dateKey] = [];
+    apptMap[dateKey].push(a);
+  });
+
+  const colors = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#ec4899','#f97316'];
+  const hours = [];
+  for(let h=7;h<20;h++) hours.push(h);
+
+  let html = `<div class="week-grid">
+    <div class="week-header" style="background:var(--surface)"></div>
+    ${days.map((day,i)=>`<div class="week-header">${day.toLocaleDateString('en-US',{weekday:'short'})} ${day.getDate()}</div>`).join('')}`;
+
+  hours.forEach(h => {
+    html += `<div class="week-time">${h<12?h+' AM':h===12?'12 PM':(h-12)+' PM'}</div>`;
+    days.forEach((day,di) => {
+      const dateKey = day.toISOString().split('T')[0];
+      const cellAppts = (apptMap[dateKey]||[]).filter(a => {
+        const t = a.start_time||'';
+        const hr = parseInt(t.includes('T')?t.split('T')[1]:t.split(' ')[1]);
+        return hr === h;
+      });
+      html += `<div class="week-cell">${cellAppts.map((a,ai)=>`<div class="week-appt" style="background:${appointmentVisual(a).palette.base}" onclick='alert("${a.client_name} with ${a.therapist_name}")'>${a.client_name?.split(' ')[0]}</div>`).join('')}</div>`;
+    });
+  });
+  html += '</div>';
+  document.getElementById('calContainer').innerHTML = html;
+}
+
+async function renderDayView() {
+  const dateStr = calDate.toISOString().split('T')[0];
+  document.getElementById('calTitle').textContent = calDate.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  document.getElementById('calPrev').onclick = () => { calDate.setDate(calDate.getDate()-1); renderCalendar(); };
+  document.getElementById('calNext').onclick = () => { calDate.setDate(calDate.getDate()+1); renderCalendar(); };
+  await showDayDetail(dateStr, calDate.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}));
+  document.getElementById('calContainer').innerHTML = '';
+}
+
+async function showDayDetail(dateStr, label) {
+  const panel = document.getElementById('dayDetailPanel');
+  document.getElementById('dayDetailTitle').textContent = label;
+  panel.style.display='block';
+  try {
+    const r = await apiFetch(`/api/appointments?start=${dateStr}&end=${dateStr}`);
+    const appts = await r.json();
+    if (!appts.length) {
+      document.getElementById('dayDetailList').innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted)"><i class="fa-regular fa-calendar" style="font-size:28px;margin-bottom:8px"></i><p style="font-weight:600">No appointments this day</p><p style="font-size:12px;margin-top:4px">Use the appointment panel to book, change, or cancel a slot.</p></div>`;
+    } else {
+      document.getElementById('dayDetailList').innerHTML = appts.map(a => `
+        <div class="day-event">
+          <div class="event-time">${formatApptTime(a.start_time)}</div>
+          <div class="event-info">
+            <div class="ev-name">${a.client_name}</div>
+            <div class="ev-sub">${a.therapist_name || '-'} - ${a.type} - ${a.location || '-'}</div>
+          </div>
+          <div class="event-status" onclick="event.stopPropagation()">
+            <button class="btn btn-ghost btn-sm" onclick="openClientDrawer(${a.client_id})"><i class="fa-regular fa-user"></i>Client</button>
+            <div class="event-actions">
+              <button class="btn btn-success btn-sm" onclick="updateApptStatus(${a.id},'completed')"><i class="fa-solid fa-check"></i></button>
+              <button class="btn btn-outline btn-sm" onclick="changeAppt(${a.id},'temporary')"><i class="fa-solid fa-clock-rotate-left"></i></button>
+              <button class="btn btn-gold btn-sm" onclick="changeAppt(${a.id},'permanent')"><i class="fa-solid fa-calendar-days"></i></button>
+              <button class="btn btn-danger btn-sm" onclick="updateApptStatus(${a.id},'cancelled')"><i class="fa-solid fa-ban"></i></button>
+            </div>
+          </div>
+        </div>`).join('');
+    }
+  } catch(e){}
+}
+
+// â”€â”€â”€ Clients â”€â”€â”€
+async function loadAllClients() {
+  try {
+    const r = await apiFetch('/api/clients');
+    allClients = await r.json();
+    renderClientsTable();
+  } catch(e){}
+}
+
+function filterClients() { renderClientsTable(); }
+
+function renderClientsTable() {
+  const q = (document.getElementById('clientSearch')?.value||'').toLowerCase();
+  const st = document.getElementById('filterStatus')?.value||'';
+  const risk = document.getElementById('filterRisk')?.value||'';
+  const filtered = allClients.filter(c =>
+    (!q || c.full_name?.toLowerCase().includes(q) || c.client_code?.toLowerCase().includes(q) || c.phone?.includes(q)) &&
+    (!st || c.status === st) && (!risk || c.risk_level === risk));
+  const tb = document.getElementById('clientsTableBody');
+  if (!tb) return;
+  if (!filtered.length) { tb.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted)">No clients found</td></tr>`; return; }
+  tb.innerHTML = filtered.map(c => `
+    <tr style="cursor:pointer" onclick="openClientDrawer(${c.id})">
+      <td><span style="font-family:monospace;font-size:12px;font-weight:700;color:var(--navy)">${c.client_code||'-'}</span></td>
+      <td><strong>${c.full_name}</strong></td>
+      <td>${c.phone||'-'}</td>
+      <td>${statusBadge(c.status)}</td>
+      <td>${riskBadge(c.risk_level)}</td>
+      <td style="font-size:12px;color:var(--text-muted)">${formatDate(c.registration_date)}</td>
+      <td style="font-size:13px">${c.therapist_name||'<span style="color:var(--text-muted)">Unassigned</span>'}</td>
+      <td onclick="event.stopPropagation()" style="display:flex;gap:4px">
+        <button class="btn btn-sm btn-ghost" onclick="openClientDrawer(${c.id})"><i class="fa-solid fa-eye"></i></button>
+        <button class="btn btn-sm btn-gold" onclick="selectAndAssign(${c.id})"><i class="fa-solid fa-user-check"></i></button>
+      </td>
+    </tr>`).join('');
+}
+
+async function openClientDrawer(cid) {
+  currentDrawerClient = cid;
+  currentDrawerTab = 'info';
+  document.getElementById('clientDrawer').classList.add('open');
+  document.getElementById('clientDrawerOverlay').classList.add('active');
+  document.getElementById('drawerClientName').textContent = 'Loading...';
+  document.getElementById('drawerContent').innerHTML = `<div class="skel" style="height:200px"></div>`;
+  try {
+    const r = await apiFetch(`/api/clients/${cid}`);
+    const data = await r.json();
+    document.getElementById('drawerClientName').textContent = data.client.full_name;
+    switchDrawerTab('info', data);
+  } catch(e){}
+}
+
+function closeClientDrawer() {
+  document.getElementById('clientDrawer').classList.remove('open');
+  document.getElementById('clientDrawerOverlay').classList.remove('active');
+}
+
+function switchDrawerTab(tab, data) {
+  currentDrawerTab = tab;
+  document.querySelectorAll('#drawerTabs button').forEach(b => {
+    b.className = b.textContent.trim().toLowerCase().startsWith(tab.charAt(0).toUpperCase()+tab.slice(1)) ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
+  });
+  if (!data) { apiFetch(`/api/clients/${currentDrawerClient}`).then(r=>r.json()).then(d => renderDrawerTab(tab,d)); return; }
+  renderDrawerTab(tab, data);
+}
+
+function renderDrawerTab(tab, data) {
+  const c = data.client;
+  const el = document.getElementById('drawerContent');
+  if (tab==='info') {
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding:16px;background:var(--bg);border-radius:12px">
+        <div style="width:56px;height:56px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800">${c.full_name[0]}</div>
+        <div><div style="font-size:17px;font-weight:800">${c.full_name}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${c.client_code} - Registered ${formatDate(c.registration_date)}</div>
+          <div style="margin-top:6px;display:flex;gap:6px">${statusBadge(c.status)}${riskBadge(c.risk_level)}</div></div>
+      </div>
+      ${infoRow('Phone',c.phone)}${infoRow('Email',c.email)}${infoRow('Gender',c.gender)}
+      ${infoRow('Date of Birth',c.date_of_birth)}${infoRow('Address',c.address)}
+      <div style="margin:14px 0;border-top:1px solid var(--border);padding-top:14px;font-size:13px;font-weight:700;color:var(--text-muted)">EMERGENCY CONTACT</div>
+      ${infoRow('Name',c.emergency_contact_name)}${infoRow('Phone',c.emergency_contact_phone)}
+      <div style="margin:14px 0;border-top:1px solid var(--border);padding-top:14px;font-size:13px;font-weight:700;color:var(--text-muted)">PREFERENCES</div>
+      ${infoRow('Language',c.language_pref)}${infoRow('Therapist Preference',c.therapist_gender_pref)}
+      ${infoRow('Intake Source',c.intake_source)}${infoRow('Assigned Therapist',c.therapist_name||'Unassigned')}
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn btn-gold btn-sm" onclick="selectAndAssign(${c.id})"><i class="fa-solid fa-user-check"></i>Assign Therapist</button>
+        <button class="btn btn-outline btn-sm" onclick="openInvoiceForClient(${c.id})"><i class="fa-solid fa-file-invoice"></i>Create Invoice</button>
+      </div>`;
+  } else if (tab==='journey') {
+    const j = data.journey;
+    el.innerHTML = j.length ? `<div class="timeline">${j.map(e=>`
+      <div class="timeline-item">
+        <div class="timeline-dot"><i class="fa-solid fa-arrow-right" style="font-size:10px"></i></div>
+        <div class="timeline-content">
+          <div class="timeline-date">${formatDate(e.changed_at)} by ${e.changed_by_name||'System'}</div>
+          <div class="timeline-text">${e.stage.replace(/_/g,' ').toUpperCase()}</div>
+          ${e.notes?`<div style="font-size:12px;color:var(--text-muted);margin-top:4px">${e.notes}</div>`:''}
+        </div>
+      </div>`).join('')}</div>` : '<p style="color:var(--text-muted)">No journey records.</p>';
+  } else if (tab==='appointments') {
+    const a = data.appointments;
+    el.innerHTML = a.length ? `<div style="display:flex;flex-direction:column;gap:8px">${a.map(ap=>`
+      <div style="padding:12px;border-radius:8px;background:var(--bg);display:flex;align-items:center;gap:10px">
+        <i class="fa-solid fa-calendar" style="color:var(--navy)"></i>
+        <div><div style="font-size:13px;font-weight:700">${formatDate(ap.start_time)}</div>
+          <div style="font-size:12px;color:var(--text-muted)">${ap.type} with ${ap.therapist_name||'TBA'}</div></div>
+        <div style="margin-left:auto">${statusBadge(ap.status)}</div>
+      </div>`).join('')}</div>` : '<p style="color:var(--text-muted)">No appointments.</p>';
+  } else if (tab==='finance') {
+    const inv = data.invoices;
+    el.innerHTML = inv.length ? `<div>${inv.map(i=>`
+      <div style="padding:12px;border-radius:8px;background:var(--bg);margin-bottom:8px;display:flex;align-items:center;gap:10px">
+        <i class="fa-solid fa-file-invoice-dollar" style="color:var(--navy)"></i>
+        <div><div style="font-size:13px;font-weight:700">ETB ${(i.amount||0).toLocaleString()}</div>
+          <div style="font-size:12px;color:var(--text-muted)">Due: ${formatDate(i.due_date)}</div></div>
+        <div style="margin-left:auto">${invStatusBadge(i.status)}</div>
+        ${i.status==='pending'?`<button class="btn btn-sm btn-success" onclick="openPaymentFor(${i.id},${i.client_id})">Pay</button>`:''}
+      </div>`).join('')}</div>` : '<p style="color:var(--text-muted)">No invoices.</p>';
+  }
+}
+
+function infoRow(label, val) {
+  return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+    <span style="font-size:12px;font-weight:700;color:var(--text-muted)">${label.toUpperCase()}</span>
+    <span style="font-size:13px;font-weight:600">${val||'-'}</span>
+  </div>`;
+}
+
+// â”€â”€â”€ New Client â”€â”€â”€
+function formatDate(value) {
+  if (!value) return '-';
+  try {
+    return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch (e) {
+    return String(value);
+  }
+}
+
+function formatApptTime(value) {
+  if (!value) return '-';
+  try {
+    return new Date(value).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  } catch (e) {
+    return String(value);
+  }
+}
+
+function formatTime(value) {
+  if (!value) return '-';
+  try {
+    return `${formatDate(value)} ${new Date(value).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+  } catch (e) {
+    return String(value);
+  }
+}
+
+function toast(message, isError = false) {
+  const host = document.getElementById('toastContainer');
+  if (!host) return;
+  const node = document.createElement('div');
+  node.className = 'toast' + (isError ? ' error' : '');
+  node.innerHTML = `<i class="fa-solid ${isError ? 'fa-circle-xmark' : 'fa-circle-check'} toast-icon"></i><span class="toast-text">${message}</span>`;
+  host.appendChild(node);
+  setTimeout(() => node.classList.add('show'), 30);
+  setTimeout(() => {
+    node.classList.remove('show');
+    setTimeout(() => node.remove(), 350);
+  }, 3200);
+}
+
+function updateAlertBadge(count) {
+  const badge = document.getElementById('alertBadge');
+  if (!badge) return;
+  if (count > 0) {
+    badge.style.display = 'flex';
+    badge.textContent = count;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function statusBadge(status) {
+  const map = {
+    registered: 'blue',
+    screening_completed: 'indigo',
+    awaiting_assignment: 'orange',
+    assigned: 'teal',
+    active: 'green',
+    completed: 'gray',
+    terminated: 'red',
+    cancelled: 'red',
+    scheduled: 'blue',
+    no_show: 'orange',
+    paid: 'green',
+    partial: 'indigo',
+    pending: 'gray'
+  };
+  return `<span class="badge badge-${map[status] || 'gray'}">${String(status || 'unknown').replace(/_/g, ' ')}</span>`;
+}
+
+function riskBadge(level) {
+  const map = { low: 'green', medium: 'orange', high: 'red' };
+  return `<span class="badge badge-${map[level] || 'gray'}">${level || 'low'}</span>`;
+}
+
+function invStatusBadge(status) {
+  const map = { pending: 'orange', paid: 'green', partial: 'indigo', overdue: 'red' };
+  return `<span class="badge badge-${map[status] || 'gray'}">${String(status || 'pending').replace(/_/g, ' ')}</span>`;
+}
+
+function hashHue(seed) {
+  const text = String(seed || '0');
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) hash = ((hash << 5) - hash) + text.charCodeAt(i);
+  return Math.abs(hash) % 360;
+}
+
+function appointmentPalette(seed) {
+  const hue = hashHue(seed);
+  return {
+    base: `hsl(${hue} 72% 46%)`,
+    dark: `hsl(${hue} 72% 34%)`,
+    soft: `hsla(${hue}, 72%, 46%, .16)`,
+    softStrong: `hsla(${hue}, 72%, 46%, .24)`
+  };
+}
+
+function appointmentVisual(a) {
+  const pal = appointmentPalette(a.therapist_id || a.therapist_name || 'appt');
+  const status = String(a.status || '').toLowerCase();
+  const scope = String(a.change_scope || '').toLowerCase();
+  if (status === 'cancelled') {
+    return { palette: { base: 'hsl(215 15% 58%)', dark: 'hsl(215 15% 40%)', soft: 'rgba(148,163,184,.14)', softStrong: 'rgba(148,163,184,.22)' }, cls: 'appt-cancelled', label: 'Cancelled' };
+  }
+  if (scope === 'temporary') {
+    return { palette: { base: 'hsl(45 95% 52%)', dark: 'hsl(38 92% 40%)', soft: 'rgba(245,158,11,.14)', softStrong: 'rgba(245,158,11,.22)' }, cls: 'appt-temporary', label: 'Temporary change' };
+  }
+  if (scope === 'permanent') {
+    return { palette: { base: 'hsl(45 90% 48%)', dark: 'hsl(40 86% 36%)', soft: 'rgba(255,191,0,.15)', softStrong: 'rgba(255,191,0,.25)' }, cls: '', label: 'Permanent change' };
+  }
+  return { palette: pal, cls: '', label: a.therapist_name || 'Therapist' };
+}
+
+function roomLabel(a) {
+  return a?.room_name || a?.room_code || 'Room not set';
+}
+
+function isFinalAppointmentStatus(status) {
+  return ['completed', 'cancelled', 'no_show'].includes(String(status || '').toLowerCase());
+}
+
+function formatRoomOption(room) {
+  return `${room?.name || 'Room'}${room?.code ? ` (${room.code})` : ''}`;
+}
+
+function formatRoomChip(room, state = 'available') {
+  const label = formatRoomOption(room);
+  const color = room?.color || 'var(--navy)';
+  const baseBg = state === 'busy' ? `${color}12` : `${color}18`;
+  const cls = state === 'busy' ? 'busy' : state === 'selected' ? 'selected' : 'available';
+  return `<span class="room-chip ${cls}" style="border-color:${color};color:${color};background:${baseBg}">${label}</span>`;
+}
+
+async function loadRooms() {
+  try {
+    const r = await apiFetch('/api/rooms');
+    allRooms = await r.json();
+  } catch (e) {
+    allRooms = [];
+  }
+}
+
+async function loadBookingRoomAvailability() {
+  const roomSelect = document.getElementById('bookRoom');
+  const panel = document.getElementById('bookRoomChips');
+  if (!roomSelect || !panel) return;
+  const date = document.getElementById('bookDate')?.value;
+  const start = document.getElementById('bookStart')?.value;
+  const end = document.getElementById('bookEnd')?.value || start;
+  if (!date || !start) {
+    roomSelect.innerHTML = '<option value="">Choose a date and time first</option>';
+    panel.innerHTML = '<span class="room-chip neutral">Pick a date and time to see room availability</span>';
+    return;
+  }
+  try {
+    const params = new URLSearchParams({ start: `${date}T${start}:00`, end: `${date}T${end}:00` });
+    const r = await apiFetch(`/api/rooms/available?${params.toString()}`);
+    const data = await r.json();
+    const available = data.rooms || [];
+    const availableIds = new Set(available.map(room => String(room.id)));
+    roomSelect.innerHTML = '<option value="">Auto-assign best available room</option>' + allRooms.map(room => {
+      const isAvail = availableIds.has(String(room.id));
+      return `<option value="${room.id}" ${isAvail ? '' : 'disabled'}>${formatRoomOption(room)}${isAvail ? '' : ' - busy'}</option>`;
+    }).join('');
+    panel.innerHTML = available.length
+      ? available.map(room => formatRoomChip(room, 'available')).join('')
+      : '<span class="room-chip busy">No therapy room is free for this slot</span>';
+  } catch (e) {
+    roomSelect.innerHTML = '<option value="">Room availability unavailable</option>';
+    panel.innerHTML = '<span class="room-chip neutral">Room availability could not be loaded</span>';
+  }
+}
+
+async function loadRoomAvailability(startValue, endValue, selectedRoomId) {
+  const panel = document.getElementById('apptRoomChips');
+  const roomSelect = document.getElementById('apptEditorRoom');
+  if (!panel || !roomSelect) return;
+  if (!startValue) {
+    panel.innerHTML = '<span class="room-chip neutral">Pick a date and time to check availability</span>';
+    roomSelect.innerHTML = '<option value="">Select a room after choosing a time</option>';
+    return;
+  }
+  try {
+    const params = new URLSearchParams({ start: startValue, end: endValue || startValue });
+    const apptId = document.getElementById('apptEditorId')?.value;
+    if (apptId) params.set('appointment_id', apptId);
+    const r = await apiFetch(`/api/rooms/available?${params.toString()}`);
+    const data = await r.json();
+    const available = data.rooms || [];
+    const availableIds = new Set(available.map(room => String(room.id)));
+    roomSelect.innerHTML = '<option value="">Auto-assign best available room</option>' + allRooms.map(room => {
+      const isAvail = availableIds.has(String(room.id));
+      const isSelected = String(selectedRoomId || roomSelect.value) === String(room.id);
+      return `<option value="${room.id}" ${isSelected ? 'selected' : ''} ${isAvail ? '' : 'disabled'}>${formatRoomOption(room)}${isAvail ? '' : ' - busy'}</option>`;
+    }).join('');
+    panel.innerHTML = available.length
+      ? available.map(room => formatRoomChip(room, String(selectedRoomId || roomSelect.value) === String(room.id) ? 'selected' : 'available')).join('')
+      : '<span class="room-chip busy">No rooms are available for this slot</span>';
+  } catch (e) {
+    panel.innerHTML = '<span class="room-chip neutral">Room availability could not be loaded</span>';
+  }
+}
+
+function refreshAppointmentRoomAvailability() {
+  const startValue = document.getElementById('apptEditorDateTime')?.value;
+  const endValue = document.getElementById('apptEditorEndTime')?.value || startValue;
+  const roomSelect = document.getElementById('apptEditorRoom');
+  loadRoomAvailability(startValue, endValue, roomSelect?.value);
+}
+
+function setApptEditorMode(mode) {
+  const scope = mode === 'permanent' ? 'permanent' : 'temporary';
+  document.getElementById('apptEditorScope').value = scope;
+  document.getElementById('apptEditorStatus').value = mode === 'cancelled' ? 'cancelled' : (mode === 'no_show' ? 'no_show' : 'scheduled');
+  document.getElementById('apptModeTemp')?.classList.toggle('active', mode === 'temporary');
+  document.getElementById('apptModePerm')?.classList.toggle('active', mode === 'permanent');
+  document.getElementById('apptModeCancel')?.classList.toggle('active', mode === 'cancelled');
+  document.getElementById('apptModeNoShow')?.classList.toggle('active', mode === 'no_show');
+  const saveBtn = document.getElementById('apptEditorSaveBtn');
+  const note = document.getElementById('apptEditorNote');
+  const timeGroup = document.querySelector('.appt-editor-time-group');
+  if (timeGroup) timeGroup.classList.toggle('appt-editor-hidden', mode === 'cancelled' || mode === 'no_show');
+  if (mode === 'cancelled') {
+    if (note) note.innerHTML = '<strong>Cancellation:</strong> add the reason so reception and Telegram get the same update.';
+    if (saveBtn) {
+      saveBtn.textContent = 'Cancel Session';
+      saveBtn.className = 'btn btn-danger appt-editor-save';
+    }
+  } else if (mode === 'no_show') {
+    if (note) note.innerHTML = '<strong>No-show:</strong> record the reason and notify the team without changing the date.';
+    if (saveBtn) {
+      saveBtn.textContent = 'Mark No-show';
+      saveBtn.className = 'btn btn-warning appt-editor-save';
+    }
+  } else {
+    if (note) note.innerHTML = mode === 'permanent'
+      ? '<strong>Permanent change:</strong> updates this session and the recurring pattern.'
+      : '<strong>Temporary change:</strong> updates this appointment only.';
+    if (saveBtn) {
+      saveBtn.textContent = mode === 'permanent' ? 'Save Permanent Change' : 'Save Temporary Change';
+      saveBtn.className = 'btn btn-danger appt-editor-save';
+    }
+  }
+}
+
+function openAppointmentEditor(apptId, mode = 'temporary') {
+  const appt = allAppointments.find(a => String(a.id) === String(apptId));
+  if (!appt) {
+    toast('Appointment not found', true);
+    return;
+  }
+  document.getElementById('apptEditorId').value = appt.id;
+  document.getElementById('apptEditorDateTime').value = appt.start_time ? new Date(appt.start_time).toISOString().slice(0, 16) : '';
+  document.getElementById('apptEditorEndTime').value = appt.end_time ? new Date(appt.end_time).toISOString().slice(0, 16) : '';
+  document.getElementById('apptEditorReason').value = appt.change_reason || appt.cancel_reason || '';
+  document.getElementById('apptEditorRoom').value = appt.room_id || '';
+  document.getElementById('apptEditorOverlay').classList.add('active');
+  document.getElementById('apptEditorModal').classList.add('active');
+  vcInit();
+  setTimeout(vcRender, 100);
+  setApptEditorMode(mode);
+  document.getElementById('apptEditorTitle').textContent = `${appt.client_name || 'Session'}${appt.client_code ? ' - ' + appt.client_code : ''}`;
+  document.getElementById('apptEditorSubtitle').textContent = `${formatDate(appt.start_time)} ${formatApptTime(appt.start_time)} - ${appt.location || 'Location not set'} - ${roomLabel(appt)} - ${appt.therapist_name || 'Therapist'}`;
+  refreshAppointmentRoomAvailability();
+}
+
+function closeAppointmentEditor() {
+  document.getElementById('apptEditorOverlay').classList.remove('active');
+  document.getElementById('apptEditorModal').classList.remove('active');
+}
+
+async function saveAppointmentEditor() {
+  const id = document.getElementById('apptEditorId').value;
+  const scope = document.getElementById('apptEditorScope').value || 'temporary';
+  const status = document.getElementById('apptEditorStatus').value || 'scheduled';
+  const reason = document.getElementById('apptEditorReason').value.trim();
+  const roomId = document.getElementById('apptEditorRoom')?.value || '';
+  if (!id) {
+    toast('No appointment selected', true);
+    return;
+  }
+  const body = { reason };
+  if (status === 'cancelled') {
+    if (!reason) {
+      toast('Please add a cancellation reason', true);
+      return;
+    }
+    body.status = 'cancelled';
+    body.cancel_reason = reason;
+    body.action = 'cancelled';
+  } else if (status === 'no_show') {
+    if (!reason) {
+      toast('Please add a no-show reason', true);
+      return;
+    }
+    body.status = 'no_show';
+    body.reason = reason;
+    body.action = 'no_show';
+  } else {
+    const dt = document.getElementById('apptEditorDateTime').value;
+    if (!dt) {
+      toast('Please choose a new date and time', true);
+      return;
+    }
+    body.start_time = new Date(dt).toISOString();
+    const end = document.getElementById('apptEditorEndTime').value;
+    if (end) body.end_time = new Date(end).toISOString();
+    if (roomId) body.room_id = roomId;
+    body.change_reason = reason;
+    body.change_scope = scope;
+    body.action = 'changed';
+  }
+  const r = await apiFetch(`/api/appointments/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const d = await r.json();
+  if (d.success) {
+    closeAppointmentEditor();
+    toast(status === 'cancelled' ? 'Appointment cancelled' : (scope === 'permanent' ? 'Permanent change saved' : 'Temporary change saved'));
+    loadTodaySchedule();
+    loadAppointments();
+    renderCalendar();
+  } else {
+    toast(d.error || 'Update failed', true);
+  }
+}
+
+async function loadAppointments() {
+  const startEl = document.getElementById('apptFilterStart');
+  const endEl = document.getElementById('apptFilterEnd');
+  if (startEl && !startEl.value) {
+    const today = new Date();
+    const future = new Date(today);
+    future.setMonth(future.getMonth() + 6);
+    startEl.value = today.toISOString().split('T')[0];
+    if (endEl && !endEl.value) endEl.value = future.toISOString().split('T')[0];
+  }
+  const start = startEl?.value;
+  const end = endEl?.value;
+  const status = document.getElementById('apptFilterStatus')?.value;
+  const params = new URLSearchParams();
+  if (start) params.set('start', start);
+  if (end) params.set('end', end);
+  try {
+    const r = await apiFetch(`/api/appointments?${params.toString()}`);
+    const data = await r.json();
+    const unique = [];
+    const seen = new Set();
+    for (const appt of data) {
+      const key = String(appt.id || `${appt.client_id}-${appt.start_time}`);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      unique.push(appt);
+    }
+    allAppointments = unique;
+    const filtered = (status ? unique.filter(a => a.status === status) : unique).sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+    const tb = document.getElementById('apptTableBody');
+    if (!tb) return;
+    if (!filtered.length) {
+      tb.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted)">No appointments found</td></tr>`;
+      return;
+    }
+    tb.innerHTML = filtered.map(a => {
+      const visual = appointmentVisual(a);
+      return `
+        <tr style="box-shadow:inset 4px 0 0 ${visual.palette.base}">
+          <td style="border-left:4px solid ${visual.palette.base}">
+            <div style="font-weight:700">${formatDate(a.start_time)}</div>
+            <div style="font-size:11px;color:var(--text-muted)">${formatApptTime(a.start_time)}</div>
+          </td>
+          <td>
+            <button class="btn btn-ghost btn-sm" style="padding:0;background:none;border:none;color:var(--navy);font-weight:800" onclick="openClientDrawer(${a.client_id});event.stopPropagation()">${a.client_name || '-'}</button>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px">${a.client_code || ''}</div>
+          </td>
+          <td><span class="appt-color-chip" style="background:${visual.palette.base}">${a.therapist_name || '-'}</span></td>
+          <td>
+            <span class="badge badge-blue">${a.type}</span>
+            ${a.change_scope ? ` <span class="badge badge-${a.change_scope === 'permanent' ? 'gold' : 'orange'}">${a.change_scope}</span>` : ''}
+            <div style="margin-top:4px"><span class="badge badge-gray">${roomLabel(a)}</span></div>
+          </td>
+          <td>${statusBadge(a.status)}</td>
+          <td>${a.location || '-'}</td>
+          <td style="display:flex;gap:4px;flex-wrap:wrap">
+            ${isFinalAppointmentStatus(a.status)
+              ? `<span style="font-size:12px;color:var(--text-muted);font-weight:600;padding:6px 0">Finalized</span>`
+              : `<button class="btn btn-sm btn-outline" onclick="changeAppt(${a.id},'temporary')" title="Temporary change"><i class="fa-solid fa-clock-rotate-left"></i></button>
+                 <button class="btn btn-sm btn-gold" onclick="changeAppt(${a.id},'permanent')" title="Permanent change"><i class="fa-solid fa-calendar-days"></i></button>
+                 <button class="btn btn-sm btn-warning" onclick="changeAppt(${a.id},'no_show')" title="No-show"><i class="fa-solid fa-user-slash"></i></button>
+                 <button class="btn btn-sm btn-danger" onclick="changeAppt(${a.id},'cancelled')" title="Cancel"><i class="fa-solid fa-ban"></i></button>`}
+          </td>
+        </tr>`;
+    }).join('');
+  } catch (e) {}
+}
+
+async function updateApptStatus(id, status) {
+  if (status === 'cancelled') {
+    openAppointmentEditor(id, 'cancelled');
+    return;
+  }
+  await apiFetch(`/api/appointments/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status, action: status })
+  });
+  toast('Appointment updated');
+  loadTodaySchedule();
+  loadAppointments();
+  renderCalendar();
+}
+
+function changeAppt(id, scope = 'temporary') {
+  openAppointmentEditor(id, scope);
+}
+
+function openBookModal() {
+  const overlay = document.getElementById('bookOverlay');
+  const modal = document.getElementById('bookModal');
+  if (overlay) overlay.classList.add('active');
+  if (modal) modal.classList.add('active');
+  bookClientSearch = '';
+  bookVcView = 'day';
+  const today = new Date();
+  const max = new Date(today);
+  max.setMonth(max.getMonth() + 6);
+  const bookDate = document.getElementById('bookDate');
+  if (bookDate) {
+    bookDate.value = today.toISOString().split('T')[0];
+    bookDate.min = today.toISOString().split('T')[0];
+    bookDate.max = max.toISOString().split('T')[0];
+  }
+  const hiddenClient = document.getElementById('bookClient');
+  if (hiddenClient) hiddenClient.value = '';
+  const searchEl = document.getElementById('bookClientSearch');
+  if (searchEl) searchEl.value = '';
+  const selectedEl = document.getElementById('bookClientSelected');
+  if (selectedEl) {
+    selectedEl.textContent = '';
+    selectedEl.style.display = 'none';
+  }
+  const therapistSel = document.getElementById('bookTherapist');
+  apiFetch('/api/users').then(r => r.json()).then(users => {
+    const therapists = users.filter(u => u.role === 'therapist' && u.is_active);
+    if (therapistSel) therapistSel.innerHTML = '<option value="">Select therapist...</option>' + therapists.map(t => `<option value="${t.id}">${t.full_name}</option>`).join('');
+  }).catch(() => {});
+  bookVcInit();
+  loadRooms().then(() => loadBookingRoomAvailability());
+  ['bookDate', 'bookStart', 'bookEnd'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.onchange = loadBookingRoomAvailability;
+  });
+  renderBookClientPicker();
+}
+
+function closeBookModal() {
+  document.getElementById('bookOverlay')?.classList.remove('active');
+  document.getElementById('bookModal')?.classList.remove('active');
+}
+
+async function bookAppointment() {
+  const cid = document.getElementById('bookClient').value;
+  const tid = document.getElementById('bookTherapist').value;
+  const date = document.getElementById('bookDate').value || document.getElementById('bookVcDateTime').value?.slice?.(0, 10);
+  const start = document.getElementById('bookStart').value || document.getElementById('bookVcDateTime').value?.slice?.(11, 16);
+  const end = document.getElementById('bookEnd').value || document.getElementById('bookVcEndTime').value?.slice?.(11, 16);
+  if (!cid || !tid || !date || !start) {
+    toast('Please fill all required fields', true);
+    return;
+  }
+  const body = {
+    client_id: cid,
+    therapist_id: tid,
+    start_time: `${date}T${start}:00`,
+    end_time: `${date}T${end || start}:00`,
+    type: document.getElementById('bookType').value,
+    location: document.getElementById('bookLocation').value,
+    notes: document.getElementById('bookNotes').value,
+    is_recurring: document.getElementById('bookRecurring').checked
+  };
+  const roomId = document.getElementById('bookRoom')?.value || '';
+  if (roomId) body.room_id = roomId;
+  const r = await apiFetch('/api/appointments', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const d = await r.json();
+  if (d.success) {
+    closeBookModal();
+    toast('Appointment booked!');
+    loadTodaySchedule();
+    loadAppointments();
+    renderCalendar();
+  } else {
+    toast(d.error || 'Booking failed', true);
+  }
+}
+
+function switchFinTab(tab) {
+  const invoices = document.getElementById('finInvoices');
+  const revenue = document.getElementById('finRevenue');
+  if (invoices) invoices.style.display = tab === 'invoices' ? 'block' : 'none';
+  if (revenue) revenue.style.display = tab === 'revenue' ? 'block' : 'none';
+}
+
+async function loadInvoices() {
+  try {
+    const r = await apiFetch('/api/invoices');
+    allInvoices = await r.json();
+    const tb = document.getElementById('invoiceTableBody');
+    if (!tb) return;
+    if (!allInvoices.length) {
+      tb.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted)">No invoices found</td></tr>`;
+      return;
+    }
+    tb.innerHTML = allInvoices.map(i => `
+      <tr>
+        <td><strong>${i.client_name || '-'}</strong><br><span style="font-size:11px;color:var(--text-muted)">${i.client_code || ''}</span></td>
+        <td>${i.service_name || '-'}</td>
+        <td style="font-weight:700">ETB ${(i.amount || 0).toLocaleString()}</td>
+        <td>${invStatusBadge(i.status)}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${formatDate(i.due_date)}</td>
+        <td>${i.status === 'pending'
+          ? `<button class="btn btn-sm btn-success" onclick="openPaymentFor(${i.id},${i.client_id})"><i class="fa-solid fa-credit-card"></i>Pay</button>`
+          : '<span style="color:var(--text-muted);font-size:12px">Settled</span>'}</td>
+      </tr>`).join('');
+  } catch (e) {}
+}
+
+function openInvoiceModal() {
+  document.getElementById('invoiceOverlay')?.classList.add('active');
+  document.getElementById('invoiceModal')?.classList.add('active');
+  const sel = document.getElementById('invClient');
+  if (sel) sel.innerHTML = '<option value="">Select client...</option>' + allClients.map(c => `<option value="${c.id}">${c.full_name} (${c.client_code})</option>`).join('');
+  apiFetch('/api/services').then(r => r.json()).then(services => {
+    const svc = document.getElementById('invService');
+    if (!svc) return;
+    svc.innerHTML = '<option value="">Select service...</option>' + services.map(s => `<option value="${s.id}" data-price="${s.price}">${s.name} (ETB ${s.price})</option>`).join('');
+    svc.onchange = function () {
+      const opt = this.options[this.selectedIndex];
+      if (opt?.dataset?.price) document.getElementById('invAmount').value = opt.dataset.price;
+    };
+  }).catch(() => {});
+}
+
+function closeInvoiceModal() {
+  document.getElementById('invoiceOverlay')?.classList.remove('active');
+  document.getElementById('invoiceModal')?.classList.remove('active');
+}
+
+async function createInvoice() {
+  const body = {
+    client_id: document.getElementById('invClient').value,
+    service_id: document.getElementById('invService').value,
+    amount: document.getElementById('invAmount').value,
+    notes: document.getElementById('invNotes').value
+  };
+  const r = await apiFetch('/api/invoices', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const d = await r.json();
+  if (d.success) {
+    closeInvoiceModal();
+    toast('Invoice created!');
+    loadInvoices();
+  } else {
+    toast(d.error || 'Failed', true);
+  }
+}
+
+function openPaymentFor(invoiceId, clientId) {
+  document.getElementById('payInvoiceId').value = invoiceId;
+  document.getElementById('payClientId').value = clientId;
+  document.getElementById('paymentOverlay')?.classList.add('active');
+  document.getElementById('paymentModal')?.classList.add('active');
+}
+
+function openInvoiceForClient(cid) {
+  closeClientDrawer();
+  showSection('finance');
+  setTimeout(() => openInvoiceModal(), 300);
+}
+
+function closePaymentModal() {
+  document.getElementById('paymentOverlay')?.classList.remove('active');
+  document.getElementById('paymentModal')?.classList.remove('active');
+}
+
+async function submitPayment() {
+  const body = {
+    invoice_id: document.getElementById('payInvoiceId').value,
+    client_id: document.getElementById('payClientId').value,
+    amount_paid: document.getElementById('payAmount').value,
+    payment_method: document.getElementById('payMethod').value,
+    invoice_status: document.getElementById('payStatus').value,
+    notes: document.getElementById('payNotes').value
+  };
+  const r = await apiFetch('/api/payments', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const d = await r.json();
+  if (d.success) {
+    closePaymentModal();
+    toast('Payment recorded!');
+    loadInvoices();
+  } else {
+    toast(d.error || 'Failed', true);
+  }
+}
+
+function parseNotificationBody(message) {
+  const lines = String(message?.body || '').split(/\r?\n/);
+  const fields = {};
+  for (const line of lines) {
+    const match = line.match(/^([^:]+):\s*(.*)$/);
+    if (match) fields[match[1].trim().toLowerCase()] = match[2].trim();
+  }
+  return { lines, fields };
+}
+
+function notificationTone(subject = '') {
+  const s = String(subject).toLowerCase();
+  if (s.includes('completed')) return { icon: 'fa-circle-check', color: 'var(--success)', bg: 'rgba(16,185,129,.1)', badge: 'badge-green', label: 'Completed' };
+  if (s.includes('cancel')) return { icon: 'fa-ban', color: 'var(--danger)', bg: 'rgba(239,68,68,.1)', badge: 'badge-red', label: 'Cancelled' };
+  if (s.includes('resched') || s.includes('change')) return { icon: 'fa-arrows-rotate', color: 'var(--info)', bg: 'rgba(59,130,246,.1)', badge: 'badge-blue', label: 'Rescheduled' };
+  if (s.includes('no-show')) return { icon: 'fa-triangle-exclamation', color: 'var(--warning)', bg: 'rgba(245,158,11,.12)', badge: 'badge-orange', label: 'No Show' };
+  if (s.includes('pending')) return { icon: 'fa-clock', color: 'var(--text-muted)', bg: 'rgba(100,116,139,.1)', badge: 'badge-gray', label: 'Pending' };
+  return { icon: 'fa-bell', color: 'var(--navy)', bg: 'rgba(4,48,105,.08)', badge: 'badge-indigo', label: 'Update' };
+}
+
+function notificationCard(message) {
+  const parsed = parseNotificationBody(message);
+  const tone = notificationTone(message.subject || '');
+  const f = parsed.fields;
+  const bodyDetails = [
+    f['date/time'] || f['new date/time'] || f['previous date/time'] || '',
+    f['end time'] || f['new end time'] || '',
+    f['reason'] || '',
+    f['scope'] || ''
+  ].filter(Boolean).join(' - ');
+  const rows = [
+    ['Client code', f['client code'] || '-'],
+    ['Therapist', f['therapist'] || '-'],
+    ['Room', f['room'] || '-'],
+    ['Appointment date', f['date/time'] || f['new date/time'] || '-'],
+    ['Time', f['date/time'] || f['new date/time'] || '-'],
+    ['Action performed', message.subject || 'Notification'],
+    ['Reason', f['reason'] || 'Not provided'],
+    ['Timestamp', formatDate(message.sent_at)]
+  ];
+  return `
+    <div class="notify-card">
+      <div class="notify-head">
+        <div class="notify-icon" style="background:${tone.bg};color:${tone.color}">
+          <i class="fa-solid ${tone.icon}"></i>
+        </div>
+        <div class="notify-main">
+          <div class="notify-title-row">
+            <div class="notify-title">${message.subject || 'Notification'}</div>
+            <div class="notify-time">${formatDate(message.sent_at)}</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+            <span class="badge ${tone.badge}">${tone.label}</span>
+            <span class="badge badge-gray">${message.sender_name || 'System'}</span>
+          </div>
+          ${bodyDetails ? `<div class="notify-body" style="margin-top:10px">${bodyDetails}</div>` : ''}
+        </div>
+      </div>
+      <div class="notify-grid">
+        ${rows.map(([label, value]) => `
+          <div class="notify-field">
+            <div class="notify-field-label">${label}</div>
+            <div class="notify-field-value">${value || '-'}</div>
+          </div>`).join('')}
+      </div>
+      <div class="notify-footer">
+        ${f['current status'] ? `<span class="badge badge-indigo">Current status: ${f['current status']}</span>` : ''}
+        ${f['scope'] ? `<span class="badge badge-gold">${f['scope']}</span>` : ''}
+        ${f['previous date/time'] ? `<span class="badge badge-gray">Previous slot recorded</span>` : ''}
+      </div>
+    </div>`;
+}
+
+async function loadMessages() {
+  try {
+    const r = await apiFetch('/api/messages');
+    const msgs = await r.json();
+    const list = document.getElementById('msgList');
+    if (list) list.innerHTML = msgs.map(m => notificationCard(m)).join('') || '<p style="text-align:center;color:var(--text-muted);padding:20px">No messages</p>';
+    const usersRes = await apiFetch('/api/users');
+    const users = await usersRes.json();
+    const to = document.getElementById('msgTo');
+    if (to) to.innerHTML = '<option value="">Select recipient...</option>' + users.map(u => `<option value="${u.id}">${u.full_name} (${u.role})</option>`).join('');
+  } catch (e) {}
+}
+
+function showCompose() {}
+
+async function sendMsg() {
+  const body = {
+    recipient_id: document.getElementById('msgTo').value,
+    subject: document.getElementById('msgSubject').value,
+    body: document.getElementById('msgBody').value
+  };
+  if (!body.recipient_id || !body.subject) {
+    toast('Fill all fields', true);
+    return;
+  }
+  const r = await apiFetch('/api/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const d = await r.json();
+  if (d.success) {
+    toast('Message sent!');
+    document.getElementById('msgSubject').value = '';
+    document.getElementById('msgBody').value = '';
+    loadMessages();
+  } else {
+    toast(d.error || 'Failed', true);
+  }
+}
+
+let currentStep = 1;
+
+function nextStep(step) {
+  if (step > 1 && !validateStep(currentStep)) return;
+  currentStep = step;
+  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('step'+step).classList.add('active');
+
+  [1,2,3].forEach(i => {
+    const dot = document.getElementById('step'+i+'dot');
+    dot.className = 'step-dot' + (i < step ? ' done' : i === step ? ' active' : '');
+    if (i < 3) document.getElementById('line'+i).className = 'step-line' + (i < step ? ' done' : '');
+  });
+
+  if (step === 3) buildReview();
+}
+
+function validateStep(step) {
+  if (step === 1) {
+    const required = ['nc_name','nc_dob','nc_gender','nc_phone','nc_ecname','nc_ecphone'];
+    for (const id of required) {
+      if (!document.getElementById(id)?.value.trim()) { toast('Please fill all required fields (*)', true); return false; }
+    }
+  }
+  return true;
+}
+
+function buildReview() {
+  const rows = [
+    ['Full Name', document.getElementById('nc_name').value],
+    ['Date of Birth', document.getElementById('nc_dob').value],
+    ['Gender', document.getElementById('nc_gender').value],
+    ['Phone', document.getElementById('nc_phone').value],
+    ['Email', document.getElementById('nc_email').value||'-'],
+    ['Address', document.getElementById('nc_address').value||'-'],
+    ['Emergency Contact', document.getElementById('nc_ecname').value + ' - ' + document.getElementById('nc_ecphone').value],
+    ['Language Preference', document.getElementById('nc_lang').value],
+    ['Therapist Gender Pref', document.getElementById('nc_genderpref').value],
+    ['Intake Source', document.getElementById('nc_source').value],
+    ['Presenting Concerns', document.getElementById('nc_concerns').value||'-'],
+  ];
+  document.getElementById('reviewContent').innerHTML = rows.map(([l,v])=>
+    `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:12px;font-weight:700;color:var(--text-muted)">${l}</span>
+      <span style="font-size:13px;font-weight:600;max-width:60%;text-align:right">${v}</span>
+    </div>`).join('');
+}
+
+async function registerClient() {
+  const btn = document.getElementById('registerBtn');
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registering...';
+  btn.disabled = true;
+  const body = {
+    full_name: document.getElementById('nc_name').value,
+    date_of_birth: document.getElementById('nc_dob').value,
+    gender: document.getElementById('nc_gender').value,
+    phone: document.getElementById('nc_phone').value,
+    email: document.getElementById('nc_email').value,
+    address: document.getElementById('nc_address').value,
+    emergency_contact_name: document.getElementById('nc_ecname').value,
+    emergency_contact_phone: document.getElementById('nc_ecphone').value,
+    language_pref: document.getElementById('nc_lang').value,
+    therapist_gender_pref: document.getElementById('nc_genderpref').value,
+    intake_source: document.getElementById('nc_source').value,
+    notes: document.getElementById('nc_notes').value,
+  };
+  try {
+    const r = await apiFetch('/api/clients', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data = await r.json();
+    if (data.success) {
+      document.querySelectorAll('.step-panel').forEach(p=>p.classList.remove('active'));
+      document.getElementById('step4').classList.add('active');
+      document.getElementById('newClientCode').textContent = data.client_code;
+      await loadAllClients();
+      toast('Client registered successfully!');
+    }
+  } catch(e){ toast('Registration failed', true); }
+  btn.disabled = false;
+}
+
+function resetClientForm() {
+  ['nc_name','nc_dob','nc_phone','nc_email','nc_address','nc_ecname','nc_ecphone','nc_concerns','nc_notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  currentStep = 1;
+  nextStep(1);
+}
+
+// â”€â”€â”€ Smart Assignment â”€â”€â”€
+async function loadAssignQueue() {
+  try {
+    const r = await apiFetch('/api/clients');
+    const clients = await r.json();
+    const pending = clients.filter(c => ['registered','screening_completed','awaiting_assignment'].includes(c.status) && !c.assigned_therapist_id);
+    const el = document.getElementById('assignQueue');
+    if (!pending.length) {
+      el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--success)"><i class="fa-solid fa-circle-check" style="font-size:32px;margin-bottom:10px"></i><p style="font-weight:700">All clients assigned!</p></div>`;
+    } else {
+      el.innerHTML = pending.map(c => `
+        <div class="queue-card" id="qc-${c.id}" onclick="selectAssignClient(${c.id})">
+          <div class="queue-name">${c.full_name} <span class="queue-code">${c.client_code}</span></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+            ${riskBadge(c.risk_level)}<span class="badge badge-blue">${c.language_pref}</span>
+            <span class="badge badge-gray">${c.therapist_gender_pref}</span>
+          </div>
+        </div>`).join('');
+    }
+  } catch(e){}
+}
+
+async function selectAssignClient(cid) {
+  selectedAssignClient = cid;
+  document.querySelectorAll('.queue-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('qc-'+cid)?.classList.add('selected');
+
+  document.getElementById('recPlaceholder').style.display='none';
+  document.getElementById('recResults').style.display='block';
+  document.getElementById('recList').innerHTML = '<div style="text-align:center;padding:30px"><i class="fa-solid fa-spinner fa-spin" style="font-size:24px;color:var(--navy)"></i><p style="margin-top:10px;color:var(--text-muted)">Analyzing match criteria...</p></div>';
+
+  const client = allClients.find(c=>c.id===cid);
+  if(client) document.getElementById('selectedClientBadge').innerHTML = `<span style="font-size:13px;font-weight:700;color:var(--navy)">${client.full_name}</span>`;
+
+  try {
+    const r = await apiFetch('/api/assign/recommend', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({client_id:cid})});
+    const data = await r.json();
+    const recs = data.recommendations;
+    if (!recs.length) { document.getElementById('recList').innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px">No therapists available</p>'; return; }
+    document.getElementById('recList').innerHTML = recs.map(t => {
+      const score = t.match_score;
+      const cls = score>=80?'match-high':score>=60?'match-mid':'match-low';
+      const fillColor = score>=80?'var(--success)':score>=60?'var(--warning)':'var(--danger)';
+      const pct = Math.min(100,(t.caseload/Math.max(t.max_caseload,1))*100);
+      return `<div class="rec-card">
+        <div class="rec-header">
+          <div class="rec-avatar">${(t.full_name||'?')[0]}</div>
+          <div>
+            <div style="font-size:15px;font-weight:800">${t.full_name}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${t.specialization||'General Counseling'}</div>
+            <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+              ${(t.languages||'English').split(',').map(l=>`<span class="badge badge-teal">${l.trim()}</span>`).join('')}
+              ${t.gender?`<span class="badge badge-blue">${t.gender}</span>`:''}
+            </div>
+          </div>
+          <div class="match-badge ${cls}">${score}%</div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+            <span style="color:var(--text-muted);font-weight:600">CASELOAD</span>
+            <span style="font-weight:700">${t.caseload}/${t.max_caseload}</span>
+          </div>
+        </div>
+      </div>`}).join('');
+    document.getElementById('assignmentModal').classList.add('active');
+  } catch(e) {
+    console.error('Error loading recommendations', e);
+  }
+}
+
+async function showSectionClient(id, tab) {
+  currentClientView = id;
+  const el = document.getElementById('cd-content');
+  if(!currentClientData || currentClientData.client.id !== id) {
+    try {
+      const r = await apiFetch(`/api/reception/clients/${id}`);
+      currentClientData = await r.json();
+    } catch(e){
+      el.innerHTML = '<p style="color:red">Failed to load client details</p>';
+      return;
+    }
+  }
+  const data = currentClientData;
+  const c = data.client;
+
+  if (tab==='profile') {
+    const c = data.client;
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding:16px;background:var(--bg);border-radius:12px">
+        <div style="width:56px;height:56px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800">${c.full_name[0]}</div>
+        <div><div style="font-size:17px;font-weight:800">${c.full_name}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${c.client_code} • Registered ${formatDate(c.registration_date)}</div>
+          <div style="margin-top:6px;display:flex;gap:6px">${statusBadge(c.status)}${riskBadge(c.risk_level)}</div></div>
+      </div>
+      ${infoRow('Language',c.language_pref)}${infoRow('Therapist Preference',c.therapist_gender_pref)}
+      ${infoRow('Intake Source',c.intake_source)}${infoRow('Assigned Therapist',c.therapist_name||'Unassigned')}
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn btn-gold btn-sm" onclick="selectAndAssign(${c.id})"><i class="fa-solid fa-user-check"></i>Assign Therapist</button>
+        <button class="btn btn-outline btn-sm" onclick="openInvoiceForClient(${c.id})"><i class="fa-solid fa-file-invoice"></i>Create Invoice</button>
+      </div>`;
+  } else if (tab==='journey') {
+    const j = data.journey;
+    el.innerHTML = j.length ? `<div class="timeline">${j.map(e=>`
+      <div class="timeline-item">
+        <div class="timeline-dot"><i class="fa-solid fa-arrow-right" style="font-size:10px"></i></div>
+        <div class="timeline-content">
+          <div class="timeline-date">${formatDate(e.changed_at)} by ${e.changed_by_name||'System'}</div>
+          <div class="timeline-text">${e.stage.replace(/_/g,' ').toUpperCase()}</div>
+          ${e.notes?`<div style="font-size:12px;color:var(--text-muted);margin-top:4px">${e.notes}</div>`:''}
+        </div>
+      </div>`).join('')}</div>` : '<p style="color:var(--text-muted)">No journey records.</p>';
+  } else if (tab==='appointments') {
+    const a = data.appointments;
+    el.innerHTML = a.length ? `<div style="display:flex;flex-direction:column;gap:8px">${a.map(ap=>`
+      <div style="padding:12px;border-radius:8px;background:var(--bg);display:flex;align-items:center;gap:10px">
+        <i class="fa-solid fa-calendar" style="color:var(--navy)"></i>
+        <div><div style="font-size:13px;font-weight:700">${formatDate(ap.start_time)}</div>
+          <div style="font-size:12px;color:var(--text-muted)">${ap.type} with ${ap.therapist_name||'TBA'}</div></div>
+        <div style="margin-left:auto">${statusBadge(ap.status)}</div>
+      </div>`).join('')}</div>` : '<p style="color:var(--text-muted)">No appointments.</p>';
+  } else if (tab==='finance') {
+    const inv = data.invoices;
+    el.innerHTML = inv.length ? `<div>${inv.map(i=>`
+      <div style="padding:12px;border-radius:8px;background:var(--bg);margin-bottom:8px;display:flex;align-items:center;gap:10px">
+        <i class="fa-solid fa-file-invoice-dollar" style="color:var(--navy)"></i>
+        <div><div style="font-size:13px;font-weight:700">ETB ${(i.amount||0).toLocaleString()}</div>
+          <div style="font-size:12px;color:var(--text-muted)">Due: ${formatDate(i.due_date)}</div></div>
+        <div style="margin-left:auto">${invStatusBadge(i.status)}</div>
+        ${i.status==='pending'?`<button class="btn btn-sm btn-success" onclick="openPaymentFor(${i.id},${i.client_id})">Pay</button>`:''}
+      </div>`).join('')}</div>` : '<p style="color:var(--text-muted)">No invoices.</p>';
+  }
+}
+
+// ── VISUAL CALENDAR LOGIC ──
+let vcCurrentDate = new Date();
+let vcView = 'day'; // 'day' or 'week'
+let vcAppointments = [];
+let vcSelectedStart = null;
+let vcSelectedEnd = null;
+let vcPollingInterval = null;
+
+function vcInit() {
+  vcCurrentDate = new Date();
+  vcSelectedStart = null;
+  vcSelectedEnd = null;
+  document.getElementById('vcSelectedLabel').style.display = 'none';
+  vcFetchData();
+  
+  if(!vcPollingInterval) {
+    vcPollingInterval = setInterval(() => {
+      const modal = document.getElementById('apptEditorModal');
+      if(modal && modal.classList.contains('open') || modal.classList.contains('active')) {
+        vcFetchData(true);
+      }
+    }, 15000); // Poll every 15s when open
+  }
+}
+
+async function vcFetchData(silent = false) {
+  try {
+    const r = await apiFetch('/api/appointments');
+    vcAppointments = await r.json();
+    vcRender();
+  } catch(e) {}
+}
+
+function vcNav(dir) {
+  if(vcView === 'day') {
+    vcCurrentDate.setDate(vcCurrentDate.getDate() + dir);
+  } else {
+    vcCurrentDate.setDate(vcCurrentDate.getDate() + (dir * 7));
+  }
+  vcSelectedStart = null;
+  vcSelectedEnd = null;
+  document.getElementById('vcSelectedLabel').style.display = 'none';
+  document.getElementById('apptEditorDateTime').value = '';
+  document.getElementById('apptEditorEndTime').value = '';
+  vcRender();
+}
+
+function vcSetView(view) {
+  vcView = view;
+  document.getElementById('vcBtnDay').classList.toggle('active', view === 'day');
+  document.getElementById('vcBtnWeek').classList.toggle('active', view === 'week');
+  vcRender();
+}
+
+function vcGetWeekDays(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+  const monday = new Date(d.setDate(diff));
+  
+  const days = [];
+  for(let i=0; i<5; i++) { // Monday to Friday
+    const nd = new Date(monday);
+    nd.setDate(monday.getDate() + i);
+    days.push(nd);
+  }
+  return days;
+}
+
+function vcRender() {
+  const grid = document.getElementById('vcGrid');
+  const label = document.getElementById('vcDateLabel');
+  
+  const days = vcView === 'day' ? [vcCurrentDate] : vcGetWeekDays(vcCurrentDate);
+  
+  if(vcView === 'day') {
+    label.textContent = days[0].toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric', year:'numeric'});
+  } else {
+    label.textContent = `${days[0].toLocaleDateString('en-US', {month:'short', day:'numeric'})} - ${days[4].toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}`;
+  }
+  
+  let html = `<div class="vc-time-col"><div class="vc-day-header">Time</div>`;
+  for(let h=8; h<=19; h++) { // 8 AM to 7 PM
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const hour = h > 12 ? h - 12 : h;
+    html += `<div class="vc-time-slot">${hour} ${ampm}</div>`;
+  }
+  html += `</div><div class="vc-days">`;
+  
+  days.forEach((d, dIdx) => {
+    const dateStr = d.toISOString().split('T')[0];
+    const dayName = d.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
+    
+    html += `<div class="vc-day-col">
+               <div class="vc-day-header">${dayName}</div>`;
+               
+    for(let h=8; h<=19; h++) {
+      const slotStart = new Date(d);
+      slotStart.setHours(h, 0, 0, 0);
+      const slotEnd = new Date(d);
+      slotEnd.setHours(h+1, 0, 0, 0);
+      
+      const slotStartStr = slotStart.toISOString();
+      const slotEndStr = slotEnd.toISOString();
+      
+      // Check busy
+      const isBusy = vcAppointments.some(a => {
+        if(['cancelled','no_show','terminated'].includes(a.status)) return false;
+        // Ignore the appointment currently being edited
+        if(document.getElementById('apptEditorId') && document.getElementById('apptEditorId').value == a.id) return false;
+        
+        const aStart = new Date(a.start_time);
+        const aEnd = new Date(a.end_time);
+        return (aStart < slotEnd && aEnd > slotStart);
+      });
+      
+      let cls = 'vc-slot available';
+      if(isBusy) cls = 'vc-slot busy';
+      if(vcSelectedStart === slotStartStr) cls += ' selected';
+      
+      html += `<div class="${cls}" data-start="${slotStartStr}" data-end="${slotEndStr}" onclick="vcSlotClick(this, ${isBusy})"></div>`;
+    }
+    
+    // Render existing appts as absolute blocks
+    const dayAppts = vcAppointments.filter(a => {
+      if(['cancelled','no_show','terminated'].includes(a.status)) return false;
+      const aDate = a.start_time.split('T')[0];
+      return aDate === dateStr;
+    });
+    
+    dayAppts.forEach(a => {
+      const aStart = new Date(a.start_time);
+      const aEnd = new Date(a.end_time);
+      if(aStart.getHours() < 8 || aStart.getHours() > 19) return;
+      
+      const top = (aStart.getHours() - 8 + aStart.getMinutes()/60) * 40;
+      const height = ((aEnd - aStart) / (1000 * 60 * 60)) * 40;
+      
+      // If editing this appt, make it semi-transparent
+      const isEditing = document.getElementById('apptEditorId') && document.getElementById('apptEditorId').value == a.id;
+      const opacity = isEditing ? '0.4' : '1';
+      const border = isEditing ? '2px dashed var(--danger)' : 'none';
+      
+      html += `<div class="vc-appt" style="top:${top+32}px;height:${height}px;background:var(--navy);opacity:${opacity};border:${border}">
+                 ${isEditing ? 'Editing...' : 'Booked'}
+               </div>`;
+    });
+    
+    html += `</div>`;
+  });
+  
+  html += `</div>`;
+  grid.innerHTML = html;
+  
+  // Render current time line
+  const now = new Date();
+  if(vcView === 'day' && days[0].toDateString() === now.toDateString()) {
+    if(now.getHours() >= 8 && now.getHours() <= 19) {
+      const top = (now.getHours() - 8 + now.getMinutes()/60) * 40;
+      const daysWrap = grid.querySelector('.vc-days');
+      if(daysWrap) {
+        daysWrap.innerHTML += `<div class="vc-current-time" style="top:${top+32}px"></div>`;
+      }
+    }
+  }
+}
+
+function vcSlotClick(el, isBusy) {
+  if(isBusy) return;
+  const start = el.dataset.start;
+  const end = el.dataset.end;
+  
+  vcSelectedStart = start;
+  vcSelectedEnd = end;
+  
+  document.getElementById('apptEditorDateTime').value = start.slice(0,16);
+  document.getElementById('apptEditorEndTime').value = end.slice(0,16);
+  
+  const dStart = new Date(start);
+  const dEnd = new Date(end);
+  const formatted = `${dStart.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'})}, ${dStart.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - ${dEnd.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+  
+  const sl = document.getElementById('vcSelectedLabel');
+  sl.textContent = `Selected: ${formatted}`;
+  sl.style.display = 'block';
+  
+  vcRender();
+}
+
+// Visual Calendar: modal hook removed (handled inline)
+
+async function loadTodaySchedule() {
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    const res = await apiFetch(`/api/appointments?start=${today}&end=${today}`);
+    const appts = (await res.json()).sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+    const el = document.getElementById('todaySchedule');
+    if (!el) return;
+    if (!appts.length) {
+      el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-muted)"><i class="fa-regular fa-calendar-xmark" style="font-size:24px;margin-bottom:8px"></i><p>No appointments today</p></div>`;
+      return;
+    }
+    el.innerHTML = appts.slice(0, 6).map(a => {
+      const visual = appointmentVisual(a);
+      return `
+        <div class="day-event" onclick="openClientDrawer(${a.client_id})" style="box-shadow:inset 4px 0 0 ${visual.palette.base}">
+          <div class="event-time"><div>${formatApptTime(a.start_time)}</div><div style="font-size:10px;opacity:.7;margin-top:2px">${formatDate(a.start_time)}</div></div>
+          <div class="event-info">
+            <div class="ev-name"><span>${a.client_name || '-'}</span><span class="appt-chip">${a.client_code || 'Code'}</span></div>
+            <div class="ev-sub">${a.therapist_name || '-'} - ${a.type || 'Appointment'}</div>
+          </div>
+          <div class="event-status">${statusBadge(a.status)}</div>
+          ${isFinalAppointmentStatus(a.status) ? '<span class="badge badge-gray">Final</span>' : `<div style="display:flex;gap:4px;margin-left:4px">
+            <button class="btn btn-sm btn-success" onclick="event.stopPropagation();updateApptStatus(${a.id},'completed')" title="Complete"><i class="fa-solid fa-check"></i></button>
+            <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();updateApptStatus(${a.id},'no_show')" title="No Show"><i class="fa-solid fa-xmark"></i></button>
+          </div>`}
+        </div>`;
+    }).join('');
+  } catch (e) {
+    const el = document.getElementById('todaySchedule');
+    if (el) el.innerHTML = '<p style="color:var(--text-muted)">Failed to load</p>';
+  }
+}
+
+async function loadPendingQueue() {
+  try {
+    const res = await apiFetch('/api/clients');
+    const clients = await res.json();
+    const pending = clients.filter(c => ['registered', 'screening_completed', 'awaiting_assignment'].includes(c.status) && !c.assigned_therapist_id);
+    const el = document.getElementById('pendingQueue');
+    if (!el) return;
+    if (!pending.length) {
+      el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--success);font-size:13px;font-weight:600"><i class="fa-solid fa-circle-check"></i> All clients assigned</div>`;
+      return;
+    }
+    el.innerHTML = pending.slice(0, 5).map(c => `
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:var(--bg);cursor:pointer;margin-bottom:6px"
+           onclick="showSection('assignment');setTimeout(()=>selectAssignClient(${c.id}),400)">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px">${(c.full_name || '?')[0]}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700">${c.full_name || '-'}</div>
+          <div style="font-size:11px;color:var(--text-muted)">${c.client_code || '-'} - ${String(c.status || '').replace(/_/g, ' ')}</div>
+        </div>
+        <span class="badge badge-orange">${c.risk_level || 'low'}</span>
+      </div>`).join('');
+  } catch (e) {}
+}
+
+async function showDayDetail(dateStr, label) {
+  const panel = document.getElementById('dayDetailPanel');
+  const title = document.getElementById('dayDetailTitle');
+  const list = document.getElementById('dayDetailList');
+  if (!panel || !title || !list) return;
+  title.textContent = label;
+  panel.style.display = 'block';
+  try {
+    const r = await apiFetch(`/api/appointments?start=${dateStr}&end=${dateStr}`);
+    const appts = (await r.json()).sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+    if (!appts.length) {
+      list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted)"><i class="fa-regular fa-calendar" style="font-size:28px;margin-bottom:8px"></i><p style="font-weight:600">No appointments this day</p><p style="font-size:12px;margin-top:4px">Use the appointment panel to book, change, or cancel a slot.</p></div>`;
+      return;
+    }
+    list.innerHTML = appts.map(a => `
+      <div class="day-event" style="box-shadow:inset 4px 0 0 ${appointmentVisual(a).palette.base}">
+        <div class="event-time">${formatApptTime(a.start_time)}</div>
+        <div class="event-info">
+          <div class="ev-name">${a.client_name || '-'}</div>
+          <div class="ev-sub">${a.therapist_name || '-'} - ${a.type || 'Appointment'} - ${a.location || '-'}</div>
+        </div>
+        <div class="event-status" onclick="event.stopPropagation()">
+          <button class="btn btn-ghost btn-sm" onclick="openClientDrawer(${a.client_id})"><i class="fa-regular fa-user"></i>Client</button>
+          ${isFinalAppointmentStatus(a.status) ? '<span class="badge badge-gray">Final</span>' : `<div class="event-actions">
+            <button class="btn btn-success btn-sm" onclick="updateApptStatus(${a.id},'completed')"><i class="fa-solid fa-check"></i></button>
+            <button class="btn btn-outline btn-sm" onclick="changeAppt(${a.id},'temporary')"><i class="fa-solid fa-clock-rotate-left"></i></button>
+            <button class="btn btn-gold btn-sm" onclick="changeAppt(${a.id},'permanent')"><i class="fa-solid fa-calendar-days"></i></button>
+            <button class="btn btn-danger btn-sm" onclick="changeAppt(${a.id},'cancelled')"><i class="fa-solid fa-ban"></i></button>
+          </div>`}
+        </div>
+      </div>`).join('');
+  } catch (e) {}
+}
+
+init();
+</script>
+</body>
+</html>
+
+

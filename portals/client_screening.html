@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/api_config.js"></script>
+  <meta charset="UTF-8">
+  <title>Screening Assessment | Aha Psychological Service</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --navy: #043069;
+      --navy-light: #0a438c;
+      --gold: #d4af37;
+      --text: #1f2937;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --danger: #ef4444;
+      --success: #10b981;
+    }
+    * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.6; }
+    
+    .header {
+      background: #fff; padding: 16px 20px; text-align: center; border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    }
+    .header img { height: 32px; }
+    
+    .container { max-width: 600px; margin: 0 auto; padding: 24px 20px; }
+    
+    .card { background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.04); margin-bottom: 20px; border: 1px solid var(--border); }
+    
+    h1 { font-size: 22px; color: var(--navy); margin-bottom: 8px; }
+    .subtitle { font-size: 14px; color: var(--muted); margin-bottom: 20px; }
+    
+    .progress-wrap { background: var(--border); height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 24px; }
+    .progress-bar { background: var(--navy); height: 100%; width: 0%; transition: 0.3s; }
+    
+    .question-block { margin-bottom: 32px; display: none; animation: fadeIn 0.4s ease; }
+    .question-block.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .q-text { font-size: 16px; font-weight: 600; margin-bottom: 12px; color: var(--navy); }
+    .q-help { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+    
+    .options { display: flex; flex-direction: column; gap: 10px; }
+    .option-label {
+      display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid var(--border);
+      border-radius: 12px; cursor: pointer; transition: 0.2s; font-size: 15px; background: #fff;
+    }
+    .option-label:hover { border-color: var(--navy-light); background: rgba(4,48,105,0.02); }
+    .option-label.selected { border-color: var(--navy); background: rgba(4,48,105,0.05); font-weight: 600; }
+    
+    input[type="radio"], input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--navy); }
+    
+    .input-text { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 12px; font-size: 15px; outline: none; transition: 0.2s; font-family: inherit; }
+    .input-text:focus { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(4,48,105,0.1); }
+    textarea.input-text { min-height: 120px; resize: vertical; }
+    
+    .nav-buttons { display: flex; justify-content: space-between; margin-top: 32px; gap: 12px; }
+    
+    .btn { padding: 14px 24px; border-radius: 12px; font-size: 15px; font-weight: 600; border: none; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: 1; }
+    .btn-primary { background: var(--navy); color: #fff; }
+    .btn-primary:hover { background: var(--navy-light); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { background: #f8fafc; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    #loader { text-align: center; padding: 40px; color: var(--navy); }
+    .spinner { display: inline-block; width: 40px; height: 40px; border: 3px solid rgba(4,48,105,0.2); border-top-color: var(--navy); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    .error-msg { color: var(--danger); background: rgba(239,68,68,0.1); padding: 12px 16px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; display: none; }
+    
+    #successScreen { text-align: center; display: none; }
+    .success-icon { width: 64px; height: 64px; background: rgba(16,185,129,0.1); color: var(--success); font-size: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <img src="/assets/aha_logo.png" alt="Aha Psychological Service" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%2232%22><text x=%220%22 y=%2220%22 font-family=%22Arial%22 font-size=%2220%22 font-weight=%22bold%22 fill=%22%23043069%22>Aha Psychology</text></svg>'">
+  </div>
+
+  <div class="container">
+    <div id="loader">
+      <div class="spinner"></div>
+      <p>Loading assessment...</p>
+    </div>
+
+    <div id="errorBox" class="error-msg"></div>
+
+    <div id="assessmentScreen" style="display:none">
+      <div class="card">
+        <h1 id="assessmentTitle">Assessment</h1>
+        <p class="subtitle" id="assessmentDesc">Please answer the following questions.</p>
+        
+        <div class="progress-wrap">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <form id="qForm"></form>
+        
+        <div class="nav-buttons">
+          <button class="btn btn-outline" id="btnPrev" type="button" onclick="prevQuestion()" style="display:none"><i class="fa-solid fa-arrow-left"></i> Previous</button>
+          <button class="btn btn-primary" id="btnNext" type="button" onclick="nextQuestion()">Next <i class="fa-solid fa-arrow-right"></i></button>
+          <button class="btn btn-primary" id="btnSubmit" type="button" onclick="submitAssessment()" style="display:none">Submit <i class="fa-solid fa-check"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="successScreen" class="card">
+      <div class="success-icon"><i class="fa-solid fa-check"></i></div>
+      <h1>Thank You</h1>
+      <p class="subtitle">Your assessment has been submitted successfully. Your therapist has been notified.</p>
+      <p style="font-size:14px;color:var(--muted)">You may now close this window.</p>
+    </div>
+  </div>
+
+<script>
+  const token = window.location.pathname.split('/').pop();
+  let questions = [];
+  let currentIndex = 0;
+  let responses = {};
+  
+  async function loadData() {
+    try {
+      const r = await apiFetch(`/api/screening-links/${token}`);
+      const d = await r.json();
+      document.getElementById('loader').style.display = 'none';
+      
+      if(!r.ok || !d.success) {
+        showError(d.error || 'Failed to load assessment. It may have expired.');
+        return;
+      }
+      
+      questions = d.questions || [];
+      document.getElementById('assessmentTitle').textContent = d.template.name;
+      document.getElementById('assessmentDesc').textContent = d.template.description || 'Please answer the following questions.';
+      
+      // Load saved state from sessionStorage
+      const saved = sessionStorage.getItem(`screening_${token}`);
+      if(saved) {
+        try { responses = JSON.parse(saved); } catch(e){}
+      }
+      
+      renderQuestions();
+      document.getElementById('assessmentScreen').style.display = 'block';
+    } catch(e) {
+      document.getElementById('loader').style.display = 'none';
+      showError('Network error. Please try again later.');
+    }
+  }
+  
+  function showError(msg) {
+    const box = document.getElementById('errorBox');
+    box.textContent = msg;
+    box.style.display = 'block';
+  }
+  
+  function renderQuestions() {
+    const form = document.getElementById('qForm');
+    form.innerHTML = questions.map((q, idx) => {
+      const isVisible = idx === currentIndex;
+      let inputHtml = '';
+      const opts = q.options_json ? JSON.parse(q.options_json) : [];
+      const qKey = q.question_key || `q_${idx}`;
+      
+      if(q.question_type === 'single_choice') {
+        inputHtml = `<div class="options">` + opts.map((opt, i) => `
+          <label class="option-label ${responses[qKey]===opt ? 'selected' : ''}">
+            <input type="radio" name="${qKey}" value="${opt}" ${responses[qKey]===opt ? 'checked' : ''} onchange="saveResponse('${qKey}', this.value); updateOptionStyling(this)">
+            ${opt}
+          </label>
+        `).join('') + `</div>`;
+      } else if(q.question_type === 'multiple_choice') {
+        const selected = Array.isArray(responses[qKey]) ? responses[qKey] : [];
+        inputHtml = `<div class="options">` + opts.map((opt, i) => `
+          <label class="option-label ${selected.includes(opt) ? 'selected' : ''}">
+            <input type="checkbox" name="${qKey}" value="${opt}" ${selected.includes(opt) ? 'checked' : ''} onchange="saveMultiResponse('${qKey}', this); updateOptionStyling(this)">
+            ${opt}
+          </label>
+        `).join('') + `</div>`;
+      } else if(q.question_type === 'textarea') {
+        inputHtml = `<textarea class="input-text" name="${qKey}" placeholder="Type your answer here..." oninput="saveResponse('${qKey}', this.value)">${responses[qKey]||''}</textarea>`;
+      } else {
+        inputHtml = `<input type="${q.question_type==='number'?'number':'text'}" class="input-text" name="${qKey}" placeholder="Type your answer here..." value="${responses[qKey]||''}" oninput="saveResponse('${qKey}', this.value)">`;
+      }
+      
+      const qLabel = q.label_en + (q.label_am ? ` <br><span style="font-size:14px;color:#64748b;font-weight:400">${q.label_am}</span>` : '');
+      
+      return `
+        <div class="question-block ${isVisible ? 'active' : ''}" id="qb_${idx}">
+          <div class="q-text">${idx + 1}. ${qLabel} ${q.required ? '<span style="color:var(--danger)">*</span>' : ''}</div>
+          ${q.helper_text ? `<div class="q-help">${q.helper_text}</div>` : ''}
+          ${inputHtml}
+        </div>
+      `;
+    }).join('');
+    
+    updateNav();
+  }
+  
+  function saveResponse(key, val) {
+    responses[key] = val;
+    sessionStorage.setItem(`screening_${token}`, JSON.stringify(responses));
+  }
+  
+  function saveMultiResponse(key, el) {
+    const val = el.value;
+    if(!Array.isArray(responses[key])) responses[key] = [];
+    if(el.checked) {
+      if(!responses[key].includes(val)) responses[key].push(val);
+    } else {
+      responses[key] = responses[key].filter(v => v !== val);
+    }
+    sessionStorage.setItem(`screening_${token}`, JSON.stringify(responses));
+  }
+  
+  function updateOptionStyling(input) {
+    const block = input.closest('.question-block');
+    if(input.type === 'radio') {
+      block.querySelectorAll('.option-label').forEach(l => l.classList.remove('selected'));
+      input.closest('.option-label').classList.add('selected');
+    } else if(input.type === 'checkbox') {
+      if(input.checked) input.closest('.option-label').classList.add('selected');
+      else input.closest('.option-label').classList.remove('selected');
+    }
+  }
+  
+  function updateNav() {
+    const progress = ((currentIndex) / questions.length) * 100;
+    document.getElementById('progressBar').style.width = `${progress}%`;
+    
+    document.getElementById('btnPrev').style.display = currentIndex > 0 ? 'inline-flex' : 'none';
+    
+    if(currentIndex === questions.length - 1) {
+      document.getElementById('btnNext').style.display = 'none';
+      document.getElementById('btnSubmit').style.display = 'inline-flex';
+    } else {
+      document.getElementById('btnNext').style.display = 'inline-flex';
+      document.getElementById('btnSubmit').style.display = 'none';
+    }
+  }
+  
+  function validateCurrent() {
+    const q = questions[currentIndex];
+    const qKey = q.question_key || `q_${currentIndex}`;
+    if(q.required) {
+      const val = responses[qKey];
+      if(!val || (Array.isArray(val) && val.length === 0)) {
+        showError('This question is required.');
+        setTimeout(()=>document.getElementById('errorBox').style.display='none', 3000);
+        return false;
+      }
+    }
+    return true;
+  }
+  
+  function nextQuestion() {
+    if(!validateCurrent()) return;
+    document.getElementById(`qb_${currentIndex}`).classList.remove('active');
+    currentIndex++;
+    document.getElementById(`qb_${currentIndex}`).classList.add('active');
+    updateNav();
+  }
+  
+  function prevQuestion() {
+    document.getElementById(`qb_${currentIndex}`).classList.remove('active');
+    currentIndex--;
+    document.getElementById(`qb_${currentIndex}`).classList.add('active');
+    updateNav();
+  }
+  
+  async function submitAssessment() {
+    if(!validateCurrent()) return;
+    
+    const btn = document.getElementById('btnSubmit');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+    
+    try {
+      const r = await apiFetch(`/api/screening-links/${token}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ responses })
+      });
+      const d = await r.json();
+      
+      if(!r.ok || !d.success) {
+        showError(d.error || 'Failed to submit. Please try again.');
+        btn.disabled = false;
+        btn.innerHTML = 'Submit <i class="fa-solid fa-check"></i>';
+        return;
+      }
+      
+      document.getElementById('assessmentScreen').style.display = 'none';
+      document.getElementById('successScreen').style.display = 'block';
+      sessionStorage.removeItem(`screening_${token}`);
+      
+    } catch(e) {
+      showError('Network error. Please try again.');
+      btn.disabled = false;
+      btn.innerHTML = 'Submit <i class="fa-solid fa-check"></i>';
+    }
+  }
+  
+  window.onload = loadData;
+</script>
+</body>
+</html>
+

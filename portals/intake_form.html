@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/api_config.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New Client Intake — Aha Psychological Services</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+:root{
+  --navy:#043069;--navy-light:#0a4b9c;
+  --gold:#ffbf00;--gold-light:#ffd84d;
+  --teal:#0d9488;--purple:#7c3aed;--indigo:#4f46e5;
+  --bg:#f4f7fc;--surface:#fff;
+  --success:#10b981;--warning:#f59e0b;--danger:#ef4444;--info:#3b82f6;
+  --text:#1e293b;--muted:#64748b;--border:#e2e8f0;
+  --shadow:0 12px 40px rgba(4,48,105,.08);
+  --radius:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;min-height:100vh}
+
+/* Topbar */
+.topbar{background:var(--navy);padding:20px 0;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.logo-text{font-size:26px;font-weight:800;color:#fff;letter-spacing:-.5px}.logo-text span{color:var(--gold)}
+.logo-sub{font-size:12px;color:rgba(255,255,255,.6);letter-spacing:2px;text-transform:uppercase;margin-top:4px}
+
+/* Main Container */
+.container{max-width:800px;margin:40px auto;padding:0 20px;flex:1;width:100%}
+.card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;border:1px solid rgba(4,48,105,.05)}
+
+/* Header Image / Pattern */
+.card-hero{height:120px;background:linear-gradient(135deg,var(--navy),var(--indigo));position:relative;display:flex;align-items:center;padding:0 40px}
+.card-hero::after{content:'';position:absolute;inset:0;background:url('data:image/svg+xml;utf8,<svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.05)"/></svg>') repeat;}
+.hero-title{color:#fff;font-size:24px;font-weight:800;position:relative;z-index:2;display:flex;align-items:center;gap:12px}
+.hero-title i{color:var(--gold)}
+
+/* Stepper */
+.stepper{display:flex;padding:30px 40px;background:#f8fafc;border-bottom:1px solid var(--border)}
+.step{flex:1;text-align:center;position:relative}
+.step:not(:last-child)::after{content:'';position:absolute;top:18px;left:50%;width:100%;height:3px;background:var(--border);z-index:1;transition:.3s}
+.step.active:not(:last-child)::after,.step.completed:not(:last-child)::after{background:var(--teal)}
+.step-icon{width:38px;height:38px;border-radius:50%;background:var(--surface);border:3px solid var(--border);color:var(--muted);display:flex;align-items:center;justify-content:center;font-weight:800;margin:0 auto 10px;position:relative;z-index:2;transition:.3s;font-size:14px}
+.step.active .step-icon{border-color:var(--teal);background:var(--teal);color:#fff;box-shadow:0 0 0 4px rgba(13,148,136,.15)}
+.step.completed .step-icon{border-color:var(--teal);background:var(--teal);color:#fff}
+.step-label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;transition:.3s}
+.step.active .step-label{color:var(--navy)}
+
+/* Form Container */
+.form-content{padding:40px}
+.step-panel{display:none;animation:fadeIn .4s ease}
+.step-panel.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+.section-title{font-size:18px;font-weight:800;color:var(--navy);margin-bottom:20px;display:flex;align-items:center;gap:10px}
+.section-title i{color:var(--teal)}
+
+/* Form Elements */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.form-group{margin-bottom:20px}
+.form-group label{display:block;font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px}
+.form-group label span{color:var(--danger)}
+.form-control{width:100%;padding:14px 16px;border:2px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;color:var(--text);background:#f8fafc;transition:.2s}
+.form-control:focus{outline:none;border-color:var(--navy);background:var(--surface);box-shadow:0 4px 12px rgba(4,48,105,.06)}
+select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M7 7l3 3 3-3' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;background-size:20px;padding-right:40px}
+textarea.form-control{resize:vertical;min-height:120px;line-height:1.5}
+
+/* Assessment Table */
+.screening-table{width:100%;border-collapse:collapse;margin-bottom:30px}
+.screening-table th{background:#f8fafc;padding:14px;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;border-bottom:2px solid var(--border);text-align:center}
+.screening-table th:first-child{text-align:left}
+.screening-table td{padding:16px 14px;border-bottom:1px solid var(--border);font-size:14.5px;color:var(--text);font-weight:500;text-align:center;vertical-align:middle}
+.screening-table td:first-child{text-align:left;font-weight:600;width:50%}
+.screening-table tr:hover td{background:#f8fafc}
+.radio-custom{width:22px;height:22px;cursor:pointer;accent-color:var(--teal)}
+
+/* Footer actions */
+.form-footer{padding:30px 40px;background:#f8fafc;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px 28px;border-radius:10px;font-weight:700;font-size:15px;border:none;cursor:pointer;transition:.2s;font-family:inherit}
+.btn-primary{background:var(--navy);color:#fff}.btn-primary:hover{background:var(--navy-light);transform:translateY(-2px);box-shadow:0 8px 20px rgba(4,48,105,.15)}
+.btn-teal{background:var(--teal);color:#fff}.btn-teal:hover{background:#0f766e;transform:translateY(-2px);box-shadow:0 8px 20px rgba(13,148,136,.15)}
+.btn-ghost{background:transparent;color:var(--muted);border:2px solid var(--border)}.btn-ghost:hover{background:var(--surface);color:var(--navy);border-color:var(--navy)}
+
+/* Validation msg */
+.error-msg{color:var(--danger);font-size:12px;font-weight:600;margin-top:6px;display:none;align-items:center;gap:6px}
+.form-group.has-error .form-control{border-color:var(--danger);background:rgba(239,68,68,.02)}
+.form-group.has-error .error-msg{display:flex}
+
+/* Success view */
+.success-view{text-align:center;padding:60px 40px}
+.success-icon{width:80px;height:80px;border-radius:50%;background:rgba(16,185,129,.1);color:var(--success);display:inline-flex;align-items:center;justify-content:center;font-size:40px;margin-bottom:20px}
+.client-code{font-family:monospace;font-size:28px;font-weight:800;color:var(--navy);background:#f8fafc;padding:12px 24px;border-radius:12px;display:inline-block;border:2px dashed var(--border);margin:20px 0;letter-spacing:2px}
+
+/* Mobile responsive */
+@media (max-width:768px){
+  .grid-2{grid-template-columns:1fr}
+  .card-hero{padding:0 24px}
+  .stepper{padding:20px 10px}
+  .step-label{display:none}
+  .form-content{padding:24px}
+  .form-footer{padding:20px 24px;flex-direction:column-reverse;gap:12px}
+  .form-footer .btn{width:100%}
+  .screening-table th{font-size:10px;padding:10px 4px}
+  .screening-table td{font-size:13px;padding:12px 4px}
+  .screening-table td:first-child{width:40%}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+    <script src="/api_config.js"></script>
+  <img src="https://www.ahaethiopia.com/site/wp-content/uploads/2021/03/aha-logo-2.png" style="height:50px; display:block; margin:0 auto;">
+  <div class="logo-sub">Psychological Services</div>
+</header>
+
+<div class="container">
+  <div class="card" id="mainCard">
+    <div class="card-hero">
+      <div class="hero-title"><i class="fa-solid fa-clipboard-user"></i> Client Registration & Intake</div>
+    </div>
+    
+    <div class="stepper" id="stepper">
+      <div class="step active" id="st-1"><div class="step-icon">1</div><div class="step-label">Personal Info / ግላዊ መረጃ</div></div>
+      <div class="step" id="st-2"><div class="step-icon">2</div><div class="step-label">Intake Details / የመጡበት ዋነኛ ጉዳይ</div></div>
+      <div class="step" id="st-3"><div class="step-icon">3</div><div class="step-label">Screening / ምርመራ</div></div>
+    </div>
+
+    <!-- Step 1: Personal Info -->
+    <div class="form-content step-panel active" id="sp-1">
+      <div class="section-title"><i class="fa-solid fa-address-card"></i> Client Intake Form / የደንበኛ መረጃ መጠይቅ</div>
+      <p style="color:var(--muted);font-size:14px;margin-bottom:24px;line-height:1.6">Please complete the intake in the language you are most comfortable with. The same form is used for English and Amharic records, and all information stays confidential.</p>
+
+      <div class="grid-2">
+        <div class="form-group req"><label>First Name / ስም <span>*</span></label><input type="text" class="form-control" id="f_first_name" placeholder="Abebe"><div class="error-msg"><i class="fa-solid fa-circle-exclamation"></i> First name is required</div></div>
+        <div class="form-group req"><label>Last Name / የአባት ስም <span>*</span></label><input type="text" class="form-control" id="f_last_name" placeholder="Kebede"><div class="error-msg"><i class="fa-solid fa-circle-exclamation"></i> Last name is required</div></div>
+        <div class="form-group"><label>Age / እድሜ</label><input type="number" class="form-control" id="f_age" min="0" max="120" placeholder="E.g. 25"></div>
+        <div class="form-group req"><label>Date of Birth / የልደት ቀን <span>*</span></label><input type="date" class="form-control" id="f_dob" max="2099-12-31"><div class="error-msg"><i class="fa-solid fa-circle-exclamation"></i> Date of birth is required</div></div>
+        <div class="form-group req"><label>Gender / ጾታ <span>*</span></label>
+          <select class="form-control" id="f_gender">
+            <option value="">Select gender...</option><option value="Male">Male / ወንድ</option><option value="Female">Female / ሴት</option><option value="Other">Other</option><option value="Prefer not to say">Prefer not to say</option>
+          </select>
+          <div class="error-msg"><i class="fa-solid fa-circle-exclamation"></i> Gender is required</div>
+        </div>
+        <div class="form-group req"><label>Education / የትምህርት ደረጃ <span>*</span></label>
+          <select class="form-control" id="f_education">
+            <option value="">Select education...</option>
+            <option value="Unable to read or write">Unable to read or write</option>
+            <option value="Read and write">Read and write</option>
+            <option value="Kindergarten">Kindergarten</option>
+            <option value="Elementary school">Elementary school</option>
+            <option value="High school">High school</option>
+            <option value="Diploma">Diploma</option>
+            <option value="First degree and above">First degree and above</option>
+          </select>
+          <div class="error-msg"><i class="fa-solid fa-circle-exclamation"></i> Education is required</div>
+        </div>
+        <div class="form-group"><label>Preferred Language / ተመራጭ ቋንቋ</label>
+          <select class="form-control" id="f_lang">
+            <option value="English">English</option><option value="Amharic">Amharic / አማርኛ</option><option value="Oromiffa">Oromiffa</option><option value="Tigrinya">Tigrinya</option><option value="Somali">Somali</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top:20px;font-size:16px"><i class="fa-solid fa-location-dot"></i> Contact Information / አድራሻ</div>
+      <div class="grid-2">
+        <div class="form-group req"><label>Phone Number / ስልክ ቁጥር <span>*</span></label><input type="tel" class="form-control" id="f_phone" placeholder="09..."><div class="error-msg"><i class="fa-solid fa-circle-exclamation"></i> Phone is required</div></div>
+        <div class="form-group"><label>Email Address / ኢ-ሜል</label><input type="email" class="form-control" id="f_email" placeholder="Optional"></div>
+        <div class="form-group"><label>Region / ክልል</label><input type="text" class="form-control" id="f_region" placeholder="Region"></div>
+        <div class="form-group"><label>Zone / Sub-city / ክፍለ ከተማ</label><input type="text" class="form-control" id="f_zone" placeholder="Zone / Sub-city"></div>
+        <div class="form-group"><label>Woreda / ወረዳ</label><input type="text" class="form-control" id="f_woreda" placeholder="Woreda"></div>
+        <div class="form-group"><label>House Number / የቤት ቁጥር</label><input type="text" class="form-control" id="f_house" placeholder="House no."></div>
+        <div class="form-group" style="grid-column:1/-1"><label>Address (if different from client) / አድራሻ (ከደንበኛው ከተለየ)</label><input type="text" class="form-control" id="f_address" placeholder="Full address"></div>
+      </div>
+
+      <div class="section-title" style="margin-top:20px;font-size:16px"><i class="fa-solid fa-truck-medical"></i> Emergency Contact / የአደጋ ጊዜ ተጠሪ</div>
+      <div class="grid-2">
+        <div class="form-group req"><label>Name / ስም <span>*</span></label><input type="text" class="form-control" id="f_em_name" placeholder="Emergency contact name"><div class="error-msg"><i class="fa-solid fa-circle-exclamation"></i> Contact name is required</div></div>
+        <div class="form-group"><label>Relation / ግንኙነት</label><input type="text" class="form-control" id="f_em_relation" placeholder="e.g. spouse, sibling, friend"></div>
+        <div class="form-group req"><label>Phone / ስልክ <span>*</span></label><input type="tel" class="form-control" id="f_em_phone" placeholder="09..."><div class="error-msg"><i class="fa-solid fa-circle-exclamation"></i> Contact phone is required</div></div>
+        <div class="form-group"><label>Email / ኢ-ሜል</label><input type="email" class="form-control" id="f_em_email" placeholder="Optional"></div>
+        <div class="form-group" style="grid-column:1/-1"><label>Emergency Address / አድራሻ</label><input type="text" class="form-control" id="f_em_address" placeholder="Emergency contact address"></div>
+      </div>
+    </div>
+
+    <!-- Step 2: Intake Details -->
+    <div class="form-content step-panel" id="sp-2">
+      <div class="section-title"><i class="fa-solid fa-clipboard-question"></i> General Issue of Visit / የመጡበት ዋነኛ ጉዳይ</div>
+      <p style="color:var(--muted);font-size:14px;margin-bottom:24px;line-height:1.6">Select every concern that applies. This helps the reception team route your intake correctly before the first appointment.</p>
+
+      <div class="grid-2">
+        <div class="form-group"><label>Appointment Date / የቀጠሮ ቀን</label><input type="date" class="form-control" id="f_appt_date"></div>
+        <div class="form-group"><label>Appointment Time / ሰዓት</label><input type="time" class="form-control" id="f_appt_time"></div>
+        <div class="form-group"><label>Therapist Preference / የሲኒ ምርጫ</label>
+          <select class="form-control" id="f_pref">
+            <option value="No Preference">No Preference</option><option value="Male">Male Therapist</option><option value="Female">Female Therapist</option>
+          </select>
+        </div>
+        <div class="form-group"><label>How did you hear about us? / ስለአገልግሎታችን እንዴት አወቁ? <span>*</span></label><input type="text" class="form-control" id="f_source" placeholder="Referral, social media, friend..."><div class="error-msg"><i class="fa-solid fa-circle-exclamation"></i> Please tell us how you heard about us</div></div>
+      </div>
+
+      <div class="form-group req" style="margin-top:10px">
+        <label>Personal concerns / የግል ጉዳዮች <span>*</span></label>
+        <div class="grid-2" style="gap:10px">
+          <label style="display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px;background:#f8fafc"><input type="checkbox" id="issue_stress"> Stress / ውጥረት</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px;background:#f8fafc"><input type="checkbox" id="issue_fear"> Fear/Anxiety / ፍርሃት/ጭንቀት</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px;background:#f8fafc"><input type="checkbox" id="issue_depression"> Depression / ድብርት</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px;background:#f8fafc"><input type="checkbox" id="issue_loneliness"> Loneliness / ብቸኝነት</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px;background:#f8fafc"><input type="checkbox" id="issue_grief"> Grief / ሃዘን</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px;background:#f8fafc"><input type="checkbox" id="issue_trauma"> Crisis/Trauma / ቀውስ</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px;background:#f8fafc"><input type="checkbox" id="issue_selfconf"> Low self-confidence / ያለ በራስ የመተማመን ችግር</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px;background:#f8fafc"><input type="checkbox" id="issue_other_personal"> Other / ሌላ</label>
+        </div>
+        <textarea class="form-control" id="issue_other_personal_text" placeholder="Specify other personal concerns"></textarea>
+      </div>
+
+      <div class="form-group" style="margin-top:14px">
+        <label>Marriage, Family and Related Issues / የጋብቻ፣ የቤተሰብ እና ተያያዥ ጉዳዮች</label>
+        <div class="grid-2" style="gap:10px">
+          <label style="display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px;background:#f8fafc"><input type="checkbox" id="issue_premarriage"> Pre-marriage / ቅድመ-ጋብቻ</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px;background:#f8fafc"><input type="checkbox" id="issue_marriage"> Marriage/Relationship / ትዳር</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px;background:#f8fafc"><input type="checkbox" id="issue_family"> Family / ቤተሰብ</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px;background:#f8fafc"><input type="checkbox" id="issue_child"> Child / ስለልጅ</label>
+        </div>
+        <input class="form-control" id="issue_family_other" placeholder="Other family-related issue (optional)">
+      </div>
+
+      <div class="form-group" style="margin-top:14px">
+        <label>Reproductive Health / የስነ-ተዋልዶ ጤና</label>
+        <div class="grid-2" style="gap:10px">
+          <label style="display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px;background:#f8fafc"><input type="checkbox" id="issue_sex"> Sex/Sexuality / ወሲብ</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px;background:#f8fafc"><input type="checkbox" id="issue_hiv"> HIV/AIDS / ኤችአይቪ/ኤድስ</label>
+        </div>
+        <input class="form-control" id="issue_repro_other" placeholder="Other reproductive health issue (optional)">
+      </div>
+
+      <div class="form-group" style="margin-top:14px">
+        <label>Other Issues / ሌሎች ጉዳዮች</label>
+        <div class="grid-2" style="gap:10px">
+          <label style="display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px;background:#f8fafc"><input type="checkbox" id="issue_life"> About Life / ስለህይወትዎ</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px;background:#f8fafc"><input type="checkbox" id="issue_work"> Work related / ከስራ ጋር የተያያዙ</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px;background:#f8fafc"><input type="checkbox" id="issue_education"> Education / ስለትምህርት</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--border);border-radius:10px;background:#f8fafc"><input type="checkbox" id="issue_substance"> Problematic Substance use / አግባብ ያልሆነ የእጽ አጠቃቀም</label>
+        </div>
+        <input class="form-control" id="issue_other_general" placeholder="Other issue (optional)">
+      </div>
+
+      <div class="form-group req" style="margin-top:10px">
+        <label>Main reason for seeking therapy today / ለምን በዛሬው ቀጠሮ መጡ? <span>*</span></label>
+        <textarea class="form-control" id="f_concerns" placeholder="Briefly describe the main concern..."></textarea>
+        <div class="error-msg"><i class="fa-solid fa-circle-exclamation"></i> Please provide a brief description</div>
+      </div>
+    </div>
+
+    <!-- Step 3: Screening (PHQ-9) -->
+    <div class="form-content step-panel" id="sp-3">
+      <div class="section-title"><i class="fa-solid fa-heart-pulse"></i> Clinical Screening (PHQ-9)</div>
+      <p style="color:var(--muted);font-size:14px;margin-bottom:24px;line-height:1.6">Over the <strong>last 2 weeks</strong>, how often have you been bothered by any of the following problems?</p>
+      
+      <table class="screening-table">
+        <thead>
+          <tr>
+            <th>Question</th>
+            <th>Not at all<br><small>(0)</small></th>
+            <th>Several days<br><small>(1)</small></th>
+            <th>More than half the days<br><small>(2)</small></th>
+            <th>Nearly every day<br><small>(3)</small></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1. Little interest or pleasure in doing things</td>
+            <td><input type="radio" name="q1" value="0" class="radio-custom" checked></td>
+            <td><input type="radio" name="q1" value="1" class="radio-custom"></td>
+            <td><input type="radio" name="q1" value="2" class="radio-custom"></td>
+            <td><input type="radio" name="q1" value="3" class="radio-custom"></td>
+          </tr>
+          <tr>
+            <td>2. Feeling down, depressed, or hopeless</td>
+            <td><input type="radio" name="q2" value="0" class="radio-custom" checked></td>
+            <td><input type="radio" name="q2" value="1" class="radio-custom"></td>
+            <td><input type="radio" name="q2" value="2" class="radio-custom"></td>
+            <td><input type="radio" name="q2" value="3" class="radio-custom"></td>
+          </tr>
+          <tr>
+            <td>3. Trouble falling or staying asleep, or sleeping too much</td>
+            <td><input type="radio" name="q3" value="0" class="radio-custom" checked></td>
+            <td><input type="radio" name="q3" value="1" class="radio-custom"></td>
+            <td><input type="radio" name="q3" value="2" class="radio-custom"></td>
+            <td><input type="radio" name="q3" value="3" class="radio-custom"></td>
+          </tr>
+          <tr>
+            <td>4. Feeling tired or having little energy</td>
+            <td><input type="radio" name="q4" value="0" class="radio-custom" checked></td>
+            <td><input type="radio" name="q4" value="1" class="radio-custom"></td>
+            <td><input type="radio" name="q4" value="2" class="radio-custom"></td>
+            <td><input type="radio" name="q4" value="3" class="radio-custom"></td>
+          </tr>
+          <tr>
+            <td>5. Poor appetite or overeating</td>
+            <td><input type="radio" name="q5" value="0" class="radio-custom" checked></td>
+            <td><input type="radio" name="q5" value="1" class="radio-custom"></td>
+            <td><input type="radio" name="q5" value="2" class="radio-custom"></td>
+            <td><input type="radio" name="q5" value="3" class="radio-custom"></td>
+          </tr>
+          <tr>
+            <td>6. Feeling bad about yourself — or that you are a failure</td>
+            <td><input type="radio" name="q6" value="0" class="radio-custom" checked></td>
+            <td><input type="radio" name="q6" value="1" class="radio-custom"></td>
+            <td><input type="radio" name="q6" value="2" class="radio-custom"></td>
+            <td><input type="radio" name="q6" value="3" class="radio-custom"></td>
+          </tr>
+          <tr>
+            <td>7. Trouble concentrating on things, such as reading the newspaper or watching television</td>
+            <td><input type="radio" name="q7" value="0" class="radio-custom" checked></td>
+            <td><input type="radio" name="q7" value="1" class="radio-custom"></td>
+            <td><input type="radio" name="q7" value="2" class="radio-custom"></td>
+            <td><input type="radio" name="q7" value="3" class="radio-custom"></td>
+          </tr>
+          <tr>
+            <td>8. Moving or speaking so slowly that other people could have noticed? Or the opposite?</td>
+            <td><input type="radio" name="q8" value="0" class="radio-custom" checked></td>
+            <td><input type="radio" name="q8" value="1" class="radio-custom"></td>
+            <td><input type="radio" name="q8" value="2" class="radio-custom"></td>
+            <td><input type="radio" name="q8" value="3" class="radio-custom"></td>
+          </tr>
+          <tr>
+            <td style="color:var(--danger);font-weight:700">9. Thoughts that you would be better off dead or of hurting yourself in some way</td>
+            <td><input type="radio" name="q9" value="0" class="radio-custom" checked></td>
+            <td><input type="radio" name="q9" value="1" class="radio-custom"></td>
+            <td><input type="radio" name="q9" value="2" class="radio-custom"></td>
+            <td><input type="radio" name="q9" value="3" class="radio-custom"></td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <div style="background:rgba(13,148,136,.08);padding:16px;border-radius:10px;border-left:4px solid var(--teal);font-size:13px;color:var(--text);line-height:1.5">
+        <i class="fa-solid fa-lock" style="color:var(--teal);margin-right:8px"></i> Your responses are secure and will only be reviewed by clinical staff to ensure you receive the appropriate level of care.
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="form-footer" id="formFooter">
+      <button class="btn btn-ghost" id="btnPrev" style="visibility:hidden" onclick="changeStep(-1)"><i class="fa-solid fa-arrow-left"></i> Back</button>
+      <button class="btn btn-primary" id="btnNext" onclick="changeStep(1)">Next Step <i class="fa-solid fa-arrow-right"></i></button>
+      <button class="btn btn-teal" id="btnSubmit" style="display:none" onclick="submitForm()"><i class="fa-solid fa-paper-plane"></i> Submit Registration</button>
+    </div>
+  </div>
+
+  <!-- Success View -->
+  <div class="card success-view" id="successCard" style="display:none">
+    <div class="success-icon"><i class="fa-solid fa-check"></i></div>
+    <h2 style="font-size:28px;font-weight:800;color:var(--navy);margin-bottom:12px">Registration Complete!</h2>
+    <p style="font-size:16px;color:var(--muted);margin-bottom:20px;line-height:1.6">Thank you for registering with Aha Psychological Services. Your information has been securely received.</p>
+    
+    <div style="background:var(--bg);padding:24px;border-radius:12px;display:inline-block;margin-top:10px;border:1px solid var(--border)">
+      <p style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Your Unique Client Code</p>
+      <div class="client-code" id="resClientCode">AHA-XXXXXX</div>
+      <p style="font-size:13px;color:var(--navy);max-width:300px;margin:0 auto">Please save this code. You will need it to book future appointments or reference your file.</p>
+    </div>
+    
+    <div style="margin-top:40px">
+      <a href="/" class="btn btn-primary"><i class="fa-solid fa-home"></i> Return to Homepage</a>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentStep = 1;
+const totalSteps = 3;
+
+function validateStep(step) {
+  let isValid = true;
+  document.querySelectorAll('.form-group').forEach(g=>g.classList.remove('has-error'));
+  
+  if(step === 1) {
+    const req = ['f_first_name', 'f_last_name', 'f_dob', 'f_phone', 'f_gender', 'f_education', 'f_em_name', 'f_em_phone'];
+    req.forEach(id => {
+      const el = document.getElementById(id);
+      if(!el.value.trim()) {
+        el.closest('.form-group').classList.add('has-error');
+        isValid = false;
+      }
+    });
+  }
+  else if(step === 2) {
+    const el = document.getElementById('f_concerns');
+    const source = document.getElementById('f_source');
+    if(!el.value.trim()) {
+      el.closest('.form-group').classList.add('has-error');
+      isValid = false;
+    }
+    if(!source.value.trim()) {
+      source.closest('.form-group').classList.add('has-error');
+      isValid = false;
+    }
+  }
+  return isValid;
+}
+
+function changeStep(dir) {
+  if(dir === 1 && !validateStep(currentStep)) return;
+  
+  document.getElementById('st-'+currentStep).classList.remove('active');
+  if(dir === 1) document.getElementById('st-'+currentStep).classList.add('completed');
+  
+  document.getElementById('sp-'+currentStep).classList.remove('active');
+  
+  currentStep += dir;
+  
+  document.getElementById('st-'+currentStep).classList.add('active');
+  document.getElementById('sp-'+currentStep).classList.add('active');
+  
+  document.getElementById('btnPrev').style.visibility = currentStep > 1 ? 'visible' : 'hidden';
+  
+  if(currentStep === totalSteps) {
+    document.getElementById('btnNext').style.display = 'none';
+    document.getElementById('btnSubmit').style.display = 'inline-flex';
+  } else {
+    document.getElementById('btnNext').style.display = 'inline-flex';
+    document.getElementById('btnSubmit').style.display = 'none';
+  }
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+async function submitForm() {
+  const btn = document.getElementById('btnSubmit');
+  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Submitting...';
+  btn.disabled = true;
+  
+  // Gather data
+  const issueChecks = [
+    ['stress','issue_stress'],['fear','issue_fear'],['depression','issue_depression'],['loneliness','issue_loneliness'],
+    ['grief','issue_grief'],['trauma','issue_trauma'],['self_confidence','issue_selfconf'],['other_personal','issue_other_personal'],
+    ['premarriage','issue_premarriage'],['marriage','issue_marriage'],['family','issue_family'],['child','issue_child'],
+    ['sex','issue_sex'],['hiv','issue_hiv'],['life','issue_life'],['work','issue_work'],['education','issue_education'],['substance','issue_substance']
+  ];
+  const issueSelections = issueChecks.filter(([,id]) => document.getElementById(id)?.checked).map(([key]) => key);
+  const personal = {
+    first_name: document.getElementById('f_first_name').value,
+    last_name: document.getElementById('f_last_name').value,
+    full_name: `${document.getElementById('f_first_name').value} ${document.getElementById('f_last_name').value}`.trim(),
+    age: document.getElementById('f_age').value,
+    date_of_birth: document.getElementById('f_dob').value,
+    phone: document.getElementById('f_phone').value,
+    email: document.getElementById('f_email').value,
+    gender: document.getElementById('f_gender').value,
+    education: document.getElementById('f_education').value,
+    region: document.getElementById('f_region').value,
+    zone_subcity: document.getElementById('f_zone').value,
+    woreda: document.getElementById('f_woreda').value,
+    house_number: document.getElementById('f_house').value,
+    address: document.getElementById('f_address').value,
+    emergency_contact_name: document.getElementById('f_em_name').value,
+    emergency_contact_relation: document.getElementById('f_em_relation').value,
+    emergency_contact_phone: document.getElementById('f_em_phone').value,
+    emergency_contact_email: document.getElementById('f_em_email').value,
+    emergency_contact_address: document.getElementById('f_em_address').value,
+    language_pref: document.getElementById('f_lang').value,
+    presenting_concerns: document.getElementById('f_concerns').value
+  };
+  
+  const responses = {};
+  for(let i=1; i<=9; i++) {
+    responses['q'+i] = document.querySelector(`input[name="q${i}"]:checked`).value;
+  }
+  
+  const payload = {
+    personal: personal,
+    intake: {
+      language_pref: document.getElementById('f_lang').value,
+      therapist_gender_pref: document.getElementById('f_pref').value,
+      intake_source: 'Website Intake Form',
+      concerns: document.getElementById('f_concerns').value,
+      source_heard: document.getElementById('f_source').value,
+      appointment_date: document.getElementById('f_appt_date').value,
+      appointment_time: document.getElementById('f_appt_time').value,
+      issue_selections: issueSelections,
+      issue_other_personal: document.getElementById('issue_other_personal_text').value,
+      issue_family_other: document.getElementById('issue_family_other').value,
+      issue_repro_other: document.getElementById('issue_repro_other').value,
+      issue_other_general: document.getElementById('issue_other_general').value
+    },
+    screening: {
+      type: 'PHQ-9',
+      responses: responses
+    }
+  };
+  
+  try {
+    const res = await apiFetch('/api/public/intake', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    const data = await res.json();
+    if(data.success) {
+      document.getElementById('mainCard').style.display = 'none';
+      document.getElementById('successCard').style.display = 'block';
+      document.getElementById('resClientCode').textContent = data.client_code;
+      window.scrollTo({top:0, behavior:'smooth'});
+    } else {
+      alert('An error occurred. Please try again.');
+      btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Registration';
+      btn.disabled = false;
+    }
+  } catch(e) {
+    console.error(e);
+    alert('A network error occurred. Please try again.');
+    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Registration';
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
+

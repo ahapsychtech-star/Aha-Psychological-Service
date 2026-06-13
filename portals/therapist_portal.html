@@ -1,0 +1,2468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/api_config.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Therapist Portal — Aha Psychological Services</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+:root{
+  --navy:#043069;--navy-light:#0a4b9c;
+  --gold:#ffbf00;--gold-light:#ffd84d;
+  --teal:#0d9488;--purple:#7c3aed;--indigo:#4f46e5;
+  --bg:#f4f7fc;--surface:#fff;
+  --success:#10b981;--warning:#f59e0b;--danger:#ef4444;--info:#3b82f6;
+  --text:#1e293b;--muted:#64748b;--border:#e2e8f0;
+  --sidebar:240px;--topbar:64px;
+  --shadow:0 4px 24px rgba(4,48,105,.08);--shadow-lg:0 12px 40px rgba(4,48,105,.14);
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden}
+
+.sidebar{width:var(--sidebar);background:var(--navy);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100}
+.sb-logo{padding:20px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sb-logo-text{font-size:22px;font-weight:800;color:#fff}.sb-logo-text span{color:var(--gold)}
+.sb-logo-sub{font-size:10px;color:rgba(255,255,255,.4);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+.sb-role{margin:12px 16px;background:rgba(13,148,136,.2);border:1px solid rgba(13,148,136,.35);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:8px}
+.sb-role i{color:#5eead4;font-size:13px}.sb-role span{color:rgba(255,255,255,.9);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.nav{flex:1;padding:8px 0;overflow-y:auto}
+.nav-section{padding:14px 20px 6px;font-size:10px;color:rgba(255,255,255,.35);font-weight:700;letter-spacing:1.5px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:12px;padding:11px 20px;color:rgba(255,255,255,.65);cursor:pointer;transition:.2s;font-size:13.5px;font-weight:500;border-left:3px solid transparent}
+.nav-item:hover{color:#fff;background:rgba(255,255,255,.07)}
+.nav-item.active{color:#fff;background:rgba(255,255,255,.1);border-left-color:var(--gold)}
+.nav-item i{width:18px;text-align:center;font-size:15px}
+.sb-footer{padding:16px;border-top:1px solid rgba(255,255,255,.08)}
+.sb-user{display:flex;align-items:center;gap:10px;padding:10px;background:rgba(255,255,255,.07);border-radius:8px}
+.sb-avatar{width:36px;height:36px;border-radius:50%;background:var(--teal);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0}
+.sb-name{color:#fff;font-size:13px;font-weight:600}.sb-role-txt{color:rgba(255,255,255,.45);font-size:11px}
+.sb-logout{margin-left:auto;color:rgba(255,255,255,.4);cursor:pointer;font-size:16px;transition:.2s}.sb-logout:hover{color:var(--danger)}
+
+.main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:var(--topbar);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:16px;flex-shrink:0;box-shadow:0 2px 8px rgba(4,48,105,.04)}
+.tb-title{font-size:18px;font-weight:700;color:var(--navy);flex:1}
+.tb-actions{display:flex;align-items:center;gap:10px}
+.content{flex:1;overflow-y:auto;padding:28px}
+.section{display:none}.section.active{display:block}
+
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:var(--surface);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow);display:flex;align-items:center;gap:16px;transition:.3s;border:1px solid var(--border)}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.stat-icon{width:50px;height:50px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0}
+.stat-val{font-size:28px;font-weight:800;line-height:1}.stat-label{font-size:12.5px;color:var(--muted);margin-top:4px}
+.si-blue{background:rgba(59,130,246,.1);color:var(--info)}.si-gold{background:rgba(255,191,0,.12);color:var(--gold)}
+.si-green{background:rgba(16,185,129,.1);color:var(--success)}.si-red{background:rgba(239,68,68,.1);color:var(--danger)}
+.si-teal{background:rgba(13,148,136,.1);color:var(--teal)}.si-purple{background:rgba(124,58,237,.1);color:var(--purple)}
+
+.panel{background:var(--surface);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow);margin-bottom:20px;border:1px solid var(--border)}
+.panel-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.panel-title{font-size:14.5px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:8px}
+.panel-title i{color:var(--gold)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;font-weight:600;font-size:13px;border:none;cursor:pointer;transition:.2s;font-family:inherit}
+.btn-primary{background:var(--navy);color:#fff}.btn-primary:hover{background:var(--navy-light)}
+.btn-teal{background:var(--teal);color:#fff}.btn-teal:hover{background:#0f766e}
+.btn-gold{background:var(--gold);color:var(--navy)}.btn-gold:hover{background:var(--gold-light)}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}.btn-ghost:hover{background:var(--bg);color:var(--text)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-warning{background:var(--warning);color:#fff}
+.btn-success{background:var(--success);color:#fff}
+.btn-outline{background:transparent;border:1.5px solid var(--navy);color:var(--navy)}.btn-outline:hover{background:var(--navy);color:#fff}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:6px}
+.btn-xs{padding:4px 8px;font-size:11px;border-radius:5px}
+
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.badge-blue{background:rgba(59,130,246,.1);color:var(--info)}.badge-green{background:rgba(16,185,129,.1);color:var(--success)}
+.badge-red{background:rgba(239,68,68,.1);color:var(--danger)}.badge-orange{background:rgba(245,158,11,.12);color:var(--warning)}
+.badge-teal{background:rgba(13,148,136,.1);color:var(--teal)}.badge-indigo{background:rgba(79,70,229,.1);color:var(--indigo)}
+.badge-purple{background:rgba(124,58,237,.1);color:var(--purple)}.badge-gray{background:rgba(100,116,139,.1);color:var(--muted)}
+.badge-gold{background:rgba(255,191,0,.16);color:#8a5b00}
+
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;padding:10px 14px;border-bottom:2px solid var(--border);white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:13.5px;vertical-align:middle}
+tr:hover td{background:rgba(244,247,252,.7)}tr:last-child td{border-bottom:none}
+
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:6px}
+.form-control{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:13.5px;font-family:inherit;color:var(--text);background:var(--surface);transition:.2s}
+.form-control:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(4,48,105,.08)}
+textarea.form-control{resize:vertical;min-height:100px}
+select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M7 7l3 3 3-3' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:20px;padding-right:36px}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(4,48,105,.4);backdrop-filter:blur(4px);z-index:200}
+.overlay.open{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:560px;background:var(--surface);box-shadow:-8px 0 40px rgba(4,48,105,.15);z-index:201;transform:translateX(100%);transition:.35s cubic-bezier(.2,.8,.2,1);overflow-y:auto;display:flex;flex-direction:column}
+.drawer.open{transform:translateX(0)}
+.drawer-hdr{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:2}
+.drawer-title{font-size:16px;font-weight:700;color:var(--navy)}
+.drawer-close{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.drawer-close:hover{background:var(--danger);color:#fff;border-color:var(--danger)}
+.drawer-body{padding:24px;flex:1}
+.drawer-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;background:var(--surface)}
+
+.modal-wrap{display:none;position:fixed;inset:0;z-index:300;align-items:center;justify-content:center}
+.modal-wrap.open{display:flex}
+.modal{background:var(--surface);border-radius:18px;width:94%;max-width:980px;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow-lg)}
+.modal-hdr{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface)}
+.modal-title{font-size:16px;font-weight:700;color:var(--navy)}
+.modal-body{padding:24px}
+.modal-footer{padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px}
+
+.toast-wrap{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:10px}
+.toast{background:var(--surface);border-radius:12px;padding:13px 18px;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:12px;min-width:280px;transform:translateX(360px);transition:.4s cubic-bezier(.2,.8,.2,1);border-left:4px solid var(--success)}
+.toast.show{transform:translateX(0)}.toast.err{border-left-color:var(--danger)}
+.toast i{font-size:17px;color:var(--success)}.toast.err i{color:var(--danger)}
+.toast span{font-size:13.5px;font-weight:600}
+
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px}
+.tab{padding:10px 18px;cursor:pointer;font-size:13.5px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:.2s}
+.tab.active{color:var(--navy);border-bottom-color:var(--navy)}
+
+/* Client card */
+.client-card{background:var(--surface);border-radius:var(--radius);padding:18px;border:2px solid var(--border);cursor:pointer;transition:.3s;margin-bottom:12px}
+.client-card:hover{border-color:var(--teal);box-shadow:var(--shadow)}
+.client-card.selected{border-color:var(--gold);background:rgba(255,191,0,.03)}
+.cc-header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.cc-avatar{width:44px;height:44px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;flex-shrink:0}
+.cc-name{font-size:15px;font-weight:800}
+.cc-code{font-size:11px;color:var(--muted);font-weight:600}
+.cc-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+
+/* Note editor */
+.note-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:16px 18px;background:linear-gradient(135deg,rgba(4,48,105,.05),rgba(13,148,136,.05));border:1px solid rgba(4,48,105,.08);border-radius:16px;margin-bottom:18px}
+.note-kicker{font-size:11px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--teal);margin-bottom:6px}
+.note-hero-title{font-size:18px;font-weight:800;color:var(--navy);margin-bottom:6px}
+.note-hero-copy{font-size:13px;line-height:1.6;color:var(--muted);max-width:720px}
+.note-chip-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.note-chip{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;background:#fff;border:1px solid var(--border);font-size:11px;font-weight:700;color:var(--navy);box-shadow:0 4px 12px rgba(4,48,105,.04)}
+.note-shell{display:flex;flex-direction:column;gap:16px}
+.note-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 28px rgba(4,48,105,.06);overflow:hidden}
+.note-card-hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#fff,#fbfdff)}
+.note-card-title{font-size:13px;font-weight:800;color:var(--navy);display:flex;align-items:center;gap:8px}
+.note-card-sub{font-size:11.5px;color:var(--muted)}
+.note-toolbar{display:flex;gap:6px;padding:8px;background:var(--bg);border-radius:8px 8px 0 0;border:1.5px solid var(--border);border-bottom:none}
+.note-toolbar button{padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:var(--surface);font-size:12px;cursor:pointer;font-weight:600;color:var(--muted);transition:.2s}
+.note-toolbar button:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
+.note-editor{width:100%;min-height:420px;padding:16px;border:1.5px solid var(--border);border-top:none;border-radius:0 0 8px 8px;font-family:inherit;font-size:14px;line-height:1.8;resize:vertical;color:var(--text);background:#fff}
+.note-editor:focus{outline:none;border-color:var(--navy)}
+.note-template{font-size:12px;color:var(--muted);padding:4px 8px;border-radius:5px;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:.2s}
+.note-template:hover{border-color:var(--teal);color:var(--teal)}
+.note-side{display:grid;grid-template-columns:1fr;gap:16px}
+.note-ai-box{background:linear-gradient(180deg,rgba(13,148,136,.05),rgba(4,48,105,.02));border:1px solid rgba(13,148,136,.18);border-radius:16px;padding:16px}
+.note-ai-helper{font-size:12px;line-height:1.7;color:var(--muted);margin-top:10px}
+.note-ai-helper b{color:var(--navy)}
+.note-summary-box{padding:14px;border-radius:14px;background:#fff;border:1px solid var(--border);box-shadow:0 6px 18px rgba(4,48,105,.05)}
+.note-summary-box textarea{background:#fbfdff}
+.note-summary-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.note-summary-title label{margin-bottom:0}
+.note-summary-hint{font-size:11.5px;color:var(--muted)}
+.note-ai-box textarea{min-height:180px}
+.notes-workspace{display:grid;grid-template-columns:280px minmax(0,1.35fr) minmax(320px,.95fr);gap:16px;align-items:start}
+.notes-col,.notes-summary-panel,.notes-client-panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 28px rgba(4,48,105,.06);overflow:hidden}
+.notes-col-hdr{padding:14px 16px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#fff,#fbfdff);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.notes-col-title{font-size:13px;font-weight:800;color:var(--navy);display:flex;align-items:center;gap:8px}
+.notes-col-sub{font-size:11.5px;color:var(--muted)}
+.notes-client-list,.notes-report-list{padding:14px;max-height:62vh;overflow:auto}
+.notes-client-item,.notes-report-item{border:1px solid var(--border);border-radius:14px;background:#fff;padding:12px;cursor:pointer;transition:.2s;margin-bottom:10px}
+.notes-client-item:hover,.notes-report-item:hover{border-color:var(--teal);box-shadow:0 6px 18px rgba(13,148,136,.08)}
+.notes-client-item.selected,.notes-report-item.selected{border-color:var(--gold);background:rgba(255,191,0,.04)}
+.notes-client-name{font-size:14px;font-weight:800;color:var(--navy);margin-bottom:2px}
+.notes-client-code{font-size:11.5px;color:var(--muted);font-weight:600}
+.notes-client-meta,.notes-report-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.notes-report-item-title{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+.notes-report-title{font-size:13.5px;font-weight:800;color:var(--navy)}
+.notes-report-date{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.notes-report-preview{font-size:13px;color:var(--muted);line-height:1.65;white-space:pre-wrap}
+.notes-summary-body{padding:16px;min-height:420px;display:flex;flex-direction:column;gap:14px}
+.notes-summary-output{flex:1;border:1px dashed var(--border);border-radius:14px;background:linear-gradient(180deg,#fff,#fbfdff);padding:16px;white-space:pre-wrap;line-height:1.75;font-size:13.5px;color:var(--text)}
+.notes-summary-actions{display:flex;gap:8px;flex-wrap:wrap}
+.notes-summary-kicker{font-size:11px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;color:var(--teal)}
+.notes-summary-head{font-size:18px;font-weight:800;color:var(--navy)}
+.notes-summary-meta{font-size:13px;color:var(--muted);line-height:1.6}
+.notes-empty{padding:30px 18px;text-align:center;color:var(--muted)}
+.notes-empty i{font-size:34px;color:var(--border);margin-bottom:10px}
+.notify-card{background:linear-gradient(180deg,#fff,#fbfdff);border:1px solid var(--border);border-radius:16px;padding:16px 16px 14px;box-shadow:0 8px 26px rgba(4,48,105,.06);margin-bottom:12px;transition:.2s}
+.notify-card:hover{transform:translateY(-1px);box-shadow:0 12px 32px rgba(4,48,105,.09)}
+.notify-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}
+.notify-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.notify-main{flex:1;min-width:0}
+.notify-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.notify-title{font-size:14px;font-weight:800;color:var(--navy);line-height:1.4}
+.notify-time{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.notify-body{font-size:12.5px;line-height:1.7;color:var(--text)}
+.notify-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-top:12px}
+.notify-field{padding:10px 12px;border-radius:12px;background:var(--bg);border:1px solid rgba(4,48,105,.06)}
+.notify-field-label{font-size:10.5px;font-weight:800;letter-spacing:.9px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.notify-field-value{font-size:13px;font-weight:700;color:var(--navy);line-height:1.4}
+.notify-footer{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.notify-status{display:inline-flex;align-items:center;gap:6px}
+.notify-status-dot{width:10px;height:10px;border-radius:50%}
+@media (max-width: 1024px){
+  .note-chip-row{justify-content:flex-start}
+  .notes-workspace{grid-template-columns:1fr}
+}
+
+/* Session card */
+.session-card{background:var(--bg);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid var(--teal)}
+.session-card.progress{border-left-color:var(--info)}
+.session-card.assessment{border-left-color:var(--purple)}
+.session-card.plan{border-left-color:var(--success)}
+
+/* Action buttons row */
+.action-bar{display:flex;gap:8px;flex-wrap:wrap;padding:16px;background:rgba(4,48,105,.03);border-radius:10px;border:1px solid var(--border);margin-bottom:16px}
+
+/* Risk indicator */
+.risk-indicator{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700}
+.risk-high{background:rgba(239,68,68,.1);color:var(--danger);border:1px solid rgba(239,68,68,.2)}
+.risk-medium{background:rgba(245,158,11,.1);color:var(--warning);border:1px solid rgba(245,158,11,.2)}
+.risk-low{background:rgba(16,185,129,.1);color:var(--success);border:1px solid rgba(16,185,129,.2)}
+
+/* Timeline */
+.timeline-item{display:flex;gap:14px;padding-bottom:16px;position:relative}
+.timeline-item::before{content:'';position:absolute;left:15px;top:30px;bottom:0;width:2px;background:var(--border)}
+.timeline-item:last-child::before{display:none}
+.tl-dot{width:32px;height:32px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;z-index:1}
+.tl-body{flex:1}
+.tl-date{font-size:11.5px;color:var(--muted);margin-bottom:3px}
+.tl-text{font-size:13.5px;font-weight:600}
+
+/* Skel */
+.skel{background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);background-size:200% 100%;animation:skel 1.4s infinite;border-radius:6px}
+@keyframes skel{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* Schedule list */
+.schedule-item{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--surface);border-radius:10px;margin-bottom:10px;border:1px solid var(--border);transition:.2s;cursor:pointer}
+.schedule-item:hover{border-color:var(--teal);box-shadow:0 4px 12px rgba(13,148,136,.08)}
+.sch-time{font-size:13px;font-weight:700;color:var(--navy);min-width:80px}
+.sch-client{font-size:14px;font-weight:700;flex:1}
+.sch-type{font-size:12px;color:var(--muted)}
+
+/* Calendar */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-day-header{text-align:center;font-size:12px;font-weight:700;color:var(--muted);padding:8px;text-transform:uppercase}
+.cal-day{min-height:96px;background:var(--surface);border-radius:10px;padding:8px;cursor:pointer;transition:.2s;border:1px solid var(--border)}
+.cal-day:hover{border-color:var(--teal)}
+.cal-day.other-month .cal-day-num{color:var(--border)}
+.cal-day-num{font-size:13px;font-weight:700;margin-bottom:6px;width:24px;height:24px;display:flex;align-items:center;justify-content:center}
+.cal-appt-dot{font-size:11px;background:rgba(13,148,136,.1);color:var(--teal);border-radius:4px;padding:2px 6px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.appt-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700;color:#fff;white-space:nowrap}
+.appt-muted{opacity:.56;filter:grayscale(.2);backdrop-filter:blur(1px)}
+.appt-temporary{opacity:.72;filter:saturate(.8);backdrop-filter:blur(.7px)}
+.appt-cancelled{opacity:.44;filter:grayscale(.35) blur(.2px);backdrop-filter:blur(1px)}
+.notes-report-item{cursor:pointer}
+.notes-report-item:hover{transform:translateY(-1px)}
+.note-reader-modal{max-width:1120px}
+.note-reader-paper{background:linear-gradient(180deg,#fff, #fbfdff);border:1px solid var(--border);border-radius:20px;box-shadow:inset 0 0 0 1px rgba(4,48,105,.03), 0 20px 60px rgba(4,48,105,.14);overflow:hidden}
+.note-reader-header{padding:18px 22px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,rgba(4,48,105,.04),rgba(13,148,136,.04))}
+.note-reader-title{font-size:22px;font-weight:800;color:var(--navy);margin-bottom:6px}
+.note-reader-meta{font-size:13px;color:var(--muted);line-height:1.6}
+.note-reader-body{padding:22px;max-height:72vh;overflow:auto;white-space:pre-wrap;line-height:1.85;font-size:14px;color:var(--text)}
+.appt-editor-modal{max-width:780px}
+.appt-editor-hero{padding:16px 18px;border-radius:16px;background:linear-gradient(135deg,rgba(4,48,105,.05),rgba(255,191,0,.12));border:1px solid rgba(4,48,105,.08);margin-bottom:16px}
+.appt-editor-title{font-size:20px;font-weight:800;color:var(--navy);margin-bottom:6px}
+.appt-editor-sub{font-size:13px;color:var(--muted);line-height:1.6}
+.appt-mode-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.appt-mode-btn{padding:8px 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;transition:.2s}
+.appt-mode-btn.active.temp{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.28);color:#92400e}
+.appt-mode-btn.active.perm{background:rgba(255,191,0,.18);border-color:rgba(255,191,0,.32);color:var(--navy)}
+.appt-mode-btn.active.cancel{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.28);color:var(--danger)}
+.appt-editor-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.appt-editor-note{padding:12px 14px;border-radius:12px;background:rgba(255,191,0,.08);border:1px solid rgba(255,191,0,.18);font-size:12.5px;line-height:1.6;color:var(--text)}
+.appt-editor-note strong{color:var(--navy)}
+.appt-editor-hidden{display:none}
+.appt-editor-save{min-width:180px}
+
+/* Treatment plan */
+.plan-section{margin-bottom:18px}
+.plan-section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:8px}
+#sec-plans{display:none !important}
+
+/* ── VISUAL CALENDAR ── */
+.vc-container {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+}
+.vc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: rgba(4,48,105,0.02);
+  border-bottom: 1px solid var(--border);
+}
+.vc-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.vc-nav button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--navy);
+  font-size: 14px;
+  padding: 4px;
+}
+.vc-date-label {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--navy);
+  min-width: 140px;
+  text-align: center;
+}
+.vc-view-toggle {
+  display: flex;
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 3px;
+  border: 1px solid var(--border);
+}
+.vc-view-toggle button {
+  background: transparent;
+  border: none;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.vc-view-toggle button.active {
+  background: #fff;
+  color: var(--navy);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.vc-grid-wrap {
+  position: relative;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.vc-grid {
+  display: flex;
+  position: relative;
+  min-width: 100%;
+}
+.vc-time-col {
+  width: 60px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  background: #fdfdfd;
+}
+.vc-time-slot {
+  height: 40px;
+  border-bottom: 1px dashed var(--border);
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+  padding-right: 8px;
+  padding-top: 4px;
+  box-sizing: border-box;
+}
+.vc-days {
+  flex: 1;
+  display: flex;
+  position: relative;
+}
+.vc-day-col {
+  flex: 1;
+  border-right: 1px solid var(--border);
+  position: relative;
+  min-width: 100px;
+}
+.vc-day-col:last-child {
+  border-right: none;
+}
+.vc-day-header {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--navy);
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  background: #f8fafc;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.vc-slot {
+  height: 40px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: 0.2s;
+  box-sizing: border-box;
+  position: relative;
+}
+.vc-slot:hover {
+  background: rgba(16,185,129,0.05);
+}
+.vc-slot.available {
+  background: rgba(16,185,129,0.02);
+}
+.vc-slot.busy {
+  background: rgba(100,116,139,0.05);
+  cursor: not-allowed;
+}
+.vc-slot.selected {
+  background: rgba(59,130,246,0.15) !important;
+  border: 1px solid var(--info);
+  z-index: 1;
+}
+.vc-appt {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  border-radius: 4px;
+  font-size: 10px;
+  padding: 4px;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  z-index: 1;
+  pointer-events: none;
+}
+.vc-current-time {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--danger);
+  z-index: 2;
+  pointer-events: none;
+}
+.vc-current-time::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <img src="https://www.ahaethiopia.com/site/wp-content/uploads/2021/03/aha-logo-2.png" style="height:40px; margin-bottom:20px;">
+    <div class="sb-logo-sub">Psychological Services</div>
+  </div>
+  <div class="sb-role"><i class="fa-solid fa-user-doctor"></i><span>Therapist Portal</span></div>
+  <nav class="nav">
+    <div class="nav-section">Clinical</div>
+    <div class="nav-item active" data-sec="dashboard"><i class="fa-solid fa-gauge-high"></i>Dashboard</div>
+    <div class="nav-item" data-sec="schedule"><i class="fa-solid fa-calendar-day"></i>My Schedule</div>
+    <div class="nav-item" data-sec="clients"><i class="fa-solid fa-users"></i>My Clients</div>
+    <div class="nav-section">Documentation</div>
+    <div class="nav-item" data-sec="notes"><i class="fa-solid fa-notes-medical"></i>Clinical Notes</div>
+    <div class="nav-section">Workflow</div>
+    <div class="nav-item" data-sec="screening-records"><i class="fa-solid fa-clipboard-check"></i>Screening Records</div>
+    <div class="nav-item" data-sec="referrals"><i class="fa-solid fa-right-left"></i>Referrals</div>
+    <div class="nav-item" data-sec="messages"><i class="fa-solid fa-comments"></i>Messages</div>
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-user">
+      <div class="sb-avatar" id="sbAvatar">T</div>
+      <div><div class="sb-name" id="sbName">Therapist</div><div class="sb-role-txt">Therapist</div></div>
+      <a href="/logout" class="sb-logout" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></a>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="tb-title" id="tbTitle">Dashboard</div>
+    <div class="tb-actions">
+      <div id="tbDate" style="font-size:13px;color:var(--muted);font-weight:500"></div>
+      <button class="btn btn-teal btn-sm" onclick="openNoteModal()"><i class="fa-solid fa-plus"></i>New Note</button>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- ── DASHBOARD ── -->
+    <section class="section active" id="sec-dashboard">
+      <div style="margin-bottom:20px">
+        <h1 style="font-size:22px;font-weight:800;color:var(--navy)" id="dashGreeting">Good morning</h1>
+        <p style="color:var(--muted);font-size:14px" id="dashSubtitle">Here's your clinical overview for today</p>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-icon si-blue"><i class="fa-solid fa-users"></i></div><div><div class="stat-val" id="sMyClients">—</div><div class="stat-label">My Clients</div></div></div>
+        <div class="stat-card"><div class="stat-icon si-gold"><i class="fa-solid fa-calendar-check"></i></div><div><div class="stat-val" id="sTodayAppts">—</div><div class="stat-label">Today's Sessions</div></div></div>
+        <div class="stat-card"><div class="stat-icon si-red"><i class="fa-solid fa-triangle-exclamation"></i></div><div><div class="stat-val" id="sHighRisk">—</div><div class="stat-label">High-Risk Clients</div></div></div>
+        <div class="stat-card"><div class="stat-icon si-purple"><i class="fa-solid fa-right-left"></i></div><div><div class="stat-val" id="sPendingRef">—</div><div class="stat-label">Pending Referrals</div></div></div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Today's sessions -->
+        <div class="panel">
+          <div class="panel-hdr">
+            <div class="panel-title"><i class="fa-solid fa-calendar-day"></i>Today's Sessions</div>
+            <button class="btn btn-ghost btn-sm" onclick="showSection('schedule')">Full Schedule</button>
+          </div>
+          <div id="todaySessions"><div class="skel" style="height:60px;margin-bottom:8px"></div><div class="skel" style="height:60px"></div></div>
+        </div>
+
+        <!-- High-Risk Clients -->
+        <div class="panel" style="border:1.5px solid rgba(239,68,68,.15)">
+          <div class="panel-hdr">
+            <div class="panel-title" style="color:var(--danger)"><i class="fa-solid fa-shield-exclamation" style="color:var(--danger)"></i>High-Risk Clients</div>
+          </div>
+          <div id="highRiskList"><div class="skel" style="height:50px;margin-bottom:8px"></div><div class="skel" style="height:50px"></div></div>
+        </div>
+      </div>
+
+      <!-- Recent Notes -->
+      <div class="panel">
+        <div class="panel-hdr">
+          <div class="panel-title"><i class="fa-solid fa-notes-medical"></i>Recent Session Notes</div>
+          <button class="btn btn-ghost btn-sm" onclick="showSection('notes')">All Notes</button>
+        </div>
+        <div id="recentNotes"><div class="skel" style="height:50px;margin-bottom:8px"></div></div>
+      </div>
+    </section>
+
+    <!-- ── SCHEDULE ── -->
+    <section class="section" id="sec-schedule">
+      <div class="panel">
+        <div class="panel-hdr">
+          <div class="panel-title"><i class="fa-solid fa-calendar-week"></i>My Schedule</div>
+          <div style="display:flex;gap:8px">
+            <input type="date" class="form-control" id="schedDate" style="width:160px" onchange="loadSchedule()">
+            <button class="btn btn-ghost btn-sm" onclick="loadSchedule()"><i class="fa-solid fa-arrows-rotate"></i></button>
+            <button class="btn btn-ghost btn-sm" id="schedListBtn" onclick="setSchedView('list')">List</button>
+            <button class="btn btn-gold btn-sm" id="schedCalBtn" onclick="setSchedView('calendar')">Calendar</button>
+          </div>
+        </div>
+        <div id="schedCalendar" style="display:none;margin-bottom:12px"></div>
+        <div id="scheduleList"><div class="skel" style="height:70px;margin-bottom:10px"></div><div class="skel" style="height:70px"></div></div>
+      </div>
+    </section>
+
+    <!-- ── MY CLIENTS ── -->
+    <section class="section" id="sec-clients">
+      <div style="display:grid;grid-template-columns:320px 1fr;gap:20px;height:calc(100vh - 130px);overflow:hidden">
+        <!-- Client List -->
+        <div class="panel" style="overflow-y:auto">
+          <div class="panel-hdr"><div class="panel-title"><i class="fa-solid fa-users"></i>My Caseload</div></div>
+          <input class="form-control" placeholder="Search clients..." id="clientSearch" oninput="filterMyClients()" style="margin-bottom:14px">
+          <div id="myClientList"></div>
+        </div>
+        <!-- Client Detail -->
+        <div id="clientDetailPanel" style="display:flex;flex-direction:column;gap:16px;overflow-y:auto">
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--muted);text-align:center">
+            <i class="fa-solid fa-person" style="font-size:48px;color:var(--border);margin-bottom:16px"></i>
+            <p style="font-size:16px;font-weight:600">Select a client</p>
+            <p style="font-size:13px;margin-top:6px">Click a client from the left to view their full profile</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SESSION NOTES ── -->
+    <section class="section" id="sec-notes">
+      <div class="panel">
+        <div class="panel-hdr">
+          <div class="panel-title"><i class="fa-solid fa-notes-medical"></i>Clinical Notes Workspace</div>
+          <button class="btn btn-teal btn-sm" onclick="openNoteModal()"><i class="fa-solid fa-plus"></i>Write Note</button>
+        </div>
+        <div class="notes-workspace">
+          <div class="notes-client-panel">
+            <div class="notes-col-hdr">
+              <div>
+                <div class="notes-col-title"><i class="fa-solid fa-address-card" style="color:var(--teal)"></i>Client Cards</div>
+                <div class="notes-col-sub">Select a client to view their reports</div>
+              </div>
+            </div>
+            <div class="notes-client-list" id="notesClientList"></div>
+          </div>
+
+          <div class="notes-col">
+            <div class="notes-col-hdr">
+              <div>
+                <div class="notes-col-title"><i class="fa-solid fa-folder-open" style="color:var(--gold)"></i>Session Reports</div>
+                <div class="notes-col-sub" id="notesClientInfo">Select a client card to view notes</div>
+              </div>
+              <div class="notes-summary-actions">
+                <button class="btn btn-gold btn-sm" id="notesClientSummaryBtn" onclick="generateClientDetailedSummary()"><i class="fa-solid fa-wand-magic-sparkles"></i>Detailed Summary</button>
+                <button class="btn btn-teal btn-sm" onclick="openNoteModal()" id="notesWriteBtn"><i class="fa-solid fa-plus"></i>New Note</button>
+              </div>
+            </div>
+            <div class="notes-report-list" id="notesReportList">
+              <div class="notes-empty">
+                <i class="fa-solid fa-folder-open"></i>
+                <div style="font-weight:700;font-size:15px">No client selected</div>
+                <div style="font-size:13px;margin-top:6px">Pick a client card on the left to load their session reports.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="notes-summary-panel">
+            <div class="notes-col-hdr">
+              <div>
+                <div class="notes-col-title"><i class="fa-solid fa-square-poll-vertical" style="color:var(--indigo)"></i>AI Summary</div>
+                <div class="notes-col-sub" id="notesSummaryHint">Detailed summary will appear here</div>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="clearNotesSummary()">Clear</button>
+            </div>
+            <div class="notes-summary-body">
+              <div>
+                <div class="notes-summary-kicker" id="notesSummaryKicker">Ready</div>
+                <div class="notes-summary-head" id="notesSummaryTitle">Select a report or a client</div>
+                <div class="notes-summary-meta" id="notesSummaryMeta">Use the report button for a specific session, or the detailed summary button for the full client history.</div>
+              </div>
+              <div class="notes-summary-output" id="notesSummaryOutput">No summary generated yet.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── TREATMENT PLANS ── -->
+    <!-- ── REFERRALS ── -->
+    
+    <section class="section" id="sec-screening-records">
+      <div class="panel">
+        <div class="panel-hdr">
+          <div class="panel-title"><i class="fa-solid fa-clipboard-check"></i> Screening Records & Link Generator</div>
+        </div>
+        
+        <div class="grid-2">
+          <!-- Left: Templates & Link Generator -->
+          <div>
+            <div class="panel-title" style="margin-bottom:12px;font-size:15px"><i class="fa-solid fa-book-medical"></i> Assessment Library</div>
+            <div class="form-group">
+              <input type="text" class="form-control" id="srTemplateSearch" placeholder="Search assessments..." oninput="filterSRTemplates()">
+            </div>
+            <div id="srTemplateList" style="display:flex;flex-direction:column;gap:10px;max-height:400px;overflow-y:auto;padding-right:8px;margin-bottom:20px">
+              <p style="color:var(--muted)">Loading templates...</p>
+            </div>
+            
+            <div id="srLinkGenerator" class="panel" style="background:#f8fafc;display:none;padding:16px">
+              <div class="panel-title" style="margin-bottom:12px;font-size:14px"><i class="fa-solid fa-link"></i> Generate Link: <span id="srSelectedTemplateName" style="color:var(--navy)"></span></div>
+              <input type="hidden" id="srSelectedTemplateId">
+              
+              <div class="form-group">
+                <label>Client (Optional)</label>
+                <select class="form-control" id="srClientSelect">
+                  <option value="">Anonymous / No Client</option>
+                  <!-- Populated by JS from myClients -->
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Link Expires In</label>
+                <select class="form-control" id="srExpiresSelect">
+                  <option value="1">1 Hour</option>
+                  <option value="24" selected>24 Hours</option>
+                  <option value="168">7 Days</option>
+                  <option value="720">30 Days</option>
+                </select>
+              </div>
+              <button class="btn btn-gold btn-sm" style="width:100%" onclick="generateScreeningLink()"><i class="fa-solid fa-magic"></i> Generate Link</button>
+              
+              <div id="srLinkResult" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+                <label>Copy Link:</label>
+                <div style="display:flex;gap:8px;margin-bottom:12px">
+                  <input type="text" class="form-control" id="srGeneratedUrl" readonly style="font-size:12px;background:#fff">
+                  <button class="btn btn-outline btn-sm" onclick="copyScreeningLink()"><i class="fa-regular fa-copy"></i></button>
+                </div>
+                <div style="text-align:center">
+                  <img id="srQrCode" src="" alt="QR Code" style="width:120px;height:120px;border-radius:8px;border:1px solid var(--border);padding:4px;background:#fff">
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Right: Completed Assessments -->
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+              <div class="panel-title" style="font-size:15px"><i class="fa-solid fa-inbox"></i> Completed Screenings</div>
+              <button class="btn btn-ghost btn-sm" onclick="loadScreeningResults()"><i class="fa-solid fa-arrows-rotate"></i></button>
+            </div>
+            <div id="srResultsList" style="display:flex;flex-direction:column;gap:10px;max-height:600px;overflow-y:auto;padding-right:8px">
+              <p style="color:var(--muted)">Loading results...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Assessment Result Modal -->
+    <div class="overlay" id="srResultOverlay" onclick="closeScreeningResult()"></div>
+    <div class="modal" id="srResultModal" style="max-width:700px;width:95%">
+      <div class="modal-hdr">
+        <div class="modal-title" id="srResultTitle">Assessment Result</div>
+        <button class="modal-close" onclick="closeScreeningResult()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex;justify-content:space-between;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:16px">
+          <div>
+            <div style="font-size:13px;color:var(--muted)">Client</div>
+            <div style="font-weight:700;font-size:16px;color:var(--navy)" id="srResultClient"></div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:13px;color:var(--muted)">Completed At</div>
+            <div style="font-weight:600;font-size:14px" id="srResultDate"></div>
+          </div>
+        </div>
+        <div id="srResultAnswers" style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
+        </div>
+        <button class="btn btn-outline" style="width:100%" onclick="window.print()"><i class="fa-solid fa-print"></i> Print Report</button>
+      </div>
+    </div>
+<section class="section" id="sec-referrals">
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-hdr"><div class="panel-title"><i class="fa-solid fa-arrow-right-arrow-left"></i>Outgoing Referrals</div>
+            <button class="btn btn-teal btn-sm" onclick="openReferralModal()"><i class="fa-solid fa-plus"></i>Create Referral</button>
+          </div>
+          <p style="color:var(--muted);font-size:13px;margin-bottom:14px">Clients you have referred to another therapist or service.</p>
+          <div id="outReferralList"><p style="color:var(--muted);text-align:center;padding:20px">Loading...</p></div>
+        </div>
+        <div class="panel">
+          <div class="panel-hdr"><div class="panel-title"><i class="fa-solid fa-arrow-left"></i>Incoming Referrals</div></div>
+          <p style="color:var(--muted);font-size:13px;margin-bottom:14px">Clients referred to you from other therapists.</p>
+          <div id="inReferralList"><p style="color:var(--muted);text-align:center;padding:20px">Loading...</p></div>
+        </div>
+      </div>
+
+      <!-- Workflow Actions -->
+      <div class="panel">
+        <div class="panel-hdr"><div class="panel-title"><i class="fa-solid fa-list-check"></i>Workflow Actions</div></div>
+        <p style="color:var(--muted);font-size:13px;margin-bottom:16px">Use these actions for client management. All actions are logged and the reception team will be notified automatically.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
+          <div style="padding:16px;border:1.5px solid var(--border);border-radius:10px;text-align:center;cursor:pointer;transition:.2s" onclick="openActionModal('supervision')" onmouseover="this.style.borderColor='var(--teal)'" onmouseout="this.style.borderColor='var(--border)'">
+            <i class="fa-solid fa-chalkboard-user" style="font-size:22px;color:var(--teal);margin-bottom:8px"></i>
+            <div style="font-weight:700;font-size:13px">Request Supervision</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:4px">Flag case for supervisor review</div>
+          </div>
+          <div style="padding:16px;border:1.5px solid var(--border);border-radius:10px;text-align:center;cursor:pointer;transition:.2s" onclick="openActionModal('refer')" onmouseover="this.style.borderColor='var(--indigo)'" onmouseout="this.style.borderColor='var(--border)'">
+            <i class="fa-solid fa-right-left" style="font-size:22px;color:var(--indigo);margin-bottom:8px"></i>
+            <div style="font-weight:700;font-size:13px">Refer Client</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:4px">Transfer to another therapist</div>
+          </div>
+          <div style="padding:16px;border:1.5px solid var(--border);border-radius:10px;text-align:center;cursor:pointer;transition:.2s" onclick="openActionModal('pause')" onmouseover="this.style.borderColor='var(--warning)'" onmouseout="this.style.borderColor='var(--border)'">
+            <i class="fa-solid fa-circle-pause" style="font-size:22px;color:var(--warning);margin-bottom:8px"></i>
+            <div style="font-weight:700;font-size:13px">Pause Treatment</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:4px">Temporarily suspend sessions</div>
+          </div>
+          <div style="padding:16px;border:1.5px solid var(--border);border-radius:10px;text-align:center;cursor:pointer;transition:.2s" onclick="openActionModal('close')" onmouseover="this.style.borderColor='var(--success)'" onmouseout="this.style.borderColor='var(--border)'">
+            <i class="fa-solid fa-circle-check" style="font-size:22px;color:var(--success);margin-bottom:8px"></i>
+            <div style="font-weight:700;font-size:13px">Close Case</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:4px">Mark treatment as completed</div>
+          </div>
+          <div style="padding:16px;border:1.5px solid var(--border);border-radius:10px;text-align:center;cursor:pointer;transition:.2s" onclick="openActionModal('terminate')" onmouseover="this.style.borderColor='var(--danger)'" onmouseout="this.style.borderColor='var(--border)'">
+            <i class="fa-solid fa-ban" style="font-size:22px;color:var(--danger);margin-bottom:8px"></i>
+            <div style="font-weight:700;font-size:13px">Terminate Service</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:4px">End services with documentation</div>
+          </div>
+          <div style="padding:16px;border:1.5px solid var(--border);border-radius:10px;text-align:center;cursor:pointer;transition:.2s" onclick="openActionModal('reschedule')" onmouseover="this.style.borderColor='var(--purple)'" onmouseout="this.style.borderColor='var(--border)'">
+            <i class="fa-solid fa-calendar-xmark" style="font-size:22px;color:var(--purple);margin-bottom:8px"></i>
+            <div style="font-weight:700;font-size:13px">Cancel Session</div>
+            <div style="font-size:11.5px;color:var(--muted);margin-top:4px">Cancel with documented reason</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── MESSAGES ── -->
+    <section class="section" id="sec-messages">
+      <div class="grid-2">
+        <div class="panel" style="overflow-y:auto;max-height:600px">
+          <div class="panel-hdr"><div class="panel-title"><i class="fa-solid fa-inbox"></i>Inbox</div></div>
+          <div id="inboxList"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-hdr"><div class="panel-title"><i class="fa-solid fa-pen"></i>Compose</div></div>
+          <div class="form-group"><label>To</label><select class="form-control" id="msgTo"></select></div>
+          <div class="form-group"><label>Subject</label><input class="form-control" id="msgSubject" placeholder="Subject..."></div>
+          <div class="form-group"><label>Message</label><textarea class="form-control" id="msgBody" style="min-height:180px"></textarea></div>
+          <button class="btn btn-teal" onclick="sendMsg()"><i class="fa-solid fa-paper-plane"></i>Send</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- ── Session Note Modal ── -->
+<div class="overlay" id="noteOverlay" onclick="closeNoteModal()"></div>
+<div class="modal-wrap" id="noteModal">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-hdr">
+      <div class="modal-title"><i class="fa-solid fa-notes-medical" style="color:var(--teal)"></i> Session Note</div>
+      <button class="drawer-close" onclick="closeNoteModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="note-hero">
+        <div>
+          <div class="note-kicker">Clinical documentation workspace</div>
+          <div class="note-hero-title">Draft naturally, then shape it with AI.</div>
+          <div class="note-hero-copy">Use the templates to start fast, then let AI Structure turn rough notes into a clear clinical format without adding anything that was not written in the chart draft.</div>
+        </div>
+        <div class="note-chip-row">
+          <span class="note-chip"><i class="fa-solid fa-note-sticky"></i>SOAP</span>
+          <span class="note-chip"><i class="fa-solid fa-layer-group"></i>DAP</span>
+          <span class="note-chip"><i class="fa-solid fa-heart-circle-exclamation"></i>Crisis</span>
+        </div>
+      </div>
+      <div class="row-2" style="margin-bottom:14px">
+        <div class="form-group"><label>Client *</label><select class="form-control" id="note_client"><option value="">Select client...</option></select></div>
+        <div class="form-group"><label>Note Type *</label>
+          <select class="form-control" id="note_type" onchange="loadNoteTemplate()">
+            <option value="progress">Progress Note</option>
+            <option value="assessment">Assessment Note</option>
+            <option value="plan">Treatment Plan</option>
+            <option value="termination">Termination Summary</option>
+            <option value="crisis">Crisis Note</option>
+          </select>
+        </div>
+      </div>
+      <div class="note-shell">
+        <div class="note-card">
+          <div class="note-card-hdr">
+            <div class="note-card-title"><i class="fa-solid fa-pen-to-square" style="color:var(--teal)"></i>Note Content</div>
+            <div class="note-card-sub">Use the buttons below to switch formats or request AI structuring</div>
+          </div>
+          <div class="note-toolbar">
+            <span style="font-size:11px;color:var(--muted);font-weight:700;padding:4px 0;align-self:center">TEMPLATE:</span>
+            <button type="button" class="note-template" onclick="insertTemplate('soap')">SOAP</button>
+            <button type="button" class="note-template" onclick="insertTemplate('dap')">DAP</button>
+            <button type="button" class="note-template" onclick="insertTemplate('progress')">Progress</button>
+            <button type="button" class="note-template" onclick="insertTemplate('crisis')">Crisis</button>
+            <button type="button" class="note-template" id="aiStructureBtn" onclick="aiStructureNote()">AI Structure</button>
+            <button type="button" class="note-template" id="aiSummaryBtn" onclick="aiClientSummary()">AI Summary</button>
+          </div>
+          <textarea class="note-editor" id="noteContent" placeholder="Begin writing your clinical note here...&#10;&#10;Use the template buttons above to insert a structured format."></textarea>
+        </div>
+        <div class="note-side">
+          <div class="note-ai-box">
+            <div class="note-summary-title">
+              <label style="font-size:12px">AI Short Summary</label>
+              <span class="note-summary-hint">Brief session recap</span>
+            </div>
+            <textarea class="form-control" id="noteAiSummary" placeholder="AI-generated short summary will appear here" style="min-height:140px;border-radius:12px"></textarea>
+            <div class="note-ai-helper">
+              <b>Tip:</b> AI Structure is designed to reorganize only the text you already typed. If the content is sparse, the result will stay sparse rather than inventing details.
+            </div>
+          </div>
+          <div class="note-ai-box">
+            <div class="note-card-title" style="margin-bottom:8px"><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--gold)"></i>AI workflow</div>
+            <div class="note-ai-helper">
+              <div><b>1.</b> Draft the note naturally.</div>
+              <div><b>2.</b> Click <b>AI Structure</b> to convert it into a clinical format.</div>
+              <div><b>3.</b> Use <b>AI Summary</b> when you need a concise recap for the record.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeNoteModal()">Cancel</button>
+      <button class="btn btn-teal" onclick="saveNote()"><i class="fa-solid fa-save"></i>Save Note</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Session Note Reader ── -->
+<div class="overlay" id="noteReaderOverlay" onclick="closeNoteReader()"></div>
+<div class="modal-wrap" id="noteReaderModal">
+  <div class="modal note-reader-modal">
+    <div class="modal-hdr">
+      <div class="modal-title"><i class="fa-solid fa-file-pdf" style="color:var(--gold)"></i> Session Note</div>
+      <button class="drawer-close" onclick="closeNoteReader()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="note-reader-paper">
+      <div class="note-reader-header">
+        <div class="note-reader-title" id="noteReaderTitle">Session note</div>
+        <div class="note-reader-meta" id="noteReaderMeta">Select a report to view the full note.</div>
+      </div>
+      <div class="note-reader-body" id="noteReaderBody">The note text will appear here.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Treatment Plan Modal ── -->
+<div class="overlay" id="planOverlay" onclick="closePlanModal()"></div>
+<div class="modal-wrap" id="planModal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-hdr">
+      <div class="modal-title">Treatment Plan</div>
+      <button class="drawer-close" onclick="closePlanModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>Client *</label><select class="form-control" id="plan_client"><option value="">Select client...</option></select></div>
+      <div class="form-group"><label>Goals</label><textarea class="form-control" id="plan_goals" placeholder="1. Reduce depressive symptoms...&#10;2. Improve coping strategies...&#10;3. Build support network..."></textarea></div>
+      <div class="form-group"><label>Interventions</label><textarea class="form-control" id="plan_interventions" placeholder="CBT techniques, mindfulness exercises, psychoeducation..."></textarea></div>
+      <div class="form-group"><label>Review Date</label><input type="date" class="form-control" id="plan_review"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closePlanModal()">Cancel</button>
+      <button class="btn btn-teal" onclick="savePlan()"><i class="fa-solid fa-check"></i>Save Plan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Referral Modal ── -->
+<div class="overlay" id="refOverlay" onclick="closeReferralModal()"></div>
+<div class="modal-wrap" id="refModal">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title">Create Referral</div>
+      <button class="drawer-close" onclick="closeReferralModal()"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Client *</label><select class="form-control" id="ref_client"><option value="">Select client...</option></select></div>
+      <div class="form-group"><label>Refer To (Therapist) *</label><select class="form-control" id="ref_to"><option value="">Select therapist...</option></select></div>
+      <div class="form-group"><label>Reason for Referral *</label><textarea class="form-control" id="ref_reason" placeholder="Explain the reason for this referral..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeReferralModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveReferral()"><i class="fa-solid fa-check"></i>Submit Referral</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Workflow Action Modal ── -->
+<div class="overlay" id="actionOverlay" onclick="closeActionModal()"></div>
+<div class="modal-wrap" id="actionModal">
+  <div class="modal">
+    <div class="modal-hdr"><div class="modal-title" id="actionModalTitle">Workflow Action</div>
+      <button class="drawer-close" onclick="closeActionModal()"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Select Client *</label><select class="form-control" id="action_client"><option value="">Select client...</option></select></div>
+      <div class="form-group" id="actionReasonGroup"><label>Reason / Notes *</label><textarea class="form-control" id="action_reason" placeholder="Provide detailed reason for this action..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeActionModal()">Cancel</button>
+      <button class="btn btn-primary" id="actionSubmitBtn" onclick="submitAction()"><i class="fa-solid fa-check"></i>Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Appointment Editor ── -->
+<div class="overlay" id="apptEditorOverlay" onclick="closeAppointmentEditor()"></div>
+<div class="modal-wrap" id="apptEditorModal">
+  <div class="modal appt-editor-modal">
+    <div class="modal-hdr">
+      <div class="modal-title" id="apptEditorHeader"><i class="fa-solid fa-sliders" style="color:var(--gold)"></i> Update Session</div>
+      <button class="drawer-close" onclick="closeAppointmentEditor()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="appt-editor-hero">
+        <div class="appt-editor-title" id="apptEditorTitle">Edit this session</div>
+        <div class="appt-editor-sub" id="apptEditorSubtitle">Choose temporary or permanent change, then add the reason so the receptionist and your Telegram account receive the same update.</div>
+      </div>
+      <input type="hidden" id="apptEditorId">
+      <input type="hidden" id="apptEditorScope" value="temporary">
+      <input type="hidden" id="apptEditorStatus" value="scheduled">
+      <div class="appt-mode-row">
+        <button type="button" class="appt-mode-btn active temp" id="apptModeTemp" onclick="setApptEditorMode('temporary')">Temporary change</button>
+        <button type="button" class="appt-mode-btn" id="apptModePerm" onclick="setApptEditorMode('permanent')">Permanent change</button>
+        <button type="button" class="appt-mode-btn" id="apptModeCancel" onclick="setApptEditorMode('cancelled')">Cancel session</button>
+        <button type="button" class="appt-mode-btn" id="apptModeNoShow" onclick="setApptEditorMode('no_show')">No-show</button>
+      </div>
+      
+      <!-- VISUAL CALENDAR COMPONENT -->
+      <div class="vc-container" id="vcContainer">
+        <div class="vc-header">
+          <div class="vc-nav">
+            <button type="button" onclick="vcNav(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+            <div class="vc-date-label" id="vcDateLabel">Loading...</div>
+            <button type="button" onclick="vcNav(1)"><i class="fa-solid fa-chevron-right"></i></button>
+          </div>
+          <div class="vc-view-toggle">
+            <button type="button" id="vcBtnDay" class="active" onclick="vcSetView('day')">Day</button>
+            <button type="button" id="vcBtnWeek" onclick="vcSetView('week')">Week</button>
+          </div>
+        </div>
+        <div class="vc-grid-wrap" id="vcGridWrap">
+          <div class="vc-grid" id="vcGrid">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+      
+      <!-- Hidden inputs to store selected times -->
+      <input type="hidden" id="apptEditorDateTime">
+      <input type="hidden" id="apptEditorEndTime">
+      <div id="vcSelectedLabel" style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:12px;text-align:center;padding:8px;background:rgba(59,130,246,.05);border-radius:8px;display:none"></div>
+
+
+      <div class="form-group">
+        <label>Reason</label>
+        <textarea class="form-control" id="apptEditorReason" placeholder="Add the reason for this change or cancellation..."></textarea>
+      </div>
+      <div class="appt-editor-note" id="apptEditorNote">
+        <strong>Temporary change:</strong> updates this session only. <strong>Permanent change:</strong> updates the recurring series. <strong>Cancel / no-show:</strong> records the reason and notifies reception automatically.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeAppointmentEditor()">Cancel</button>
+      <button class="btn btn-gold appt-editor-save" id="apptEditorSaveBtn" onclick="saveAppointmentEditor()">Save Change</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+let currentUser=null, myClients=[], allNotes=[], currentAction=null, currentClientView=null, currentClientData=null;
+const noteTemplates={
+  soap:`SUBJECTIVE:\n${'-'.repeat(40)}\n[Client's reported experience, chief complaint, mood, events since last session]\n\nOBJECTIVE:\n${'-'.repeat(40)}\n[Therapist observations: affect, appearance, behavior, cognition]\n\nASSESSMENT:\n${'-'.repeat(40)}\n[Clinical impression, diagnostic considerations, progress toward goals]\n\nPLAN:\n${'-'.repeat(40)}\n[Interventions used, homework assigned, next session focus, follow-up needed]`,
+  dap:`DATA:\n${'-'.repeat(40)}\n[What the client reported and therapist observed during this session]\n\nASSESSMENT:\n${'-'.repeat(40)}\n[Therapist's analysis, interpretation, and clinical impressions]\n\nPLAN:\n${'-'.repeat(40)}\n[Next steps, interventions planned, goals for next session]`,
+  progress:`Session #: \nDate: ${new Date().toLocaleDateString()}\nDuration: 50 minutes\n\nSESSION SUMMARY:\n${'-'.repeat(40)}\n[Brief overview of session content and themes discussed]\n\nPROGRESS TOWARD GOALS:\n${'-'.repeat(40)}\n[Client progress on treatment goals, any setbacks or breakthroughs]\n\nINTERVENTIONS:\n${'-'.repeat(40)}\n[Specific techniques and interventions used this session]\n\nHOMEWORK/BETWEEN-SESSION TASKS:\n${'-'.repeat(40)}\n[Tasks assigned to client]\n\nRISK ASSESSMENT:\n${'-'.repeat(40)}\nSuicidal ideation: [ ] None [ ] Passive [ ] Active\nSelf-harm: [ ] None [ ] Present\nSafety plan: [ ] N/A [ ] Reviewed [ ] Updated\n\nNEXT SESSION:\n${'-'.repeat(40)}\n[Planned focus for next session]`,
+  crisis:`CRISIS NOTE\n${'='.repeat(40)}\nDate/Time: ${new Date().toLocaleString()}\n\nPRESENTING CRISIS:\n[Describe the crisis situation]\n\nRISK ASSESSMENT:\n- Suicidal ideation: \n- Plan/intent: \n- Means access: \n- Protective factors: \n\nINTERVENTIONS:\n[Crisis interventions used]\n\nSAFETY PLAN:\n[Updated safety plan details]\n\nDISPOSITION:\n[ ] Continued outpatient  [ ] Referred to ER  [ ] Crisis hotline provided  [ ] Family notified\n\nFOLLOW-UP:\n[Next contact plan]`
+};
+
+async function init(){
+  document.querySelectorAll('.nav-item').forEach(el=>el.addEventListener('click',()=>showSection(el.dataset.sec)));
+  const now=new Date();
+  const h=now.getHours();
+  document.getElementById('dashGreeting').textContent=(h<12?'Good morning':(h<17?'Good afternoon':'Good evening'))+'!';
+  document.getElementById('dashSubtitle').textContent=now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  document.getElementById('tbDate').textContent=now.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  document.getElementById('schedDate').value=now.toISOString().split('T')[0];
+  try{const r=await apiFetch('/api/me');if(r.ok){currentUser=await r.json();
+    document.getElementById('sbName').textContent=currentUser.full_name||currentUser.username;
+    document.getElementById('sbAvatar').textContent=(currentUser.full_name||currentUser.username)[0].toUpperCase();}}catch(e){}
+  await loadMyClients();
+  loadDashboard();
+  loadSchedule();
+  loadNotes();
+  loadMessages();
+}
+
+function showSection(sec){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('sec-'+sec).classList.add('active');
+  document.querySelector(`.nav-item[data-sec="${sec}"]`)?.classList.add('active');
+  const titles={dashboard:'Dashboard',schedule:'My Schedule',clients:'My Clients',notes:'Clinical Notes',plans:'Treatment Plans','screening-records':'Screening Records',referrals:'Referrals & Workflow',messages:'Messages'};
+  document.getElementById('tbTitle').textContent=titles[sec]||sec;
+  if(sec==='referrals') loadReferrals();
+  if(sec==='notes') loadNotes();
+  if(sec==='screening-records') loadScreeningRecords();
+}
+
+async function loadMyClients(){
+  try{const r=await apiFetch('/api/clients');const all=await r.json();
+    myClients=currentUser?all.filter(c=>c.assigned_therapist_id==currentUser.id):all;
+    renderMyClients();
+    populateClientDropdowns();
+    document.getElementById('sMyClients').textContent=myClients.length;
+    document.getElementById('sHighRisk').textContent=myClients.filter(c=>c.risk_level==='high').length;
+  }catch(e){}
+}
+
+function filterMyClients(){
+  const q=document.getElementById('clientSearch').value.toLowerCase();
+  const filtered=myClients.filter(c=>c.full_name?.toLowerCase().includes(q)||c.client_code?.includes(q));
+  renderClientCards(filtered);
+}
+
+function renderMyClients(){
+  renderClientCards(myClients);
+  // High risk panel
+  const hr=myClients.filter(c=>c.risk_level==='high');
+  document.getElementById('highRiskList').innerHTML=hr.length?hr.map(c=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:10px;border-radius:8px;background:rgba(239,68,68,.04);border:1px solid rgba(239,68,68,.1);margin-bottom:8px;cursor:pointer" onclick="viewClient(${c.id})">
+      <div class="risk-indicator risk-high"><i class="fa-solid fa-circle-exclamation"></i>HIGH RISK</div>
+      <div><div style="font-weight:700;font-size:13px">${c.full_name}</div><div style="font-size:11.5px;color:var(--muted)">${c.client_code} · ${c.status?.replace(/_/g,' ')}</div></div>
+      <button class="btn btn-xs btn-danger" style="margin-left:auto" onclick="event.stopPropagation();openNoteFor(${c.id})">Note</button>
+    </div>`).join(''):'<div style="text-align:center;padding:16px;color:var(--success);font-size:13px;font-weight:600"><i class="fa-solid fa-circle-check"></i> No high-risk clients — all stable</div>';
+}
+
+function renderClientCards(list){
+  const el=document.getElementById('myClientList');
+  el.innerHTML=list.map(c=>`
+    <div class="client-card" id="cc-${c.id}" onclick="viewClient(${c.id})">
+      <div class="cc-header">
+        <div class="cc-avatar">${c.full_name[0]}</div>
+        <div><div class="cc-name">${c.full_name}</div><div class="cc-code">${c.client_code}</div></div>
+        ${c.risk_level==='high'?`<span class="risk-indicator risk-high" style="margin-left:auto;font-size:10px">HIGH</span>`:c.risk_level==='medium'?`<span class="risk-indicator risk-medium" style="margin-left:auto;font-size:10px">MED</span>`:''}
+      </div>
+      <div class="cc-meta">${statusBadge(c.status)}<span class="badge badge-gray">${c.gender||'—'}</span><span class="badge badge-teal">${c.language_pref}</span></div>
+    </div>`).join('')||'<p style="color:var(--muted);text-align:center;padding:20px">No clients found</p>';
+}
+
+async function viewClient(cid){
+  currentClientView=cid;
+  document.querySelectorAll('.client-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('cc-'+cid)?.classList.add('selected');
+  const panel=document.getElementById('clientDetailPanel');
+  panel.innerHTML=`<div class="panel"><div class="skel" style="height:120px;margin-bottom:14px"></div><div class="skel" style="height:200px"></div></div>`;
+  try{
+    const r=await apiFetch(`/api/clients/${cid}`);const d=await r.json();const c=d.client;
+    currentClientData = d;
+    panel.innerHTML=`
+      <div class="panel">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding:18px;background:var(--bg);border-radius:12px">
+          <div style="width:60px;height:60px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;flex-shrink:0">${c.full_name[0]}</div>
+          <div style="flex:1">
+            <div style="font-size:18px;font-weight:800;color:var(--navy)">${c.full_name}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">${c.client_code} · ${c.gender||'—'} · ${fmtDate(c.date_of_birth)}</div>
+            <div style="display:flex;gap:8px;margin-top:8px">${statusBadge(c.status)}${riskBadge(c.risk_level)}</div>
+          </div>
+          <button class="btn btn-teal btn-sm" onclick="openNoteFor(${c.id})"><i class="fa-solid fa-pen"></i>Write Note</button>
+        </div>
+
+        <!-- Action bar -->
+        <div class="action-bar">
+          <button class="btn btn-sm btn-gold" onclick="openActionFor(${c.id},'supervision')"><i class="fa-solid fa-chalkboard-user"></i>Request Supervision</button>
+          <button class="btn btn-sm btn-outline" onclick="openActionFor(${c.id},'refer')"><i class="fa-solid fa-right-left"></i>Refer Client</button>
+          <button class="btn btn-sm btn-ghost" onclick="openActionFor(${c.id},'pause')"><i class="fa-solid fa-circle-pause"></i>Pause</button>
+          <button class="btn btn-sm btn-success" onclick="openActionFor(${c.id},'close')"><i class="fa-solid fa-circle-check"></i>Close Case</button>
+          <button class="btn btn-sm btn-danger" onclick="openActionFor(${c.id},'terminate')"><i class="fa-solid fa-ban"></i>Terminate</button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+          <div class="tab active" onclick="switchCTab('info',this)">Info</div>
+          <div class="tab" onclick="switchCTab('history',this)">Session History</div>
+          <div class="tab" onclick="switchCTab('screening',this)">Screening</div>
+          <div class="tab" onclick="switchCTab('journey',this)">Journey</div>
+        </div>
+        <div id="ctab-content">${renderCtab('info')}</div>
+      </div>`;
+  }catch(e){panel.innerHTML='<div class="panel"><p style="color:var(--muted)">Failed to load client data</p></div>';}
+}
+
+function switchCTab(tab,el){
+  document.querySelectorAll('#clientDetailPanel .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('ctab-content').innerHTML=renderCtab(tab);
+}
+
+function renderCtab(tab){
+  const data = currentClientData;
+  const c=data.client;
+  if(tab==='info') return `
+    ${infoRow('Phone',c.phone)}${infoRow('Email',c.email)}${infoRow('Address',c.address)}
+    ${infoRow('Emergency Contact',c.emergency_contact_name+' · '+c.emergency_contact_phone)}
+    ${infoRow('Language Preference',c.language_pref)}${infoRow('Intake Source',c.intake_source)}
+    ${infoRow('Registration Date',fmtDate(c.registration_date))}
+    ${c.notes?`<div style="margin-top:12px;padding:12px;background:rgba(245,158,11,.06);border-radius:8px;border-left:3px solid var(--warning)"><div style="font-size:11px;font-weight:700;color:var(--warning);margin-bottom:4px">NOTES</div><div style="font-size:13px">${c.notes}</div></div>`:''}`;
+  if(tab==='history') {
+    const a=data.appointments;
+    return a.length?a.map(ap=>`<div style="padding:12px;border-radius:8px;background:var(--bg);margin-bottom:8px;display:flex;align-items:center;gap:10px">
+      <i class="fa-solid fa-calendar" style="color:var(--teal)"></i>
+      <div><div style="font-size:13px;font-weight:700">${fmtDate(ap.start_time)} ${fmtTime(ap.start_time)}</div>
+        <div style="font-size:12px;color:var(--muted)">${ap.type} · ${ap.location}</div></div>
+      <div style="margin-left:auto">${statusBadge(ap.status)}</div>
+    </div>`).join(''):'<p style="color:var(--muted);padding:10px">No appointment history.</p>';
+  }
+  if(tab==='screening'){
+    const s=data.screening;
+    if(!s.length) return '<p style="color:var(--muted);padding:10px">No screening data yet.</p>';
+    return s.map(sc=>{
+      const sev=sc.severity||'minimal';
+      const sevColor=sev==='severe'||sev==='moderately_severe'?'var(--danger)':sev==='moderate'?'var(--warning)':sev==='mild'?'var(--indigo)':'var(--success)';
+      return `<div style="padding:16px;border-radius:10px;background:var(--bg);margin-bottom:12px;border-left:4px solid ${sevColor}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <strong style="font-size:14px">${sc.questionnaire_type}</strong>
+          <span style="font-size:13px;font-weight:800;color:${sevColor}">${sev.toUpperCase().replace('_',' ')}</span>
+        </div>
+        <div style="font-size:24px;font-weight:800;color:${sevColor};margin-bottom:6px">${sc.total_score} / ${sc.questionnaire_type==='PHQ-9'?27:21}</div>
+        <div style="font-size:12px;color:var(--muted)">Completed: ${fmtDate(sc.submitted_at)}</div>
+        ${sc.risk_flags_json&&JSON.parse(sc.risk_flags_json).length?`<div style="margin-top:10px;padding:8px;background:rgba(239,68,68,.08);border-radius:6px"><div style="font-size:11px;font-weight:700;color:var(--danger)"><i class="fa-solid fa-triangle-exclamation"></i> RISK FLAGS DETECTED</div>${JSON.parse(sc.risk_flags_json).map(f=>`<div style="font-size:12px;margin-top:4px">${f.type?.replace(/_/g,' ')}: ${f.severity}</div>`).join('')}</div>`:''}
+      </div>`;
+    }).join('');
+  }
+  if(tab==='journey'){
+    const j=data.journey;
+    return j.length?`<div>${j.map(e=>`<div class="timeline-item">
+      <div class="tl-dot"><i class="fa-solid fa-circle-dot" style="font-size:10px"></i></div>
+      <div class="tl-body"><div class="tl-date">${fmtDate(e.changed_at)} · ${e.changed_by_name||'System'}</div>
+        <div class="tl-text">${e.stage?.replace(/_/g,' ').toUpperCase()}</div>
+        ${e.notes?`<div style="font-size:12px;color:var(--muted);margin-top:3px">${e.notes}</div>`:''}</div>
+    </div>`).join('')}</div>`:'<p style="color:var(--muted);padding:10px">No journey records yet.</p>';
+  }
+  return '';
+}
+
+function infoRow(l,v){return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:11.5px;font-weight:700;color:var(--muted)">${l.toUpperCase()}</span><span style="font-size:13px;font-weight:600">${v||'—'}</span></div>`;}
+
+// Schedule
+async function loadDashboard(){
+  const today=new Date().toISOString().split('T')[0];
+  try{const r=await apiFetch(`/api/appointments?start=${today}&end=${today}`);const appts=await r.json();
+    document.getElementById('sTodayAppts').textContent=appts.length;
+    const el=document.getElementById('todaySessions');
+    el.innerHTML=appts.length?appts.map(a=>`
+      <div class="schedule-item" onclick="openNoteFor(${a.client_id})">
+        <div class="sch-time">${fmtTime(a.start_time)}</div>
+        <div style="flex:1"><div class="sch-client">${a.client_name}</div><div class="sch-type">${a.type} · ${a.location}</div></div>
+        <div style="display:flex;gap:6px;align-items:center">${statusBadge(a.status)}${appointmentActionButtons(a, 'dashboard')}</div>
+      </div>`).join(''):'<div style="text-align:center;padding:20px;color:var(--muted)"><i class="fa-regular fa-calendar-xmark" style="font-size:24px;margin-bottom:8px"></i><p>No sessions today</p></div>';
+  }catch(e){}
+  // pending referrals placeholder
+  document.getElementById('sPendingRef').textContent='0';
+}
+
+async function loadSchedule(){
+  const date=document.getElementById('schedDate').value||new Date().toISOString().split('T')[0];
+  try{const r=await apiFetch(`/api/appointments?start=${date}&end=${date}`);const appts=await r.json();
+    const el=document.getElementById('scheduleList');
+    el.innerHTML=appts.length?appts.map(a=>`
+      <div class="schedule-item" style="margin-bottom:10px">
+        <div style="width:80px;text-align:center;border-right:2px solid var(--border);padding-right:14px;margin-right:4px">
+          <div style="font-size:20px;font-weight:800;color:var(--navy)">${fmtTime(a.start_time)}</div>
+          <div style="font-size:11px;color:var(--muted)">${a.end_time?fmtTime(a.end_time):''}</div>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:700">${a.client_name}</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:2px">${a.type} · ${a.location}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+            <span class="badge badge-indigo">${a.client_code || 'Client code'}</span>
+            <span class="badge badge-gray">${roomLabel(a)}</span>
+            ${a.change_scope ? `<span class="badge badge-${a.change_scope==='permanent'?'gold':'orange'}">${a.change_scope}</span>` : ''}
+          </div>
+          ${a.notes?`<div style="font-size:12px;color:var(--muted);margin-top:4px"><i class="fa-solid fa-note-sticky"></i> ${a.notes}</div>`:''}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+          ${statusBadge(a.status)}
+          <div style="display:flex;gap:4px;flex-wrap:wrap">${appointmentActionButtons(a, 'schedule')}</div>
+        </div>
+      </div>`).join(''):'<div style="text-align:center;padding:40px;color:var(--muted)"><i class="fa-regular fa-calendar" style="font-size:36px;margin-bottom:12px"></i><p style="font-size:15px;font-weight:600">No sessions scheduled for this day</p></div>';
+  }catch(e){}
+}
+
+async function markAppt(id,status){
+  await apiFetch(`/api/appointments/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
+  toast('Session updated'); loadSchedule(); loadDashboard();
+}
+
+// Notes
+async function loadNotes(){
+  const cid=document.getElementById('noteClientFilter')?.value||'';
+  const type=document.getElementById('noteTypeFilter')?.value||'';
+  let url='/api/notes?';
+  if(cid) url+=`client_id=${cid}&`;
+  try{const r=await fetch(url);allNotes=await r.json();
+    const filtered=type?allNotes.filter(n=>n.note_type===type):allNotes;
+    document.getElementById('notesList').innerHTML=filtered.length?filtered.map(n=>`
+      <div class="session-card ${n.note_type}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+          <div><span class="badge badge-${n.note_type==='progress'?'blue':n.note_type==='assessment'?'purple':n.note_type==='plan'?'green':'orange'}">${n.note_type}</span></div>
+          <div style="font-size:11.5px;color:var(--muted)">${fmtDate(n.created_at)}</div>
+        </div>
+        <div style="font-size:13.5px;font-weight:700;margin-bottom:6px">${n.client_name||'—'}</div>
+        <div style="font-size:13px;color:var(--muted);white-space:pre-wrap;max-height:100px;overflow:hidden">${(n.content||'').substring(0,200)}${n.content?.length>200?'...':''}</div>
+      </div>`).join(''):'<div style="text-align:center;padding:30px;color:var(--muted)"><i class="fa-solid fa-notes-medical" style="font-size:32px;margin-bottom:10px"></i><p>No notes found</p></div>';
+  }catch(e){}
+}
+
+function populateClientDropdowns(){
+  const opts='<option value="">Select client...</option>'+myClients.map(c=>`<option value="${c.id}">${c.full_name} (${c.client_code})</option>`).join('');
+  ['note_client','plan_client','ref_client','action_client','noteClientFilter'].forEach(id=>{const el=document.getElementById(id);if(el){el.innerHTML=id==='noteClientFilter'?'<option value="">All clients</option>'+myClients.map(c=>`<option value="${c.id}">${c.full_name}</option>`).join(''):opts;}});
+}
+
+// Note Modal
+function openNoteModal(){document.getElementById('noteOverlay').classList.add('open');document.getElementById('noteModal').classList.add('open');document.getElementById('noteAiSummary').value='';}
+function openNoteFor(cid){document.getElementById('note_client').value=cid;openNoteModal();}
+function closeNoteModal(){document.getElementById('noteOverlay').classList.remove('open');document.getElementById('noteModal').classList.remove('open');}
+function insertTemplate(t){document.getElementById('noteContent').value=noteTemplates[t]||'';}
+function setAiButtonBusy(isBusy, label){
+  const btn = document.getElementById(label === 'AI Structure' ? 'aiStructureBtn' : 'aiSummaryBtn');
+  if(!btn) return;
+  if(isBusy){
+    if(!btn.dataset.originalText) btn.dataset.originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Working...';
+    btn.style.opacity = '0.7';
+    btn.style.cursor = 'wait';
+  } else {
+    btn.disabled = false;
+    btn.textContent = btn.dataset.originalText || label;
+    btn.style.opacity = '';
+    btn.style.cursor = '';
+  }
+}
+function normalizeStructuredText(text){
+  let out = (text || '').replace(/\r/g,'').trim();
+  out = out.replace(/\*\*(.+?)\*\*/g, '$1');
+  out = out.replace(/^#{1,6}\s+/gm, '');
+  out = out.replace(/^\s*[-*A]\s+/gm, '- ');
+  out = out.replace(/[\u2018\u2019]/g, "'");
+  out = out.replace(/[\u201C\u201D]/g, '"');
+  out = out.replace(/\n{3,}/g, '\n\n');
+  const lines = out.split('\n').map(line => {
+    const m = line.match(/^\s*([A-Za-z][A-Za-z /&()-]{2,40}):\s*$/);
+    if (m) return `${m[1].trim().toUpperCase()}:`;
+    return line;
+  });
+  return lines.join('\n').trim();
+}
+function localStructuredFallback(raw, noteType='progress'){
+  const clean = (raw || '').trim();
+  const map = {
+    progress: `SUBJECTIVE:\n${clean || '[Client report not specified]'}\n\nOBJECTIVE:\n[Not specified]\n\nASSESSMENT:\n[Not specified]\n\nPLAN:\n[Not specified]`,
+    assessment: `ASSESSMENT SUMMARY:\n${clean || '[Not specified]'}\n\nRISK / SAFETY:\n[Not specified]\n\nRECOMMENDATIONS:\n[Not specified]`,
+    plan: `GOALS:\n[Not specified]\n\nINTERVENTIONS:\n[Not specified]\n\nFOLLOW-UP:\n[Not specified]`,
+    crisis: `PRESENTING CRISIS:\n${clean || '[Not specified]'}\n\nRISK ASSESSMENT:\n[Not specified]\n\nSAFETY PLAN:\n[Not specified]\n\nFOLLOW-UP:\n[Not specified]`
+  };
+  return {
+    structured: map[noteType] || map.progress,
+    summary: clean ? clean.split(/[.!?]/).slice(0, 3).join('. ').trim() : 'Summary not specified.'
+  };
+}
+async function saveNote(){
+  const cid=document.getElementById('note_client').value;const content=document.getElementById('noteContent').value;
+  if(!cid||!content.trim()){toast('Please select a client and write a note',true);return;}
+  const r=await apiFetch('/api/notes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({client_id:cid,note_type:document.getElementById('note_type').value,content,structured_content:content,short_summary:document.getElementById('noteAiSummary').value})});
+  const d=await r.json();if(d.success){closeNoteModal();toast('Note saved!');document.getElementById('noteContent').value='';loadNotes();}else toast('Failed',true);
+}
+
+// Plan Modal
+function openPlanModal(){document.getElementById('planOverlay').classList.add('open');document.getElementById('planModal').classList.add('open');}
+function closePlanModal(){document.getElementById('planOverlay').classList.remove('open');document.getElementById('planModal').classList.remove('open');}
+async function savePlan(){
+  const cid=document.getElementById('plan_client').value;
+  if(!cid){toast('Select a client',true);return;}
+  // Save as a note with type=plan
+  const content=`GOALS:\n${document.getElementById('plan_goals').value}\n\nINTERVENTIONS:\n${document.getElementById('plan_interventions').value}\n\nREVIEW DATE: ${document.getElementById('plan_review').value}`;
+  const r=await apiFetch('/api/notes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({client_id:cid,note_type:'plan',content})});
+  const d=await r.json();if(d.success){closePlanModal();toast('Treatment plan saved!');loadNotes();}
+}
+async function loadPlansList(){
+  document.getElementById('plansList').innerHTML='<p style="color:var(--muted)">Treatment plans are stored as structured session notes. <a style="color:var(--teal);cursor:pointer" onclick="showSection(\'notes\');document.getElementById(\'noteTypeFilter\').value=\'plan\';loadNotes()">View all plans →</a></p>';
+}
+
+// Referral Modal
+function openReferralModal(){
+  document.getElementById('refOverlay').classList.add('open');document.getElementById('refModal').classList.add('open');
+  apiFetch('/api/users').then(r=>r.json()).then(users=>{
+    const therapists=users.filter(u=>u.role==='therapist'&&u.id!==currentUser?.id);
+    document.getElementById('ref_to').innerHTML='<option value="">Select therapist...</option>'+therapists.map(t=>`<option value="${t.id}">${t.full_name}</option>`).join('');
+  });
+}
+function closeReferralModal(){document.getElementById('refOverlay').classList.remove('open');document.getElementById('refModal').classList.remove('open');}
+async function saveReferral(){
+  const cid=document.getElementById('ref_client').value,tid=document.getElementById('ref_to').value,reason=document.getElementById('ref_reason').value;
+  if(!cid||!tid||!reason){toast('All fields required',true);return;}
+  toast('Referral submitted!');closeReferralModal();
+}
+async function loadReferrals(){
+  document.getElementById('outReferralList').innerHTML='<p style="color:var(--muted);text-align:center;padding:20px">No outgoing referrals</p>';
+  document.getElementById('inReferralList').innerHTML='<p style="color:var(--muted);text-align:center;padding:20px">No incoming referrals</p>';
+}
+
+// Workflow Actions
+let actionClientId=null;
+function openActionModal(type){currentAction=type;
+  const titles={supervision:'Request Supervision',refer:'Refer Client',pause:'Pause Treatment',close:'Close Case',terminate:'Terminate Services',reschedule:'Cancel Session'};
+  document.getElementById('actionModalTitle').textContent=titles[type]||type;
+  document.getElementById('actionOverlay').classList.add('open');document.getElementById('actionModal').classList.add('open');
+}
+function openActionFor(cid,type){document.getElementById('action_client').value=cid;openActionModal(type);}
+function closeActionModal(){document.getElementById('actionOverlay').classList.remove('open');document.getElementById('actionModal').classList.remove('open');}
+async function submitAction(){
+  const cid=document.getElementById('action_client').value,reason=document.getElementById('action_reason').value;
+  if(!cid||!reason){toast('Select a client and provide reason',true);return;}
+  const statusMap={close:'completed',terminate:'terminated',pause:'active',refer:'awaiting_assignment'};
+  if(statusMap[currentAction]){
+    await apiFetch(`/api/clients/${cid}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:statusMap[currentAction],notes:reason})});
+  }
+  await apiFetch('/api/notes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({client_id:cid,note_type:'termination',content:`ACTION: ${currentAction.toUpperCase()}\n\nReason: ${reason}`})});
+  toast('Action recorded and team notified');closeActionModal();loadMyClients();
+}
+
+// Messages
+async function loadMessages(){
+  try{const r=await apiFetch('/api/messages');const msgs=await r.json();
+    document.getElementById('inboxList').innerHTML=msgs.map(m=>notificationCard(m)).join('')||'<p style="color:var(--muted);text-align:center;padding:20px">No messages</p>';
+    const r2=await apiFetch('/api/users');const users=await r2.json();
+    document.getElementById('msgTo').innerHTML='<option value="">Select recipient...</option>'+users.filter(u=>u.id!==currentUser?.id).map(u=>`<option value="${u.id}">${u.full_name} (${u.role})</option>`).join('');
+  }catch(e){}
+}
+async function sendMsg(){
+  const body={recipient_id:document.getElementById('msgTo').value,subject:document.getElementById('msgSubject').value,body:document.getElementById('msgBody').value};
+  if(!body.recipient_id||!body.subject){toast('Fill all fields',true);return;}
+  const r=await apiFetch('/api/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();if(d.success){toast('Sent!');document.getElementById('msgSubject').value='';document.getElementById('msgBody').value='';}
+}
+
+// Helpers
+function statusBadge(s){const map={registered:'blue',screening_completed:'indigo',assigned:'teal',active:'green',completed:'gray',terminated:'red',scheduled:'blue',cancelled:'red',no_show:'orange'};return `<span class="badge badge-${map[s]||'gray'}">${(s||'—').replace(/_/g,' ')}</span>`;}
+function riskBadge(r){const map={low:'green',medium:'orange',high:'red'};return `<span class="badge badge-${map[r]||'gray'}">${r||'low'}</span>`;}
+function fmtDate(d){if(!d)return '—';try{return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}catch(e){return d;}}
+function fmtTime(d){if(!d)return '';try{return new Date(d).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});}catch(e){return '';}}
+function toast(msg,isErr=false){const c=document.getElementById('toastWrap');const t=document.createElement('div');t.className='toast'+(isErr?' err':'');t.innerHTML=`<i class="fa-solid ${isErr?'fa-circle-xmark':'fa-circle-check'}"></i><span>${msg}</span>`;c.appendChild(t);setTimeout(()=>t.classList.add('show'),50);setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),400);},3500);}
+
+let therapistScheduleView='list';
+
+function setSchedView(view){
+  therapistScheduleView=view;
+  document.getElementById('schedListBtn')?.classList.toggle('btn-gold', view==='list');
+  document.getElementById('schedListBtn')?.classList.toggle('btn-ghost', view!=='list');
+  document.getElementById('schedCalBtn')?.classList.toggle('btn-gold', view==='calendar');
+  document.getElementById('schedCalBtn')?.classList.toggle('btn-ghost', view!=='calendar');
+  loadSchedule();
+}
+
+function renderTherapistCalendar(appts){
+  const anchor = document.getElementById('schedDate')?.value || new Date().toISOString().split('T')[0];
+  const base = new Date(anchor + 'T00:00:00');
+  const y = base.getFullYear(), m = base.getMonth();
+  const firstDay = new Date(y, m, 1).getDay();
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const map = {};
+  appts.forEach(a=>{
+    const key = (a.start_time || '').split('T')[0];
+    if(!map[key]) map[key] = [];
+    map[key].push(a);
+  });
+  let html = `<div class="cal-grid">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="cal-day-header">${d}</div>`).join('')}`;
+  for(let i=0;i<firstDay;i++) html += `<div class="cal-day other-month"><div class="cal-day-num"></div></div>`;
+  for(let d=1; d<=daysInMonth; d++){
+    const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dayAppts = map[dateStr] || [];
+    html += `<div class="cal-day" onclick="document.getElementById('schedDate').value='${dateStr}';setSchedView('list')">
+      <div class="cal-day-num">${d}</div>
+      ${dayAppts.slice(0,3).map(a=>{ const visual = appointmentVisual(a); return `<span class="cal-appt-dot ${visual.cls}" style="background:${visual.palette.base};color:#fff">${a.client_code || (a.client_name||'Appt').split(' ')[0]} · ${roomLabel(a)}</span>`; }).join('')}
+      ${dayAppts.length>3?`<span style="font-size:10px;color:var(--muted)">+${dayAppts.length-3} more</span>`:''}
+    </div>`;
+  }
+  html += '</div>';
+  document.getElementById('schedCalendar').innerHTML = html;
+}
+
+async function loadSchedule(){
+  const date=document.getElementById('schedDate').value||new Date().toISOString().split('T')[0];
+  if(therapistScheduleView==='calendar'){
+    const start = date.slice(0,7) + '-01';
+    const end = new Date(date.slice(0,7) + '-01T00:00:00');
+    end.setMonth(end.getMonth()+1);
+    end.setDate(0);
+    const endStr = end.toISOString().split('T')[0];
+    try{
+      const r=await apiFetch(`/api/appointments?start=${start}&end=${endStr}`);const appts=await r.json();
+      document.getElementById('schedCalendar').style.display='block';
+      document.getElementById('scheduleList').style.display='none';
+      renderTherapistCalendar(appts);
+    }catch(e){}
+    return;
+  }
+  document.getElementById('schedCalendar').style.display='none';
+  document.getElementById('scheduleList').style.display='block';
+  try{const r=await apiFetch(`/api/appointments?start=${date}&end=${date}`);const appts=await r.json();
+    const el=document.getElementById('scheduleList');
+    el.innerHTML=appts.length?appts.map(a=>`
+      <div class="schedule-item" style="margin-bottom:10px">
+        <div style="width:80px;text-align:center;border-right:2px solid var(--border);padding-right:14px;margin-right:4px">
+          <div style="font-size:20px;font-weight:800;color:var(--navy)">${fmtTime(a.start_time)}</div>
+          <div style="font-size:11px;color:var(--muted)">${a.end_time?fmtTime(a.end_time):''}</div>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:700">${a.client_name}</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:2px">${a.type} · ${a.location}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+            <span class="badge badge-indigo">${a.client_code || 'Client code'}</span>
+            <span class="badge badge-gray">${roomLabel(a)}</span>
+            ${a.change_scope ? `<span class="badge badge-${a.change_scope==='permanent'?'gold':'orange'}">${a.change_scope}</span>` : ''}
+          </div>
+          ${a.notes?`<div style="font-size:12px;color:var(--muted);margin-top:4px"><i class="fa-solid fa-note-sticky"></i> ${a.notes}</div>`:''}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+          ${statusBadge(a.status)}
+          <div style="display:flex;gap:4px;flex-wrap:wrap">${appointmentActionButtons(a, 'schedule')}</div>
+        </div>
+      </div>`).join(''):'<div style="text-align:center;padding:40px;color:var(--muted)"><i class="fa-regular fa-calendar" style="font-size:36px;margin-bottom:12px"></i><p style="font-size:15px;font-weight:600">No sessions scheduled for this day</p></div>';
+  }catch(e){}
+}
+
+async function markAppt(id,status){
+  const reason = status==='cancelled' ? (prompt('Reason for cancelling this appointment:') || '') : '';
+  await apiFetch(`/api/appointments/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status, reason, cancel_reason:reason})});
+  toast('Session updated'); loadSchedule(); loadDashboard();
+}
+
+async function changeAppt(id){
+  const dateTime = prompt('Enter new date and time in ISO format (YYYY-MM-DDTHH:MM):');
+  if(!dateTime) return;
+  const reason = prompt('Reason for changing this appointment:') || '';
+  await apiFetch(`/api/appointments/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({start_time:dateTime, change_reason:reason, reason, action:'changed'})});
+  toast('Session changed'); loadSchedule(); loadDashboard();
+}
+
+async function aiStructureNote(){
+  const raw = document.getElementById('noteContent').value;
+  if(!raw.trim()){ toast('Write a draft note first', true); return; }
+  const noteType = document.getElementById('note_type').value;
+  const fallback = localStructuredFallback(raw, noteType);
+  const contentEl = document.getElementById('noteContent');
+  const summaryEl = document.getElementById('noteAiSummary');
+  setAiButtonBusy(true, 'AI Structure');
+  toast('AI is structuring your note. This can take a moment.', false);
+  try{
+    const r = await apiFetch('/api/ai/structure-note', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+      raw_text: raw,
+      note_type: noteType,
+      client_name: document.getElementById('note_client')?.selectedOptions?.[0]?.textContent || '',
+      therapist_name: currentUser?.full_name || ''
+    })});
+    const text = await r.text();
+    let d = null;
+    try { d = JSON.parse(text); } catch(e) {}
+    if(d && d.success){
+      contentEl.value = normalizeStructuredText(d.structured_content || fallback.structured);
+      summaryEl.value = normalizeStructuredText(d.short_summary || fallback.summary);
+      toast('AI structure generated');
+    } else {
+      contentEl.value = normalizeStructuredText(fallback.structured);
+      summaryEl.value = fallback.summary;
+      toast('AI response unavailable, using local structure', true);
+    }
+  } catch(err){
+    if (String(err?.name || '').toLowerCase() === 'aborterror') {
+      toast('AI took too long, using local structure', true);
+    } else {
+      toast('AI request failed, using local structure', true);
+    }
+    contentEl.value = normalizeStructuredText(fallback.structured);
+    summaryEl.value = fallback.summary;
+  } finally {
+    setAiButtonBusy(false, 'AI Structure');
+  }
+}
+
+async function aiClientSummary(){
+  const cid = document.getElementById('note_client').value;
+  if(!cid){ toast('Select a client first', true); return; }
+  setAiButtonBusy(true, 'AI Summary');
+  toast('AI is generating the client summary. This can take a moment.', false);
+  try{
+    const r = await apiFetch('/api/ai/client-summary', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({client_id: cid})});
+    const text = await r.text();
+    let d = null;
+    try { d = JSON.parse(text); } catch(e) {}
+    if(d && d.success){
+      document.getElementById('noteContent').value = normalizeStructuredText(`${d.summary}\n\nKEY THEMES:\n${d.key_themes}\n\nFOLLOW-UP PRIORITIES:\n${d.follow_up_priorities}`);
+      toast('Client summary generated');
+    } else {
+      toast('AI summary unavailable', true);
+    }
+  } catch(err){
+    toast('AI summary request failed', true);
+  } finally {
+    setAiButtonBusy(false, 'AI Summary');
+  }
+}
+
+// Notes workspace overrides
+let selectedNotesClientId = null;
+let selectedNotesReportId = null;
+let notesWorkspaceItems = [];
+let detailedSummaryAutoTimer = null;
+
+function populateClientDropdowns(){
+  const opts='<option value="">Select client...</option>'+myClients.map(c=>`<option value="${c.id}">${c.full_name} (${c.client_code})</option>`).join('');
+  ['note_client','plan_client','ref_client','action_client'].forEach(id=>{const el=document.getElementById(id);if(el){el.innerHTML=opts;}});
+}
+
+function renderNotesSummary(title, meta, body, kicker='Ready'){
+  const titleEl = document.getElementById('notesSummaryTitle');
+  const metaEl = document.getElementById('notesSummaryMeta');
+  const bodyEl = document.getElementById('notesSummaryOutput');
+  const kickerEl = document.getElementById('notesSummaryKicker');
+  if(titleEl) titleEl.textContent = title || 'Select a report or a client';
+  if(metaEl) metaEl.textContent = meta || 'Use the report button for a specific session, or the detailed summary button for the full client history.';
+  if(bodyEl) bodyEl.textContent = body || 'No summary generated yet.';
+  if(kickerEl) kickerEl.textContent = kicker || 'Ready';
+}
+
+function clearNotesSummary(){
+  selectedNotesReportId = null;
+  document.querySelectorAll('.notes-report-item').forEach(n=>n.classList.remove('selected'));
+  renderNotesSummary('Select a report or a client', 'Use the report button for a specific session, or the detailed summary button for the full client history.', 'No summary generated yet.', 'Ready');
+}
+
+function renderNotesClientCards(){
+  const el = document.getElementById('notesClientList');
+  if(!el) return;
+  if(!myClients.length){
+    el.innerHTML = '<div class="notes-empty"><i class="fa-solid fa-users-slash"></i><div style="font-weight:700;font-size:15px">No clients found</div><div style="font-size:13px;margin-top:6px">Assigned clients will appear here.</div></div>';
+    return;
+  }
+  el.innerHTML = myClients.map(c=>{
+    const noteCount = notesWorkspaceItems.filter(n=>String(n.client_id)===String(c.id)).length;
+    return `
+      <div class="notes-client-item ${String(selectedNotesClientId)===String(c.id)?'selected':''}" onclick="selectNotesClient(${c.id})">
+        <div class="notes-client-name">${c.full_name}</div>
+        <div class="notes-client-code">${c.client_code}</div>
+        <div class="notes-client-meta">
+          ${statusBadge(c.status)}
+          <span class="badge badge-gray">${c.gender||'—'}</span>
+          <span class="badge badge-teal">${noteCount} report${noteCount===1?'':'s'}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function loadNotesForSelectedClient(){
+  const reportEl = document.getElementById('notesReportList');
+  if(!reportEl) return;
+  if(!selectedNotesClientId){
+    renderNotesClientCards();
+    reportEl.innerHTML = '<div class="notes-empty"><i class="fa-solid fa-folder-open"></i><div style="font-weight:700;font-size:15px">No client selected</div><div style="font-size:13px;margin-top:6px">Pick a client card on the left to load their session reports.</div></div>';
+    return;
+  }
+  try{
+    const r = await apiFetch(`/api/notes?client_id=${selectedNotesClientId}`);
+    notesWorkspaceItems = await r.json();
+    renderNotesClientCards();
+    const client = myClients.find(c=>String(c.id)===String(selectedNotesClientId));
+    if(!notesWorkspaceItems.length){
+      reportEl.innerHTML = '<div class="notes-empty"><i class="fa-solid fa-clipboard"></i><div style="font-weight:700;font-size:15px">No session reports yet</div><div style="font-size:13px;margin-top:6px">This client does not have any saved notes.</div></div>';
+      return;
+    }
+    reportEl.innerHTML = notesWorkspaceItems.map((n, idx)=>`
+      <div class="notes-report-item ${String(selectedNotesReportId)===String(n.id)?'selected':''}" onclick="selectNotesReport(${n.id})">
+        <div class="notes-report-item-title">
+          <div>
+            <div class="notes-report-title">Session ${notesWorkspaceItems.length - idx}</div>
+            <div class="notes-report-date">${fmtDate(n.created_at)}${n.therapist_name ? ` · ${n.therapist_name}` : ''}</div>
+          </div>
+          <span class="badge badge-${n.note_type==='progress'?'blue':n.note_type==='assessment'?'purple':n.note_type==='plan'?'green':'orange'}">${(n.note_type||'note').replace(/_/g,' ')}</span>
+        </div>
+        <div class="notes-report-preview">${(n.short_summary || n.ai_summary || n.content || '').substring(0,240)}${(n.short_summary || n.ai_summary || n.content || '').length > 240 ? '...' : ''}</div>
+      </div>`).join('');
+    if(client){
+      document.getElementById('notesClientInfo').textContent = `${client.full_name} · ${client.client_code} · ${notesWorkspaceItems.length} report${notesWorkspaceItems.length===1?'':'s'}`;
+    }
+    scheduleClientDetailedSummary();
+  }catch(e){
+    reportEl.innerHTML = '<div class="notes-empty"><i class="fa-solid fa-triangle-exclamation"></i><div style="font-weight:700;font-size:15px">Could not load notes</div><div style="font-size:13px;margin-top:6px">Please try again.</div></div>';
+  }
+}
+
+async function selectNotesClient(cid){
+  selectedNotesClientId = cid;
+  selectedNotesReportId = null;
+  document.querySelectorAll('.notes-report-item').forEach(n=>n.classList.remove('selected'));
+  renderNotesSummary('Select a report or a client', '', 'No summary generated yet.', 'Client selected');
+  const client = myClients.find(c=>String(c.id)===String(cid));
+  if(client){
+    document.getElementById('notesClientInfo').textContent = `${client.full_name} · ${client.client_code} · ${client.gender||'—'} · ${client.status?.replace(/_/g,' ')||'unknown status'}`;
+  }
+  await loadNotesForSelectedClient();
+}
+
+function scheduleClientDetailedSummary(){
+  clearTimeout(detailedSummaryAutoTimer);
+  if(!selectedNotesClientId || !notesWorkspaceItems.length) return;
+  detailedSummaryAutoTimer = setTimeout(() => {
+    if(selectedNotesClientId && notesWorkspaceItems.length){
+      generateClientDetailedSummary();
+    }
+  }, 350);
+}
+
+async function selectNotesReport(noteId){
+  selectedNotesReportId = noteId;
+  document.querySelectorAll('.notes-report-item').forEach(n=>n.classList.remove('selected'));
+  const item = Array.from(document.querySelectorAll('.notes-report-item')).find(el=>el.getAttribute('onclick')?.includes(`selectNotesReport(${noteId})`));
+  item?.classList.add('selected');
+  const note = notesWorkspaceItems.find(n=>String(n.id)===String(noteId));
+  const client = myClients.find(c=>String(c.id)===String(selectedNotesClientId));
+  if(note){
+    const sessionNumber = notesWorkspaceItems.length - notesWorkspaceItems.findIndex(n=>String(n.id)===String(noteId));
+    const body = [
+      `Counselor: ${note.therapist_name || currentUser?.full_name || 'Not specified'}`,
+      `Session Date: ${fmtDate(note.created_at)}`,
+      `Time: ${fmtTime(note.created_at) || 'Not specified'}`,
+      `Client(s) Name: ${client?.full_name || note.client_name || 'Not specified'}`,
+      `Code: ${client?.client_code || 'Not specified'}`,
+      `Session #: ${sessionNumber}`,
+      '',
+      `Note Type: ${String(note.note_type || 'progress').replace(/_/g, ' ')}`,
+      '',
+      'Full Report:',
+      note.structured_content || note.content || note.short_summary || 'No report content available.'
+    ].join('\n');
+    renderNotesSummary(
+      `Session ${sessionNumber} Full Report`,
+      `${client ? `${client.full_name} · ${client.client_code}` : (note.client_name || 'Client')}`,
+      body,
+      'Report opened'
+    );
+  }
+}
+
+async function generateClientDetailedSummary(){
+  if(!selectedNotesClientId){ toast('Select a client first', true); return; }
+  const client = myClients.find(c=>String(c.id)===String(selectedNotesClientId));
+  renderNotesSummary('Generating detailed client summary...', client ? `${client.full_name} (${client.client_code})` : '', 'Please wait while the system composes the full summary from the client’s session reports and treatment plans.', 'Working');
+  try{
+    const r = await apiFetch('/api/ai/client-detailed-summary', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({client_id: selectedNotesClientId})
+    });
+    const d = await r.json();
+    if(d.success){
+      renderNotesSummary('Detailed Client Summary', client ? `${client.full_name} (${client.client_code})` : '', d.summary, 'AI complete');
+    } else {
+      renderNotesSummary('Detailed Client Summary', client ? `${client.full_name} (${client.client_code})` : '', d.error || 'AI helper unavailable', 'Fallback');
+      toast('AI helper unavailable, please try again', true);
+    }
+  }catch(e){
+    renderNotesSummary('Detailed Client Summary', client ? `${client.full_name} (${client.client_code})` : '', 'AI request failed', 'Error');
+    toast('AI request failed', true);
+  }
+}
+
+async function generateReportDetailedSummary(noteId){
+  selectedNotesReportId = noteId;
+  const note = notesWorkspaceItems.find(n=>String(n.id)===String(noteId));
+  const client = myClients.find(c=>String(c.id)===String(selectedNotesClientId));
+  document.querySelectorAll('.notes-report-item').forEach(n=>n.classList.remove('selected'));
+  const item = Array.from(document.querySelectorAll('.notes-report-item')).find(el=>el.getAttribute('onclick')?.includes(`selectNotesReport(${noteId})`));
+  item?.classList.add('selected');
+  renderNotesSummary(`Generating report summary for Session ${note ? (notesWorkspaceItems.length - notesWorkspaceItems.findIndex(n=>String(n.id)===String(noteId))) : ''}...`, client ? `${client.full_name} (${client.client_code})` : '', 'Please wait while the system rewrites this specific session note into the requested format.', 'Working');
+  try{
+    const r = await apiFetch('/api/ai/note-detailed-summary', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({note_id: noteId})
+    });
+    const d = await r.json();
+    if(d.success){
+      renderNotesSummary('Session Report Summary', `${client ? client.full_name : 'Client'} · Session ${d.session_number || ''}`, d.summary, 'AI complete');
+    } else {
+      renderNotesSummary('Session Report Summary', `${client ? client.full_name : 'Client'} · Session note`, d.error || 'AI helper unavailable', 'Fallback');
+      toast('AI helper unavailable, please try again', true);
+    }
+  }catch(e){
+    renderNotesSummary('Session Report Summary', `${client ? client.full_name : 'Client'} · Session note`, 'AI request failed', 'Error');
+    toast('AI request failed', true);
+  }
+}
+
+async function loadNotes(){
+  renderNotesClientCards();
+  if(!selectedNotesClientId && myClients.length){
+    await selectNotesClient(myClients[0].id);
+    return;
+  }
+  if(selectedNotesClientId) await loadNotesForSelectedClient();
+}
+
+function openNoteModal(){
+  document.getElementById('noteOverlay').classList.add('open');
+  document.getElementById('noteModal').classList.add('open');
+  document.getElementById('noteAiSummary').value='';
+  if(selectedNotesClientId && document.getElementById('note_client')){
+    document.getElementById('note_client').value = selectedNotesClientId;
+  }
+}
+
+async function loadPlansList(){}
+
+let allAppointments = [];
+let dashboardRecentNotes = [];
+
+function hashHue(seed){
+  const text = String(seed || '0');
+  let hash = 0;
+  for(let i=0;i<text.length;i++) hash = ((hash << 5) - hash) + text.charCodeAt(i);
+  return Math.abs(hash) % 360;
+}
+
+function clientPalette(seed){
+  const hue = hashHue(seed);
+  return {
+    base: `hsl(${hue} 72% 46%)`,
+    dark: `hsl(${hue} 72% 34%)`,
+    soft: `hsla(${hue}, 72%, 46%, .16)`
+  };
+}
+
+function appointmentVisual(a){
+  const pal = clientPalette(a.client_id || a.client_name || 'appt');
+  const status = (a.status || '').toLowerCase();
+  const scope = (a.change_scope || '').toLowerCase();
+  if(status === 'cancelled') return { palette: { base:'hsl(215 15% 58%)', dark:'hsl(215 15% 40%)', soft:'rgba(148,163,184,.14)' }, cls:'appt-cancelled' };
+  if(scope === 'temporary') return { palette: { base:'hsl(45 95% 52%)', dark:'hsl(38 92% 40%)', soft:'rgba(245,158,11,.14)' }, cls:'appt-temporary' };
+  if(scope === 'permanent') return { palette: { base:'hsl(45 90% 48%)', dark:'hsl(40 86% 36%)', soft:'rgba(255,191,0,.15)' }, cls:'' };
+  return { palette: pal, cls:'' };
+}
+
+function roomLabel(a){
+  return a.room_name || a.room_code || 'Room not set';
+}
+
+function isFinalAppointmentStatus(status){
+  return ['completed', 'cancelled', 'no_show'].includes(String(status || '').toLowerCase());
+}
+
+function appointmentActionButtons(a, context='schedule'){
+  if(isFinalAppointmentStatus(a.status)){
+    return `<span class="badge badge-gray">Final</span>`;
+  }
+  const changeButton = context === 'dashboard'
+    ? `<button class="btn btn-xs btn-teal" onclick="event.stopPropagation();openNoteFor(${a.client_id})"><i class="fa-solid fa-pen"></i></button>`
+    : `<button class="btn btn-xs btn-outline" onclick="event.stopPropagation();changeAppt(${a.id})">Change</button>`;
+  return `
+    <button class="btn btn-xs btn-teal" onclick="event.stopPropagation();markAppt(${a.id},'completed')">Complete</button>
+    <button class="btn btn-xs btn-ghost" onclick="event.stopPropagation();markAppt(${a.id},'no_show')">No-show</button>
+    ${changeButton}
+    <button class="btn btn-xs btn-danger" onclick="event.stopPropagation();markAppt(${a.id},'cancelled')">Cancel</button>`;
+}
+
+function parseNotificationBody(message){
+  const body = String(message?.body || '').split(/\r?\n/);
+  const out = { lines: body, fields: {} };
+  for(const line of body){
+    const match = line.match(/^([^:]+):\s*(.*)$/);
+    if(match){
+      out.fields[match[1].trim().toLowerCase()] = match[2].trim();
+    }
+  }
+  return out;
+}
+
+function notificationTone(subject=''){
+  const s = subject.toLowerCase();
+  if(s.includes('completed')) return { icon:'fa-circle-check', color:'var(--success)', bg:'rgba(16,185,129,.1)', badge:'badge-green', label:'Completed' };
+  if(s.includes('cancel')) return { icon:'fa-ban', color:'var(--danger)', bg:'rgba(239,68,68,.1)', badge:'badge-red', label:'Cancelled' };
+  if(s.includes('resched') || s.includes('change')) return { icon:'fa-arrows-rotate', color:'var(--info)', bg:'rgba(59,130,246,.1)', badge:'badge-blue', label:'Rescheduled' };
+  if(s.includes('no-show')) return { icon:'fa-triangle-exclamation', color:'var(--warning)', bg:'rgba(245,158,11,.12)', badge:'badge-orange', label:'No Show' };
+  if(s.includes('pending')) return { icon:'fa-clock', color:'var(--muted)', bg:'rgba(100,116,139,.1)', badge:'badge-gray', label:'Pending' };
+  return { icon:'fa-bell', color:'var(--navy)', bg:'rgba(4,48,105,.08)', badge:'badge-indigo', label:'Update' };
+}
+
+function notificationCard(message){
+  const parsed = parseNotificationBody(message);
+  const tone = notificationTone(message.subject || '');
+  const f = parsed.fields;
+  const status = f['status'] || f['current status'] || tone.label;
+  const action = message.subject || 'Notification';
+  const details = [
+    f['date/time'] || f['new date/time'] || f['previous date/time'] || '',
+    f['end time'] || f['new end time'] || '',
+    f['reason'] || '',
+    f['scope'] || ''
+  ].filter(Boolean).join(' · ');
+  const gridItems = [
+    ['Client code', f['client code'] || '—'],
+    ['Therapist', f['therapist'] || '—'],
+    ['Room', f['room'] || '—'],
+    ['Appointment date', f['date/time'] || f['new date/time'] || '—'],
+    ['Time', f['date/time'] || f['new date/time'] || '—'],
+    ['Action performed', action],
+    ['Reason', f['reason'] || 'Not provided'],
+    ['Timestamp', fmtDate(message.sent_at)]
+  ];
+  return `
+    <div class="notify-card">
+      <div class="notify-head">
+        <div class="notify-icon" style="background:${tone.bg};color:${tone.color}">
+          <i class="fa-solid ${tone.icon}"></i>
+        </div>
+        <div class="notify-main">
+          <div class="notify-title-row">
+            <div class="notify-title">${action}</div>
+            <div class="notify-time">${fmtDate(message.sent_at)}</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+            <span class="badge ${tone.badge}">${status}</span>
+            <span class="badge badge-gray">${message.sender_name || 'System'}</span>
+          </div>
+          ${details ? `<div class="notify-body" style="margin-top:10px">${details}</div>` : ''}
+        </div>
+      </div>
+      <div class="notify-grid">
+        ${gridItems.map(([label, value])=>`
+          <div class="notify-field">
+            <div class="notify-field-label">${label}</div>
+            <div class="notify-field-value">${value || '—'}</div>
+          </div>`).join('')}
+      </div>
+      <div class="notify-footer">
+        ${f['current status'] ? `<span class="badge badge-indigo">Current status: ${f['current status']}</span>` : ''}
+        ${f['scope'] ? `<span class="badge badge-gold">${f['scope']}</span>` : ''}
+        ${f['previous date/time'] ? `<span class="badge badge-gray">Previous slot recorded</span>` : ''}
+      </div>
+    </div>`;
+}
+
+function closeNoteReader(){
+  document.getElementById('noteReaderOverlay').classList.remove('open');
+  document.getElementById('noteReaderModal').classList.remove('open');
+}
+
+function openNoteReader(noteId){
+  const note = notesWorkspaceItems.find(n=>String(n.id)===String(noteId)) || dashboardRecentNotes.find(n=>String(n.id)===String(noteId));
+  if(!note) return;
+  const client = myClients.find(c=>String(c.id)===String(selectedNotesClientId)) || myClients.find(c=>String(c.id)===String(note.client_id));
+  const sessionNumber = notesWorkspaceItems.length - notesWorkspaceItems.findIndex(n=>String(n.id)===String(noteId));
+  document.getElementById('noteReaderTitle').textContent = `${client ? client.full_name : (note.client_name || 'Client')} · Session ${sessionNumber}`;
+  document.getElementById('noteReaderMeta').textContent = `${note.note_type || 'note'} · ${fmtDate(note.created_at)} · ${note.therapist_name || currentUser?.full_name || 'Therapist'}`;
+  document.getElementById('noteReaderBody').textContent = note.structured_content || note.content || note.short_summary || 'No note content available.';
+  document.getElementById('noteReaderOverlay').classList.add('open');
+  document.getElementById('noteReaderModal').classList.add('open');
+}
+
+function setApptEditorMode(mode){
+  const scope = mode === 'permanent' ? 'permanent' : 'temporary';
+  document.getElementById('apptEditorScope').value = scope;
+  document.getElementById('apptEditorStatus').value = mode === 'cancelled' ? 'cancelled' : (mode === 'no_show' ? 'no_show' : 'scheduled');
+  document.getElementById('apptModeTemp').classList.toggle('active', mode === 'temporary');
+  document.getElementById('apptModePerm').classList.toggle('active', mode === 'permanent');
+  document.getElementById('apptModeCancel').classList.toggle('active', mode === 'cancelled');
+  document.getElementById('apptModeNoShow').classList.toggle('active', mode === 'no_show');
+  const dtGroup = document.querySelector('.appt-editor-time-group');
+  const note = document.getElementById('apptEditorNote');
+  const saveBtn = document.getElementById('apptEditorSaveBtn');
+  if(mode === 'cancelled'){
+    dtGroup.classList.add('appt-editor-hidden');
+    note.innerHTML = '<strong>Cancellation:</strong> add the reason so reception and Telegram get the same update.';
+    saveBtn.textContent = 'Cancel Session';
+    saveBtn.className = 'btn btn-danger appt-editor-save';
+  } else if(mode === 'no_show'){
+    dtGroup.classList.add('appt-editor-hidden');
+    note.innerHTML = '<strong>No-show:</strong> record the reason or note if needed. The session will be marked as no-show and the team will be notified.';
+    saveBtn.textContent = 'Mark No-show';
+    saveBtn.className = 'btn btn-ghost appt-editor-save';
+  } else if(mode === 'permanent'){
+    dtGroup.classList.remove('appt-editor-hidden');
+    note.innerHTML = '<strong>Permanent change:</strong> updates this session and the recurring pattern.';
+    saveBtn.textContent = 'Save Permanent Change';
+    saveBtn.className = 'btn btn-gold appt-editor-save';
+  } else {
+    dtGroup.classList.remove('appt-editor-hidden');
+    note.innerHTML = '<strong>Temporary change:</strong> updates this appointment only.';
+    saveBtn.textContent = 'Save Temporary Change';
+    saveBtn.className = 'btn btn-gold appt-editor-save';
+  }
+}
+
+function openAppointmentEditor(apptId, mode='temporary'){
+  const appt = allAppointments.find(a=>String(a.id)===String(apptId));
+  if(!appt){ toast('Appointment not found', true); return; }
+  document.getElementById('apptEditorId').value = appt.id;
+  document.getElementById('apptEditorDateTime').value = appt.start_time ? new Date(appt.start_time).toISOString().slice(0,16) : '';
+  document.getElementById('apptEditorEndTime').value = appt.end_time ? new Date(appt.end_time).toISOString().slice(0,16) : '';
+  document.getElementById('apptEditorReason').value = appt.change_reason || appt.cancel_reason || '';
+  document.getElementById('apptEditorOverlay').classList.add('open');
+  document.getElementById('apptEditorModal').classList.add('open'); vcInit(); setTimeout(vcRender, 100);
+  setApptEditorMode(mode);
+  document.getElementById('apptEditorTitle').textContent = `${appt.client_name || 'Session'}${appt.client_code ? ' · ' + appt.client_code : ''}`;
+  document.getElementById('apptEditorSubtitle').textContent = `${fmtDate(appt.start_time)} ${fmtTime(appt.start_time)} · ${appt.location || 'Location not set'} · ${roomLabel(appt)} · ${appt.therapist_name || 'Therapist'}`;
+}
+
+function closeAppointmentEditor(){
+  document.getElementById('apptEditorOverlay').classList.remove('open');
+  document.getElementById('apptEditorModal').classList.remove('open');
+}
+
+async function saveAppointmentEditor(){
+  const id = document.getElementById('apptEditorId').value;
+  const mode = document.getElementById('apptEditorStatus').value;
+  const scope = document.getElementById('apptEditorScope').value || 'temporary';
+  const reason = document.getElementById('apptEditorReason').value.trim();
+  const body = { reason };
+  if(mode === 'cancelled'){
+    if(!reason){ toast('Please add a cancellation reason', true); return; }
+    body.status = 'cancelled';
+    body.cancel_reason = reason;
+    body.action = 'cancelled';
+  } else if(mode === 'no_show'){
+    body.status = 'no_show';
+    body.reason = reason;
+    body.action = 'no_show';
+  } else {
+    const dt = document.getElementById('apptEditorDateTime').value;
+    if(!dt){ toast('Please choose a new date and time', true); return; }
+    body.start_time = new Date(dt).toISOString();
+    const end = document.getElementById('apptEditorEndTime').value;
+    if(end) body.end_time = new Date(end).toISOString();
+    body.change_reason = reason;
+    body.change_scope = scope;
+    body.action = 'changed';
+  }
+  const r = await apiFetch(`/api/appointments/${id}`, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d = await r.json();
+  if(d.success){
+    closeAppointmentEditor();
+    toast(mode === 'cancelled' ? 'Session cancelled' : mode === 'no_show' ? 'Marked no-show' : (scope === 'permanent' ? 'Permanent change saved' : 'Temporary change saved'));
+    loadSchedule();
+    loadDashboard();
+  } else {
+    toast(d.error || 'Update failed', true);
+  }
+}
+
+async function loadRecentNotesForDashboard(){
+  try{
+    const r = await apiFetch('/api/notes');
+    const notes = await r.json();
+    dashboardRecentNotes = notes;
+    const recent = notes.slice(0,4);
+    const el = document.getElementById('recentNotes');
+    if(!el) return;
+    if(!recent.length){
+      el.innerHTML = '<div class="notes-empty"><i class="fa-solid fa-notes-medical"></i><div style="font-weight:700;font-size:15px">No recent notes</div><div style="font-size:13px;margin-top:6px">Your latest session reports will show here.</div></div>';
+      return;
+    }
+    el.innerHTML = recent.map(n=>`
+      <div class="notes-report-item" onclick="openNoteReader(${n.id})" style="margin-bottom:10px">
+        <div class="notes-report-item-title">
+          <div>
+            <div class="notes-report-title">${n.client_name || 'Client'}</div>
+            <div class="notes-report-date">${fmtDate(n.created_at)}${n.therapist_name ? ` · ${n.therapist_name}` : ''}</div>
+          </div>
+          <span class="badge badge-${n.note_type==='progress'?'blue':n.note_type==='assessment'?'purple':n.note_type==='plan'?'green':'orange'}">${(n.note_type||'note').replace(/_/g,' ')}</span>
+        </div>
+        <div class="notes-report-preview">${(n.short_summary || n.ai_summary || n.content || '').substring(0,180)}${(n.short_summary || n.ai_summary || n.content || '').length > 180 ? '...' : ''}</div>
+      </div>
+    `).join('');
+  }catch(e){}
+}
+
+async function loadDashboard(){
+  const today = new Date().toISOString().split('T')[0];
+  try{
+    const r = await apiFetch(`/api/appointments?start=${today}&end=${today}`);
+    allAppointments = await r.json();
+    document.getElementById('sTodayAppts').textContent = allAppointments.length;
+    const el = document.getElementById('todaySessions');
+    el.innerHTML = allAppointments.length ? allAppointments.map(a=>{
+      const visual = appointmentVisual(a);
+      return `
+      <div class="schedule-item" onclick="openAppointmentEditor(${a.id},'temporary')" style="box-shadow:inset 4px 0 0 ${visual.palette.base}">
+        <div class="sch-time" style="color:${visual.palette.dark}">${fmtTime(a.start_time)}</div>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <div class="sch-client">${a.client_name}</div>
+            <span class="appt-chip" style="background:${visual.palette.base}">${a.client_code || 'Code'}</span>
+          </div>
+          <div class="sch-type">${a.type} · ${a.location}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+            <span class="badge badge-indigo">${roomLabel(a)}</span>
+            ${a.change_scope ? `<span class="badge badge-${a.change_scope==='permanent'?'gold':'orange'}">${a.change_scope}</span>` : ''}
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">${statusBadge(a.status)}${appointmentActionButtons(a, 'dashboard')}</div>
+      </div>`;
+    }).join('') : '<div style="text-align:center;padding:20px;color:var(--muted)"><i class="fa-regular fa-calendar-xmark" style="font-size:24px;margin-bottom:8px"></i><p>No sessions today</p></div>';
+  }catch(e){}
+  document.getElementById('sPendingRef').textContent='0';
+  await loadRecentNotesForDashboard();
+}
+
+async function loadSchedule(){
+  const date=document.getElementById('schedDate').value||new Date().toISOString().split('T')[0];
+  try{
+    const r=await apiFetch(`/api/appointments?start=${date}&end=${date}`);
+    allAppointments=await r.json();
+    const el=document.getElementById('scheduleList');
+    if(therapistScheduleView==='calendar'){
+      document.getElementById('schedCalendar').style.display='block';
+      document.getElementById('scheduleList').style.display='none';
+      renderTherapistCalendar(allAppointments);
+      return;
+    }
+    document.getElementById('schedCalendar').style.display='none';
+    document.getElementById('scheduleList').style.display='block';
+    el.innerHTML=allAppointments.length?allAppointments.map(a=>{
+      const visual = appointmentVisual(a);
+      return `
+      <div class="schedule-item" style="margin-bottom:10px;box-shadow:inset 4px 0 0 ${visual.palette.base}" onclick="openAppointmentEditor(${a.id},'temporary')">
+        <div style="width:80px;text-align:center;border-right:2px solid var(--border);padding-right:14px;margin-right:4px">
+          <div style="font-size:20px;font-weight:800;color:${visual.palette.dark}">${fmtTime(a.start_time)}</div>
+          <div style="font-size:11px;color:var(--muted)">${a.end_time?fmtTime(a.end_time):''}</div>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:700">${a.client_name}</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:2px">${a.type} · ${a.location}</div>
+          ${a.notes?`<div style="font-size:12px;color:var(--muted);margin-top:4px"><i class="fa-solid fa-note-sticky"></i> ${a.notes}</div>`:''}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+          ${statusBadge(a.status)}
+          <div style="display:flex;gap:4px;flex-wrap:wrap">
+            <button class="btn btn-xs btn-teal" onclick="event.stopPropagation();markAppt(${a.id},'completed')">Complete</button>
+            <button class="btn btn-xs btn-ghost" onclick="event.stopPropagation();openAppointmentEditor(${a.id},'no_show')">No-show</button>
+            <button class="btn btn-xs btn-outline" onclick="event.stopPropagation();openAppointmentEditor(${a.id},'temporary')">Change</button>
+            <button class="btn btn-xs btn-danger" onclick="event.stopPropagation();openAppointmentEditor(${a.id},'cancelled')">Cancel</button>
+          </div>
+        </div>
+      </div>`;
+    }).join(''):'<div style="text-align:center;padding:40px;color:var(--muted)"><i class="fa-regular fa-calendar" style="font-size:36px;margin-bottom:12px"></i><p style="font-size:15px;font-weight:600">No sessions scheduled for this day</p></div>';
+  }catch(e){}
+}
+
+function renderTherapistCalendar(appts){
+  const anchor = document.getElementById('schedDate')?.value || new Date().toISOString().split('T')[0];
+  const base = new Date(anchor + 'T00:00:00');
+  const y = base.getFullYear(), m = base.getMonth();
+  const firstDay = new Date(y, m, 1).getDay();
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const map = {};
+  appts.forEach(a=>{
+    const key=(a.start_time||'').split('T')[0];
+    if(!map[key]) map[key]=[];
+    map[key].push(a);
+  });
+  let html = `<div class="cal-grid">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="cal-day-header">${d}</div>`).join('')}`;
+  for(let i=0;i<firstDay;i++) html += `<div class="cal-day other-month"><div class="cal-day-num"></div></div>`;
+  for(let d=1; d<=daysInMonth; d++){
+    const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dayAppts = map[dateStr] || [];
+    html += `<div class="cal-day" onclick="document.getElementById('schedDate').value='${dateStr}';setSchedView('list')">
+      <div class="cal-day-num">${d}</div>
+      ${dayAppts.slice(0,3).map(a=>{ const visual = appointmentVisual(a); return `<span class="cal-appt-dot ${visual.cls}" style="background:${visual.palette.base};color:#fff">${a.client_code || (a.client_name||'Appt').split(' ')[0]} · ${roomLabel(a)}</span>`; }).join('')}
+      ${dayAppts.length>3?`<span style="font-size:10px;color:var(--muted)">+${dayAppts.length-3} more</span>`:''}
+    </div>`;
+  }
+  html += '</div>';
+  document.getElementById('schedCalendar').innerHTML = html;
+}
+
+async function markAppt(id,status){
+  if(status==='cancelled'){ openAppointmentEditor(id,'cancelled'); return; }
+  const body = {status, action:status};
+  if(status==='no_show') body.reason = document.getElementById('apptEditorReason')?.value || '';
+  await apiFetch(`/api/appointments/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  toast('Session updated');
+  loadSchedule(); loadDashboard();
+}
+
+async function changeAppt(id,status='temporary'){
+  openAppointmentEditor(id, status);
+}
+
+async function selectNotesReport(noteId){
+  selectedNotesReportId = noteId;
+  document.querySelectorAll('.notes-report-item').forEach(n=>n.classList.remove('selected'));
+  const item = Array.from(document.querySelectorAll('.notes-report-item')).find(el=>el.getAttribute('onclick')?.includes(`selectNotesReport(${noteId})`));
+  item?.classList.add('selected');
+  const note = notesWorkspaceItems.find(n=>String(n.id)===String(noteId));
+  const client = myClients.find(c=>String(c.id)===String(selectedNotesClientId));
+  if(note){
+    const sessionNumber = notesWorkspaceItems.length - notesWorkspaceItems.findIndex(n=>String(n.id)===String(noteId));
+    renderNotesSummary(
+      `Session ${sessionNumber} selected`,
+      `${client ? `${client.full_name} · ${client.client_code}` : (note.client_name || 'Client')}`,
+      note.short_summary || note.ai_summary || note.content || 'No summary available.',
+      'Report selected'
+    );
+    openNoteReader(noteId);
+  }
+}
+
+function openAppointmentEditor(apptId, mode='temporary'){
+  const openWith = (appt) => {
+    if(!appt){ toast('Appointment not found', true); return; }
+    if(!allAppointments.find(a=>String(a.id)===String(appt.id))) {
+      allAppointments = [appt, ...allAppointments.filter(a=>String(a.id)!==String(appt.id))];
+    }
+    document.getElementById('apptEditorId').value = appt.id;
+    document.getElementById('apptEditorDateTime').value = appt.start_time ? new Date(appt.start_time).toISOString().slice(0,16) : '';
+    document.getElementById('apptEditorEndTime').value = appt.end_time ? new Date(appt.end_time).toISOString().slice(0,16) : '';
+    document.getElementById('apptEditorReason').value = appt.change_reason || appt.cancel_reason || '';
+    document.getElementById('apptEditorOverlay').classList.add('open');
+    document.getElementById('apptEditorModal').classList.add('open'); vcInit(); setTimeout(vcRender, 100);
+    setApptEditorMode(mode);
+    document.getElementById('apptEditorTitle').textContent = `${appt.client_name || 'Session'}${appt.client_code ? ' · ' + appt.client_code : ''}`;
+    document.getElementById('apptEditorSubtitle').textContent = `${fmtDate(appt.start_time)} ${fmtTime(appt.start_time)} · ${appt.location || 'Location not set'} · ${roomLabel(appt)} · ${appt.therapist_name || 'Therapist'}`;
+  };
+  const appt = allAppointments.find(a=>String(a.id)===String(apptId));
+  if(appt){ openWith(appt); return; }
+  apiFetch(`/api/appointments/${apptId}`)
+    .then(r => r.ok ? r.json() : null)
+    .then(d => {
+      if(!d || d.error){ toast('Appointment not found', true); return; }
+      openWith(d);
+    })
+    .catch(() => toast('Appointment not found', true));
+}
+
+function closeAppointmentEditor(){
+  document.getElementById('apptEditorOverlay').classList.remove('open');
+  document.getElementById('apptEditorModal').classList.remove('open');
+}
+
+async function saveAppointmentEditor(){
+  const id = document.getElementById('apptEditorId').value;
+  const mode = document.getElementById('apptEditorStatus').value;
+  const scope = document.getElementById('apptEditorScope').value || 'temporary';
+  const reason = document.getElementById('apptEditorReason').value.trim();
+  const body = { reason };
+  if(mode === 'cancelled'){
+    if(!reason){ toast('Please add a cancellation reason', true); return; }
+    body.status = 'cancelled';
+    body.cancel_reason = reason;
+    body.action = 'cancelled';
+  } else if(mode === 'no_show'){
+    body.status = 'no_show';
+    body.reason = reason;
+    body.action = 'no_show';
+  } else {
+    const dt = document.getElementById('apptEditorDateTime').value;
+    if(!dt){ toast('Please choose a new date and time', true); return; }
+    body.start_time = new Date(dt).toISOString();
+    const end = document.getElementById('apptEditorEndTime').value;
+    if(end) body.end_time = new Date(end).toISOString();
+    body.change_reason = reason;
+    body.change_scope = scope;
+    body.action = 'changed';
+  }
+  const r = await apiFetch(`/api/appointments/${id}`, {
+    method:'PUT',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  });
+  const d = await r.json();
+  if(d.success){
+    closeAppointmentEditor();
+    toast(mode === 'cancelled' ? 'Session cancelled' : mode === 'no_show' ? 'Marked no-show' : (scope === 'permanent' ? 'Permanent change saved' : 'Temporary change saved'));
+    loadSchedule();
+    loadDashboard();
+  } else {
+    toast(d.error || 'Update failed', true);
+  }
+}
+
+
+
+
+// ─── Screening Records ───
+async function loadScreeningRecords() {
+  try {
+    const r = await apiFetch('/api/screening-results');
+    const records = await r.json();
+    const container = document.getElementById('screeningRecordsList');
+    if (!container) return;
+    if (!records.length) {
+      container.innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px">No screening records yet.</p>';
+      return;
+    }
+    container.innerHTML = records.map(rec => `
+      <div style="padding:14px;border-radius:10px;background:var(--surface);border:1px solid var(--border);margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="font-weight:700;font-size:14px">${rec.client_name || rec.client_email || 'Anonymous'}</div>
+          <div style="font-size:11px;color:var(--muted)">${new Date(rec.completed_at).toLocaleDateString()}</div>
+        </div>
+        <div style="font-size:12px;color:var(--muted)">${rec.template_name || 'Assessment'}</div>
+      </div>`).join('');
+  } catch(e) {
+    console.error('loadScreeningRecords error', e);
+  }
+}
+
+// ── VISUAL CALENDAR LOGIC ──
+let vcCurrentDate = new Date();
+let vcView = 'day'; // 'day' or 'week'
+let vcAppointments = [];
+let vcSelectedStart = null;
+let vcSelectedEnd = null;
+let vcPollingInterval = null;
+
+function vcInit() {
+  vcCurrentDate = new Date();
+  vcSelectedStart = null;
+  vcSelectedEnd = null;
+  document.getElementById('vcSelectedLabel').style.display = 'none';
+  vcFetchData();
+  
+  if(!vcPollingInterval) {
+    vcPollingInterval = setInterval(() => {
+      const modal = document.getElementById('apptEditorModal');
+      if(modal && modal.classList.contains('open') || modal.classList.contains('active')) {
+        vcFetchData(true);
+      }
+    }, 15000); // Poll every 15s when open
+  }
+}
+
+async function vcFetchData(silent = false) {
+  try {
+    const r = await apiFetch('/api/appointments');
+    vcAppointments = await r.json();
+    vcRender();
+  } catch(e) {}
+}
+
+function vcNav(dir) {
+  if(vcView === 'day') {
+    vcCurrentDate.setDate(vcCurrentDate.getDate() + dir);
+  } else {
+    vcCurrentDate.setDate(vcCurrentDate.getDate() + (dir * 7));
+  }
+  vcSelectedStart = null;
+  vcSelectedEnd = null;
+  document.getElementById('vcSelectedLabel').style.display = 'none';
+  document.getElementById('apptEditorDateTime').value = '';
+  document.getElementById('apptEditorEndTime').value = '';
+  vcRender();
+}
+
+function vcSetView(view) {
+  vcView = view;
+  document.getElementById('vcBtnDay').classList.toggle('active', view === 'day');
+  document.getElementById('vcBtnWeek').classList.toggle('active', view === 'week');
+  vcRender();
+}
+
+function vcGetWeekDays(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+  const monday = new Date(d.setDate(diff));
+  
+  const days = [];
+  for(let i=0; i<5; i++) { // Monday to Friday
+    const nd = new Date(monday);
+    nd.setDate(monday.getDate() + i);
+    days.push(nd);
+  }
+  return days;
+}
+
+function vcRender() {
+  const grid = document.getElementById('vcGrid');
+  const label = document.getElementById('vcDateLabel');
+  
+  const days = vcView === 'day' ? [vcCurrentDate] : vcGetWeekDays(vcCurrentDate);
+  
+  if(vcView === 'day') {
+    label.textContent = days[0].toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric', year:'numeric'});
+  } else {
+    label.textContent = `${days[0].toLocaleDateString('en-US', {month:'short', day:'numeric'})} - ${days[4].toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}`;
+  }
+  
+  let html = `<div class="vc-time-col"><div class="vc-day-header">Time</div>`;
+  for(let h=8; h<=19; h++) { // 8 AM to 7 PM
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const hour = h > 12 ? h - 12 : h;
+    html += `<div class="vc-time-slot">${hour} ${ampm}</div>`;
+  }
+  html += `</div><div class="vc-days">`;
+  
+  days.forEach((d, dIdx) => {
+    const dateStr = d.toISOString().split('T')[0];
+    const dayName = d.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
+    
+    html += `<div class="vc-day-col">
+               <div class="vc-day-header">${dayName}</div>`;
+               
+    for(let h=8; h<=19; h++) {
+      const slotStart = new Date(d);
+      slotStart.setHours(h, 0, 0, 0);
+      const slotEnd = new Date(d);
+      slotEnd.setHours(h+1, 0, 0, 0);
+      
+      const slotStartStr = slotStart.toISOString();
+      const slotEndStr = slotEnd.toISOString();
+      
+      // Check busy
+      const isBusy = vcAppointments.some(a => {
+        if(['cancelled','no_show','terminated'].includes(a.status)) return false;
+        // Ignore the appointment currently being edited
+        if(document.getElementById('apptEditorId') && document.getElementById('apptEditorId').value == a.id) return false;
+        
+        const aStart = new Date(a.start_time);
+        const aEnd = new Date(a.end_time);
+        return (aStart < slotEnd && aEnd > slotStart);
+      });
+      
+      let cls = 'vc-slot available';
+      if(isBusy) cls = 'vc-slot busy';
+      if(vcSelectedStart === slotStartStr) cls += ' selected';
+      
+      html += `<div class="${cls}" data-start="${slotStartStr}" data-end="${slotEndStr}" onclick="vcSlotClick(this, ${isBusy})"></div>`;
+    }
+    
+    // Render existing appts as absolute blocks
+    const dayAppts = vcAppointments.filter(a => {
+      if(['cancelled','no_show','terminated'].includes(a.status)) return false;
+      const aDate = a.start_time.split('T')[0];
+      return aDate === dateStr;
+    });
+    
+    dayAppts.forEach(a => {
+      const aStart = new Date(a.start_time);
+      const aEnd = new Date(a.end_time);
+      if(aStart.getHours() < 8 || aStart.getHours() > 19) return;
+      
+      const top = (aStart.getHours() - 8 + aStart.getMinutes()/60) * 40;
+      const height = ((aEnd - aStart) / (1000 * 60 * 60)) * 40;
+      
+      // If editing this appt, make it semi-transparent
+      const isEditing = document.getElementById('apptEditorId') && document.getElementById('apptEditorId').value == a.id;
+      const opacity = isEditing ? '0.4' : '1';
+      const border = isEditing ? '2px dashed var(--danger)' : 'none';
+      
+      html += `<div class="vc-appt" style="top:${top+32}px;height:${height}px;background:var(--navy);opacity:${opacity};border:${border}">
+                 ${isEditing ? 'Editing...' : 'Booked'}
+               </div>`;
+    });
+    
+    html += `</div>`;
+  });
+  
+  html += `</div>`;
+  grid.innerHTML = html;
+  
+  // Render current time line
+  const now = new Date();
+  if(vcView === 'day' && days[0].toDateString() === now.toDateString()) {
+    if(now.getHours() >= 8 && now.getHours() <= 19) {
+      const top = (now.getHours() - 8 + now.getMinutes()/60) * 40;
+      const daysWrap = grid.querySelector('.vc-days');
+      if(daysWrap) {
+        daysWrap.innerHTML += `<div class="vc-current-time" style="top:${top+32}px"></div>`;
+      }
+    }
+  }
+}
+
+function vcSlotClick(el, isBusy) {
+  if(isBusy) return;
+  const start = el.dataset.start;
+  const end = el.dataset.end;
+  
+  vcSelectedStart = start;
+  vcSelectedEnd = end;
+  
+  document.getElementById('apptEditorDateTime').value = start.slice(0,16);
+  document.getElementById('apptEditorEndTime').value = end.slice(0,16);
+  
+  const dStart = new Date(start);
+  const dEnd = new Date(end);
+  const formatted = `${dStart.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'})}, ${dStart.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - ${dEnd.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+  
+  const sl = document.getElementById('vcSelectedLabel');
+  sl.textContent = `Selected: ${formatted}`;
+  sl.style.display = 'block';
+  
+  vcRender();
+}
+
+// Visual Calendar: modal hook removed (handled inline)
+
+
+init();
+</script>
+</body>
+</html>
+
