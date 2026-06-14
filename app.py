@@ -964,6 +964,44 @@ def unique_assessment_slug(conn, base_name, current_id=None):
         slug = f'{base_slug}-{suffix}'
 
 
+def coerce_int(value, default=0):
+
+    try:
+
+        if value is None or value == '':
+
+            return default
+
+        if isinstance(value, bool):
+
+            return 1 if value else 0
+
+        return int(value)
+
+    except (TypeError, ValueError):
+
+        return default
+
+
+def coerce_required(value):
+
+    if isinstance(value, bool):
+
+        return 1 if value else 0
+
+    if isinstance(value, (int, float)):
+
+        return 1 if value else 0
+
+    text = str(value or '').strip().lower()
+
+    if text in ('1', 'true', 'yes', 'y', 'required', 'on', 'checked'):
+
+        return 1
+
+    return 0
+
+
 
 def generate_login_code(length=8):
 
@@ -2376,7 +2414,11 @@ Assessment text:
             payload.setdefault('category', _assessment_category_from_text(payload.get('title', ''), text))
 
             if heuristic.get('warnings'):
-                payload['warnings'] = list(dict.fromkeys([*(payload.get('warnings') or []), *heuristic.get('warnings', [])]))
+                merged_warnings = list(dict.fromkeys([*(payload.get('warnings') or []), *heuristic.get('warnings', [])]))
+                has_options = any(q.get('options') for q in (payload.get('questions') or []))
+                if has_options:
+                    merged_warnings = [w for w in merged_warnings if 'no response options' not in str(w).lower()]
+                payload['warnings'] = merged_warnings
 
             return payload
 
@@ -4331,17 +4373,18 @@ def hard_delete_user(uid):
 
         return jsonify({'error': 'Unauthorized'}), 401
 
-    with get_db() as conn:
+    try:
+        with get_db() as conn:
+            conn.execute('DELETE FROM users WHERE id=?', (uid,))
+            conn.commit()
 
-        conn.execute('DELETE FROM users WHERE id=?', (uid,))
+        if current_user():
 
-        conn.commit()
+            log_action(current_user()['id'], 'DELETE_USER', 'users', f'Deleted user id {uid}')
 
-    if current_user():
-
-        log_action(current_user()['id'], 'DELETE_USER', 'users', f'Deleted user id {uid}')
-
-    return jsonify({'success': True})
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': f'Failed to delete user: {e}'}), 500
 
 
 
@@ -5614,47 +5657,59 @@ def assessment_templates():
 
     data = request.json or {}
 
-    with get_db() as conn:
+    try:
 
-        slug = unique_assessment_slug(conn, data.get('slug') or data.get('name', ''))
+        with get_db() as conn:
 
-        cur = conn.execute('''INSERT INTO assessment_templates 
+            slug = unique_assessment_slug(conn, data.get('slug') or data.get('name', ''))
+
+            cur = conn.execute('''INSERT INTO assessment_templates
 
                                (name, slug, description, form_language, is_public, is_active, created_by, config_json, category, tags, published, version, author)
 
                                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)''',
 
-                           (data.get('name', ''), slug, data.get('description', ''), data.get('form_language', 'English'),
+                               (data.get('name', ''), slug, data.get('description', ''), data.get('form_language', 'English'),
 
-                            int(data.get('is_public', 1)), 1, current_user()['id'], json.dumps(data.get('config', {})),
+                                coerce_int(data.get('is_public', 1), 1), 1, current_user()['id'], json.dumps(data.get('config', {})),
 
-                            data.get('category', ''), data.get('tags', ''), int(data.get('published', 0)), int(data.get('version', 1)), data.get('author') or current_user().get('full_name', '')))
-
-        conn.commit()
-
-        
-
-        # If questions are provided, insert them too
-
-        if 'questions' in data and isinstance(data['questions'], list):
-
-            tid = cur.lastrowid
-
-            for q in data['questions']:
-
-                conn.execute('''INSERT INTO assessment_questions (template_id, question_key, label_en, question_type, required, options_json, helper_text, sort_order)
-
-                                VALUES (?,?,?,?,?,?,?,?)''',
-
-                             (tid, q.get('question_key'), q.get('label_en'), q.get('question_type', 'text'), int(q.get('required', 0)),
-
-                              json.dumps(q.get('options', [])), q.get('helper_text', ''), int(q.get('sort_order', 0))))
+                                data.get('category', ''), data.get('tags', ''), coerce_int(data.get('published', 0), 0), coerce_int(data.get('version', 1), 1), data.get('author') or current_user().get('full_name', '')))
 
             conn.commit()
 
-            
 
-        return jsonify({'success': True, 'id': cur.lastrowid, 'slug': slug}), 201
+            # If questions are provided, insert them too
+
+            if 'questions' in data and isinstance(data['questions'], list):
+
+                tid = cur.lastrowid
+
+                for q in data['questions']:
+
+                    raw_options = q.get('options', [])
+
+                    if isinstance(raw_options, str):
+
+                        raw_options = [opt.strip() for opt in raw_options.split('\n') if opt.strip()]
+
+                    elif not isinstance(raw_options, list):
+
+                        raw_options = [str(raw_options)] if raw_options not in (None, '') else []
+
+                    conn.execute('''INSERT INTO assessment_questions (template_id, question_key, label_en, question_type, required, options_json, helper_text, sort_order)
+
+                                    VALUES (?,?,?,?,?,?,?,?)''',
+
+                                 (tid, q.get('question_key'), q.get('label_en'), q.get('question_type', 'text'), coerce_required(q.get('required', 0)),
+
+                                  json.dumps(raw_options), q.get('helper_text', ''), coerce_int(q.get('sort_order', 0), 0)))
+
+                conn.commit()
+
+
+            return jsonify({'success': True, 'id': cur.lastrowid, 'slug': slug}), 201
+    except Exception as e:
+        return jsonify({'error': f'Failed to save template: {e}'}), 500
 
 
 
@@ -5684,53 +5739,66 @@ def assessment_template_detail(tid):
 
         return jsonify({'error': 'Unauthorized'}), 401
 
-    with get_db() as conn:
+    try:
+        with get_db() as conn:
+            if request.method == 'DELETE':
+                conn.execute('UPDATE assessment_templates SET is_active=0, updated_at=? WHERE id=?', (datetime.now().isoformat(), tid))
+                conn.commit()
+                return jsonify({'success': True})
 
-        if request.method == 'DELETE':
+            data = request.json or {}
+            slug = unique_assessment_slug(conn, data.get('slug') or data.get('name', ''), current_id=tid)
 
-            conn.execute('UPDATE assessment_templates SET is_active=0, updated_at=? WHERE id=?', (datetime.now().isoformat(), tid))
+            conn.execute(
+                '''UPDATE assessment_templates
+                   SET name=?, slug=?, description=?, form_language=?, is_public=?, updated_at=?, config_json=?, category=?, tags=?, published=?, version=?, author=?
+                   WHERE id=?''',
+                (
+                    data.get('name', ''),
+                    slug,
+                    data.get('description', ''),
+                    data.get('form_language', 'English'),
+                    coerce_int(data.get('is_public', 1), 1),
+                    datetime.now().isoformat(),
+                    json.dumps(data.get('config', {})),
+                    data.get('category', ''),
+                    data.get('tags', ''),
+                    coerce_int(data.get('published', 0), 0),
+                    coerce_int(data.get('version', 1), 1),
+                    data.get('author', ''),
+                    tid,
+                ),
+            )
+
+            if 'questions' in data and isinstance(data['questions'], list):
+                conn.execute('DELETE FROM assessment_questions WHERE template_id=?', (tid,))
+
+                for q in data['questions']:
+                    raw_options = q.get('options', [])
+                    if isinstance(raw_options, str):
+                        raw_options = [opt.strip() for opt in raw_options.split('\n') if opt.strip()]
+                    elif not isinstance(raw_options, list):
+                        raw_options = [str(raw_options)] if raw_options not in (None, '') else []
+
+                    conn.execute(
+                        '''INSERT INTO assessment_questions (template_id, question_key, label_en, question_type, required, options_json, helper_text, sort_order)
+                           VALUES (?,?,?,?,?,?,?,?)''',
+                        (
+                            tid,
+                            q.get('question_key'),
+                            q.get('label_en'),
+                            q.get('question_type', 'text'),
+                            coerce_required(q.get('required', 0)),
+                            json.dumps(raw_options),
+                            q.get('helper_text', ''),
+                            coerce_int(q.get('sort_order', 0), 0),
+                        ),
+                    )
 
             conn.commit()
-
             return jsonify({'success': True})
-
-        data = request.json or {}
-
-        slug = unique_assessment_slug(conn, data.get('slug') or data.get('name', ''), current_id=tid)
-
-        conn.execute('''UPDATE assessment_templates
-
-                        SET name=?, slug=?, description=?, form_language=?, is_public=?, updated_at=?, config_json=?, category=?, tags=?, published=?, version=?, author=?
-
-                        WHERE id=?''',
-
-                     (data.get('name', ''), slug,
-
-                      data.get('description', ''), data.get('form_language', 'English'), int(data.get('is_public', 1)),
-
-                      datetime.now().isoformat(), json.dumps(data.get('config', {})), data.get('category', ''), data.get('tags', ''),
-
-                      int(data.get('published', 0)), int(data.get('version', 1)), data.get('author', ''), tid))
-
-                      
-
-        if 'questions' in data and isinstance(data['questions'], list):
-
-            conn.execute('DELETE FROM assessment_questions WHERE template_id=?', (tid,))
-
-            for q in data['questions']:
-
-                conn.execute('''INSERT INTO assessment_questions (template_id, question_key, label_en, question_type, required, options_json, helper_text, sort_order)
-
-                                VALUES (?,?,?,?,?,?,?,?)''',
-
-                             (tid, q.get('question_key'), q.get('label_en'), q.get('question_type', 'text'), int(q.get('required', 0)),
-
-                              json.dumps(q.get('options', [])), q.get('helper_text', ''), int(q.get('sort_order', 0))))
-
-        conn.commit()
-
-        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': f'Failed to save template: {e}'}), 500
 
 
 
@@ -5744,7 +5812,7 @@ def publish_assessment_template(tid):
 
     data = request.json or {}
 
-    published = int(data.get('published', 1))
+    published = coerce_int(data.get('published', 1), 1)
 
     with get_db() as conn:
 
@@ -5796,7 +5864,7 @@ def duplicate_assessment_template(tid):
 
                            (new_name, new_slug, tpl_dict.get('description', ''), tpl_dict.get('form_language', 'English'),
 
-                            tpl_dict.get('is_public', 1), 1, current_user()['id'], tpl_dict.get('config_json', '{}'),
+                            coerce_int(tpl_dict.get('is_public', 1), 1), 1, current_user()['id'], tpl_dict.get('config_json', '{}'),
 
                             tpl_dict.get('category', ''), tpl_dict.get('tags', ''), 0, new_version, tpl_dict.get('author', '')))
 
@@ -5814,9 +5882,9 @@ def duplicate_assessment_template(tid):
 
                             VALUES (?,?,?,?,?,?,?,?)''',
 
-                         (new_tid, q_dict.get('question_key'), q_dict.get('label_en'), q_dict.get('question_type', 'text'), q_dict.get('required', 0),
+                         (new_tid, q_dict.get('question_key'), q_dict.get('label_en'), q_dict.get('question_type', 'text'), coerce_required(q_dict.get('required', 0)),
 
-                          q_dict.get('options_json', '[]'), q_dict.get('helper_text', ''), q_dict.get('sort_order', 0)))
+                          q_dict.get('options_json', '[]'), q_dict.get('helper_text', ''), coerce_int(q_dict.get('sort_order', 0), 0)))
 
         conn.commit()
 
