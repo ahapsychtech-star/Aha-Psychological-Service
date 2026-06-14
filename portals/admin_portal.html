@@ -1571,6 +1571,30 @@ let assessmentTemplatesCache=[];
 let assessmentImportFile=null;
 let assessmentImportPreviewData=null;
 
+function normalizeQuestionType(type) {
+  const value = String(type || 'text').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  const map = {
+    short_answer: 'text',
+    singlechoice: 'single_choice',
+    multiplechoice: 'multiple_choice',
+    checkbox: 'multiple_choice',
+    checkboxes: 'multiple_choice',
+    likert: 'scale',
+    likert_scale: 'scale',
+    rating: 'scale',
+    rating_scale: 'scale',
+    open_ended: 'textarea',
+    openended: 'textarea',
+    long_answer: 'textarea',
+    yes_no: 'boolean',
+    yesno: 'boolean',
+    true_false: 'boolean',
+    truefalse: 'boolean',
+    numeric: 'number',
+  };
+  return map[value] || value || 'text';
+}
+
 async function readJsonResponse(res) {
   const text = await res.text();
   if (!text) return { ok: res.ok, data: null, raw: '' };
@@ -1819,8 +1843,13 @@ function filterAssessmentLibrary() {
 
 function renderAssessmentTemplateGrid(data) {
   const el = document.getElementById('assessmentTemplateGrid');
-  if(!data || !data.length) {
-    el.innerHTML = '<p style="color:var(--muted)">No assessments found in the library.</p>';
+  if(!el) return;
+  if(!Array.isArray(data) || !data.length) {
+    el.innerHTML = `
+      <div style="padding:20px;border:1px dashed var(--border);border-radius:14px;background:linear-gradient(180deg,#fff,#fbfdff);color:var(--muted);text-align:center">
+        <div style="font-weight:800;color:var(--navy);margin-bottom:6px">No assessments found in the library</div>
+        <div style="font-size:13px;line-height:1.7">Create a template in the editor or import one with AI, then save it here.</div>
+      </div>`;
     return;
   }
   
@@ -1983,9 +2012,9 @@ function applyAssessmentImport(parsed){
     question_key: q.question_key || `q${idx+1}`,
     label_en: q.label_en || q.question || '',
     label_am: q.label_am || '',
-    question_type: q.question_type || 'text',
+    question_type: normalizeQuestionType(q.question_type || 'text'),
     required: q.required ? 1 : 0,
-    options: Array.isArray(q.options) ? q.options : [],
+    options: Array.isArray(q.options) ? q.options : (typeof q.options === 'string' ? q.options.split('\n').map(opt => opt.trim()).filter(Boolean) : []),
     helper_text: q.helper_text || '',
     sort_order: q.sort_order ?? (idx + 1),
     scoring: q.scoring || {},
@@ -2032,7 +2061,7 @@ function addBuilderQuestion(){
     question_key: document.getElementById('qKey').value || `q${pendingAssessmentQuestions.length+1}`,
     label_en: document.getElementById('qEn').value,
     label_am: document.getElementById('qAm').value,
-    question_type: document.getElementById('qType').value,
+    question_type: normalizeQuestionType(document.getElementById('qType').value),
     required: document.getElementById('qRequired').checked ? 1 : 0,
     options,
     helper_text: document.getElementById('qHelp').value,
@@ -2077,14 +2106,26 @@ async function saveAssessmentTemplate(){
 }
 
 async function loadAssessmentTemplates(){
+  const el = document.getElementById('assessmentTemplateGrid');
   try{
     const r = await apiFetch('/api/assessment-templates');
-    assessmentTemplatesCache = await r.json();
-    renderAssessmentTemplateGrid(assessmentTemplatesCache);
+    const parsed = await readJsonResponse(r);
+    if(!parsed.ok){
+      const msg = parsed.data?.error || parsed.error || `Failed to load assessment library (${r.status})`;
+      throw new Error(msg);
+    }
+    const list = Array.isArray(parsed.data) ? parsed.data : (Array.isArray(parsed.data?.templates) ? parsed.data.templates : []);
+    assessmentTemplatesCache = list;
+    renderAssessmentTemplateGrid(list);
   }catch(e){
     console.error(e);
-    const el = document.getElementById('assessmentTemplateGrid');
-    if(el) el.innerHTML = '<p style="color:var(--muted)">Could not load the assessment library.</p>';
+    if(el) {
+      el.innerHTML = `
+        <div style="padding:18px;border:1px solid rgba(239,68,68,.18);border-radius:14px;background:rgba(239,68,68,.04)">
+          <div style="font-weight:800;color:var(--danger);margin-bottom:6px">Could not load the assessment library</div>
+          <div style="font-size:13px;line-height:1.7;color:var(--text)">${(e && e.message) ? e.message : 'Please try again.'}</div>
+        </div>`;
+    }
   }
 }
 
@@ -2092,6 +2133,7 @@ async function openAssessmentTemplate(id){
   try {
     const r = await apiFetch(`/api/assessment-templates/${id}`);
     const d = await r.json();
+    if(!r.ok || !d || d.error) throw new Error(d?.error || `Failed to load template (${r.status})`);
     currentAssessmentTemplateId = id;
     document.getElementById('assessName').value = d.template.name || '';
     document.getElementById('assessCat').value = d.template.category || '';
@@ -2104,7 +2146,7 @@ async function openAssessmentTemplate(id){
       question_key: q.question_key,
       label_en: q.label_en,
       label_am: q.label_am,
-      question_type: q.question_type,
+      question_type: normalizeQuestionType(q.question_type),
       required: q.required,
       options: (() => { try { return q.options_json ? JSON.parse(q.options_json) : []; } catch (e) { return []; } })(),
       helper_text: q.helper_text,
@@ -2116,7 +2158,7 @@ async function openAssessmentTemplate(id){
     document.getElementById('tab-assess-editor').style.display = 'inline-block';
     switchAssessTab('editor');
   } catch(e) {
-    toast('Failed to load template', true);
+    toast(e.message || 'Failed to load template', true);
   }
 }
 

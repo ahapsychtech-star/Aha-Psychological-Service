@@ -262,10 +262,39 @@
             ${opt}
           </label>
         `).join('') + `</div>`;
+      } else if(type === 'scale') {
+        const scaleOptions = opts.length ? opts : ['1', '2', '3', '4', '5'];
+        const current = responses[qKey];
+        inputHtml = `
+          <div class="options">
+            ${scaleOptions.map((opt, i) => `
+              <label class="option-label ${String(current)===String(opt) ? 'selected' : ''}" style="justify-content:center;text-align:center;min-height:56px">
+                <input type="radio" name="${qKey}" value="${opt}" ${String(current)===String(opt) ? 'checked' : ''} onchange="saveResponse('${qKey}', this.value); updateOptionStyling(this)">
+                <div>
+                  <div style="font-size:18px;font-weight:800;color:var(--navy)">${i + 1}</div>
+                  <div style="font-size:12px;color:var(--muted);margin-top:2px">${opt}</div>
+                </div>
+              </label>
+            `).join('')}
+          </div>`;
+      } else if(type === 'boolean') {
+        const boolVal = String(responses[qKey] ?? '');
+        inputHtml = `<div class="options">
+          ${['Yes','No'].map(opt => `
+            <label class="option-label ${boolVal === opt ? 'selected' : ''}">
+              <input type="radio" name="${qKey}" value="${opt}" ${boolVal === opt ? 'checked' : ''} onchange="saveResponse('${qKey}', this.value); updateOptionStyling(this)">
+              ${opt}
+            </label>
+          `).join('')}
+        </div>`;
+      } else if(type === 'date') {
+        inputHtml = `<input type="date" class="input-text" name="${qKey}" value="${responses[qKey]||''}" oninput="saveResponse('${qKey}', this.value)">`;
+      } else if(type === 'number') {
+        inputHtml = `<input type="number" class="input-text" name="${qKey}" placeholder="Enter a number" value="${responses[qKey]||''}" oninput="saveResponse('${qKey}', this.value)">`;
       } else if(type === 'textarea') {
         inputHtml = `<textarea class="input-text" name="${qKey}" placeholder="Type your answer here..." oninput="saveResponse('${qKey}', this.value)">${responses[qKey]||''}</textarea>`;
       } else {
-        inputHtml = `<input type="${type==='number'?'number':'text'}" class="input-text" name="${qKey}" placeholder="Type your answer here..." value="${responses[qKey]||''}" oninput="saveResponse('${qKey}', this.value)">`;
+        inputHtml = `<input type="text" class="input-text" name="${qKey}" placeholder="Type your answer here..." value="${responses[qKey]||''}" oninput="saveResponse('${qKey}', this.value)">`;
       }
       
       const qLabel = q.label_en + (q.label_am ? ` <br><span style="font-size:14px;color:#64748b;font-weight:400">${q.label_am}</span>` : '');

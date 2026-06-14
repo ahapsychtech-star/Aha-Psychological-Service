@@ -891,9 +891,34 @@ def ensure_column(conn, table, column, ddl):
 
 
 
+def normalize_role(role):
+
+    role = str(role or '').strip().lower()
+
+    if role in ('administrator', 'system administrator', 'super admin', 'superadmin', 'root'):
+
+        return 'admin'
+
+    if role in ('reception', 'front desk'):
+
+        return 'receptionist'
+
+    return role
+
+
 def current_user():
 
-    return session.get('user')
+    user = session.get('user')
+
+    if not user:
+
+        return None
+
+    user = dict(user)
+
+    user['role'] = normalize_role(user.get('role'))
+
+    return user
 
 
 
@@ -905,7 +930,9 @@ def require_role(*roles):
 
         return False
 
-    return user.get('role') in roles
+    allowed = {normalize_role(role) for role in roles}
+
+    return user.get('role') in allowed
 
 
 
@@ -1000,6 +1027,61 @@ def coerce_required(value):
         return 1
 
     return 0
+
+
+def normalize_question_type(value):
+
+    text = str(value or 'text').strip().lower().replace('-', '_').replace(' ', '_')
+
+    mapping = {
+
+        'short_answer': 'text',
+
+        'singlechoice': 'single_choice',
+
+        'single_choice': 'single_choice',
+
+        'multiplechoice': 'multiple_choice',
+
+        'multiple_choice': 'multiple_choice',
+
+        'checkbox': 'multiple_choice',
+
+        'checkboxes': 'multiple_choice',
+
+        'likert': 'scale',
+
+        'likert_scale': 'scale',
+
+        'rating': 'scale',
+
+        'rating_scale': 'scale',
+
+        'scale': 'scale',
+
+        'open_ended': 'textarea',
+
+        'openended': 'textarea',
+
+        'long_answer': 'textarea',
+
+        'paragraph': 'textarea',
+
+        'yes_no': 'boolean',
+
+        'yesno': 'boolean',
+
+        'boolean': 'boolean',
+
+        'true_false': 'boolean',
+
+        'truefalse': 'boolean',
+
+        'numeric': 'number',
+
+    }
+
+    return mapping.get(text, text if text in ('text', 'textarea', 'single_choice', 'multiple_choice', 'scale', 'date', 'number', 'boolean', 'instruction', 'info', 'intro', 'heading', 'title', 'paragraph', 'separator', 'note') else 'text')
 
 
 
@@ -5700,7 +5782,7 @@ def assessment_templates():
 
                                     VALUES (?,?,?,?,?,?,?,?)''',
 
-                                 (tid, q.get('question_key'), q.get('label_en'), q.get('question_type', 'text'), coerce_required(q.get('required', 0)),
+                                 (tid, q.get('question_key'), q.get('label_en'), normalize_question_type(q.get('question_type', 'text')), coerce_required(q.get('required', 0)),
 
                                   json.dumps(raw_options), q.get('helper_text', ''), coerce_int(q.get('sort_order', 0), 0)))
 
@@ -5787,7 +5869,7 @@ def assessment_template_detail(tid):
                             tid,
                             q.get('question_key'),
                             q.get('label_en'),
-                            q.get('question_type', 'text'),
+                            normalize_question_type(q.get('question_type', 'text')),
                             coerce_required(q.get('required', 0)),
                             json.dumps(raw_options),
                             q.get('helper_text', ''),
@@ -5882,7 +5964,7 @@ def duplicate_assessment_template(tid):
 
                             VALUES (?,?,?,?,?,?,?,?)''',
 
-                         (new_tid, q_dict.get('question_key'), q_dict.get('label_en'), q_dict.get('question_type', 'text'), coerce_required(q_dict.get('required', 0)),
+                         (new_tid, q_dict.get('question_key'), q_dict.get('label_en'), normalize_question_type(q_dict.get('question_type', 'text')), coerce_required(q_dict.get('required', 0)),
 
                           q_dict.get('options_json', '[]'), q_dict.get('helper_text', ''), coerce_int(q_dict.get('sort_order', 0), 0)))
 
@@ -5910,7 +5992,7 @@ def add_assessment_question(tid):
 
             VALUES (?,?,?,?,?,?,?,?,?,?,?)''',
 
-            (tid, data.get('question_key', ''), data.get('label_en', ''), data.get('label_am', ''), data.get('question_type', 'text'),
+            (tid, data.get('question_key', ''), data.get('label_en', ''), data.get('label_am', ''), normalize_question_type(data.get('question_type', 'text')),
 
              int(data.get('required', 0)), json.dumps(data.get('options', [])), data.get('helper_text', ''),
 
@@ -5948,7 +6030,7 @@ def assessment_question_detail(qid):
 
                         WHERE id=?''',
 
-                     (data.get('question_key', ''), data.get('label_en', ''), data.get('label_am', ''), data.get('question_type', 'text'),
+                     (data.get('question_key', ''), data.get('label_en', ''), data.get('label_am', ''), normalize_question_type(data.get('question_type', 'text')),
 
                       int(data.get('required', 0)), json.dumps(data.get('options', [])), data.get('helper_text', ''),
 
