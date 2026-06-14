@@ -1084,6 +1084,59 @@ def normalize_question_type(value):
     return mapping.get(text, text if text in ('text', 'textarea', 'single_choice', 'multiple_choice', 'scale', 'date', 'number', 'boolean', 'instruction', 'info', 'intro', 'heading', 'title', 'paragraph', 'separator', 'note') else 'text')
 
 
+def normalize_assessment_question(question, idx=0):
+
+    q = dict(question or {})
+
+    label = str(q.get('label_en') or q.get('question') or '').strip()
+
+    helper = str(q.get('helper_text') or '').strip()
+
+    options = q.get('options', [])
+
+    if isinstance(options, str):
+
+        options = [opt.strip() for opt in options.split('\n') if opt.strip()]
+
+    elif not isinstance(options, list):
+
+        options = [str(options)] if options not in (None, '') else []
+
+    text_blob = f"{label} {helper} {' '.join(options)}".lower()
+
+    qtype = normalize_question_type(q.get('question_type', 'text'))
+
+    if qtype in ('text', 'scale') and re.search(r'\b(yes/no|yes or no|y/n|\(yes/no\)|\(y/n\))\b', text_blob):
+
+        qtype = 'boolean'
+
+    if qtype == 'boolean':
+
+        options = ['Yes', 'No']
+
+    q['question_key'] = q.get('question_key') or f'q{idx+1}'
+
+    q['label_en'] = label
+
+    q['label_am'] = str(q.get('label_am') or '').strip()
+
+    q['question_type'] = qtype
+
+    q['required'] = coerce_required(q.get('required', 0))
+
+    q['options'] = options
+
+    q['helper_text'] = helper
+
+    q['sort_order'] = coerce_int(q.get('sort_order', idx + 1), idx + 1)
+
+    q['scoring'] = q.get('scoring') or {}
+
+    q['logic'] = q.get('logic') or {}
+
+    return q
+
+
 
 def generate_login_code(length=8):
 
@@ -2302,19 +2355,23 @@ def heuristic_assessment_parse(text):
 
                 questions.append(current)
 
+            question_text = numbered.group(2).strip()
+            lower_text = question_text.lower()
+            is_boolean = bool(re.search(r'\b(yes/no|yes or no|y/n|\(yes/no\)|\(y/n\))\b', lower_text))
+
             current = {
 
                 'question_key': f'q{numbered.group(1)}',
 
-                'label_en': numbered.group(2).strip(),
+                'label_en': re.sub(r'\s*\(?yes\s*/\s*no\)?\s*$', '', question_text, flags=re.I).strip(),
 
                 'label_am': '',
 
-                'question_type': 'scale',
+                'question_type': 'boolean' if is_boolean else 'scale',
 
                 'required': 1,
 
-                'options': [],
+                'options': ['Yes', 'No'] if is_boolean else [],
 
                 'helper_text': '',
 
@@ -2484,12 +2541,12 @@ Assessment text:
 
         if isinstance(payload, dict):
 
-            payload.setdefault('questions', heuristic.get('questions', []))
+            payload['questions'] = [normalize_assessment_question(q, idx) for idx, q in enumerate(payload.get('questions') or heuristic.get('questions', []))]
 
             payload.setdefault('warnings', [])
 
             if not payload.get('questions'):
-                payload['questions'] = heuristic.get('questions', [])
+                payload['questions'] = [normalize_assessment_question(q, idx) for idx, q in enumerate(heuristic.get('questions', []))]
 
             payload.setdefault('title', heuristic.get('title', 'Untitled Assessment'))
 
