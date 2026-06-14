@@ -5749,7 +5749,8 @@ def assessment_templates():
 
                                (name, slug, description, form_language, is_public, is_active, created_by, config_json, category, tags, published, version, author)
 
-                               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+                               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+                               RETURNING id''',
 
                                (data.get('name', ''), slug, data.get('description', ''), data.get('form_language', 'English'),
 
@@ -5757,14 +5758,16 @@ def assessment_templates():
 
                                 data.get('category', ''), data.get('tags', ''), coerce_int(data.get('published', 0), 0), coerce_int(data.get('version', 1), 1), data.get('author') or current_user().get('full_name', '')))
 
-            conn.commit()
+            row = cur.fetchone()
+            tid = row['id'] if row else None
 
 
             # If questions are provided, insert them too
 
             if 'questions' in data and isinstance(data['questions'], list):
 
-                tid = cur.lastrowid
+                if not tid:
+                    raise ValueError('Template id was not returned by the database')
 
                 for q in data['questions']:
 
@@ -5789,7 +5792,9 @@ def assessment_templates():
                 conn.commit()
 
 
-            return jsonify({'success': True, 'id': cur.lastrowid, 'slug': slug}), 201
+            conn.commit()
+
+            return jsonify({'success': True, 'id': tid, 'slug': slug}), 201
     except Exception as e:
         return jsonify({'error': f'Failed to save template: {e}'}), 500
 
@@ -5942,7 +5947,8 @@ def duplicate_assessment_template(tid):
 
                                (name, slug, description, form_language, is_public, is_active, created_by, config_json, category, tags, published, version, author)
 
-                               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+                               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+                               RETURNING id''',
 
                            (new_name, new_slug, tpl_dict.get('description', ''), tpl_dict.get('form_language', 'English'),
 
@@ -5952,7 +5958,10 @@ def duplicate_assessment_template(tid):
 
         
 
-        new_tid = cur.lastrowid
+        new_row = cur.fetchone()
+        new_tid = new_row['id'] if new_row else None
+        if not new_tid:
+            raise ValueError('Template id was not returned by the database')
 
         
 

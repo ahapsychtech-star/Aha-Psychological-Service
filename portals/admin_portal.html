@@ -1872,7 +1872,7 @@ function renderAssessmentTemplateGrid(data) {
         </div>
         <div style="font-size:11px;color:var(--muted);margin-bottom:14px">
           <div><i class="fa-solid fa-user"></i> ${t.author || 'Unknown'}</div>
-          <div><i class="fa-regular fa-clock"></i> ${formatDate(t.created_at)}</div>
+          <div><i class="fa-regular fa-clock"></i> ${fmtDate(t.created_at)}</div>
         </div>
         <div style="display:flex;gap:8px;border-top:1px solid var(--border);padding-top:12px">
           <button class="btn btn-outline btn-xs" onclick="openAssessmentTemplate(${t.id})"><i class="fa-solid fa-pen"></i> Edit</button>
