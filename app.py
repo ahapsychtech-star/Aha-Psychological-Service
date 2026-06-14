@@ -2320,6 +2320,8 @@ def parse_assessment_structure(text):
 
         return heuristic_assessment_parse(text)
 
+    heuristic = heuristic_assessment_parse(text)
+
     prompt = f"""
 
 You are converting a psychological assessment into a structured JSON template.
@@ -2362,17 +2364,23 @@ Assessment text:
 
         if isinstance(payload, dict):
 
-            payload.setdefault('questions', [])
+            payload.setdefault('questions', heuristic.get('questions', []))
 
             payload.setdefault('warnings', [])
 
-            payload.setdefault('title', heuristic_assessment_parse(text).get('title', 'Untitled Assessment'))
+            if not payload.get('questions'):
+                payload['questions'] = heuristic.get('questions', [])
+
+            payload.setdefault('title', heuristic.get('title', 'Untitled Assessment'))
 
             payload.setdefault('category', _assessment_category_from_text(payload.get('title', ''), text))
 
+            if heuristic.get('warnings'):
+                payload['warnings'] = list(dict.fromkeys([*(payload.get('warnings') or []), *heuristic.get('warnings', [])]))
+
             return payload
 
-    fallback = heuristic_assessment_parse(text)
+    fallback = heuristic
 
     if result.strip():
 
@@ -6149,7 +6157,7 @@ def referrals_api():
 
 def assessment_import():
 
-    if not require_role('admin'):
+    if not current_user():
 
         return jsonify({'error': 'Unauthorized'}), 401
 

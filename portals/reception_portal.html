@@ -21,7 +21,7 @@
   --radius: 14px; --radius-sm: 8px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;overflow:hidden}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;overflow-y:auto;overflow-x:hidden}
 
 /* â”€â”€ Sidebar â”€â”€ */
 .sidebar{width:var(--sidebar-w);background:var(--navy);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:width .3s ease}
@@ -47,7 +47,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);displ
 .logout-btn:hover{color:var(--danger)}
 
 /* â”€â”€ Main â”€â”€ */
-.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;overflow:hidden}
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;overflow:visible}
 .topbar{height:var(--topbar-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:16px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(4,48,105,.04)}
 .topbar-title{font-size:18px;font-weight:700;color:var(--navy);flex:1}
 .topbar-clock{font-size:13px;color:var(--text-muted);font-weight:500}
@@ -55,10 +55,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);displ
 .notif-btn{position:relative;width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-muted);font-size:16px;transition:.2s}
 .notif-btn:hover{background:var(--bg);color:var(--navy)}
 .notif-badge{position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center}
-.content{flex:1;overflow-y:auto;padding:28px}
+.content{flex:1;overflow:visible;padding:28px 28px 140px;min-height:0}
 .section{display:none}
 .section.active{display:block}
-#sec-calendar .panel,#sec-appointments .panel{max-height:calc(100vh - 152px);overflow:auto}
+#sec-calendar .panel,#sec-appointments .panel{max-height:none;overflow:visible}
 #sec-calendar,#sec-appointments{padding-bottom:120px}
 
 /* â”€â”€ Cards â”€â”€ */
