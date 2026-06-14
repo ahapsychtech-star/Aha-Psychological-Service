@@ -2048,11 +2048,13 @@ async function saveAssessmentTemplate(){
   try {
     let tplId = currentAssessmentTemplateId;
     if(tplId){
-      await apiFetch(`/api/assessment-templates/${tplId}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+      const res = await apiFetch(`/api/assessment-templates/${tplId}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+      const payload = await res.json();
+      if(!res.ok || !payload.success) throw new Error(payload.error || 'Save failed');
     }else{
       const r = await apiFetch('/api/assessment-templates', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
       const d = await r.json();
-      if(!d.success){ toast('Failed to create template', true); return; }
+      if(!r.ok || !d.success){ throw new Error(d.error || 'Failed to create template'); }
       tplId = d.id;
       currentAssessmentTemplateId = tplId;
     }
@@ -2060,7 +2062,7 @@ async function saveAssessmentTemplate(){
     loadAssessmentTemplates();
     switchAssessTab('library');
   } catch(e) {
-    toast('Failed to save template', true);
+    toast(e.message || 'Failed to save template', true);
   }
 }
 

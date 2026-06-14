@@ -724,6 +724,22 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
           </div>
           <div class="form-group"><label>Presenting Concerns <span style="color:var(--danger)">*</span></label><textarea class="form-control" id="nc_concerns" rows="4" placeholder="Briefly describe why the client is seeking psychological services — their primary concern, symptoms, or situation..."></textarea></div>
           <div class="form-group"><label>Additional Notes</label><textarea class="form-control" id="nc_notes" style="min-height:80px" placeholder="Any other relevant information, referral source details, special requirements..."></textarea></div>
+          <div class="panel" style="margin:8px 0 18px;background:linear-gradient(180deg,#fff,#fbfdff)">
+            <div class="panel-header" style="margin-bottom:12px">
+              <div class="panel-title"><i class="fa-solid fa-calendar-plus"></i>Book First Appointment</div>
+            </div>
+            <div style="font-size:12.5px;color:var(--text-muted);line-height:1.7;margin-bottom:12px">Optional. If the client is ready, schedule the first visit immediately after registration.</div>
+            <div class="grid-2">
+              <div class="form-group"><label>Therapist</label><select class="form-control" id="nc_book_therapist"><option value="">Select therapist...</option></select></div>
+              <div class="form-group"><label>Location</label><select class="form-control" id="nc_book_location"><option>In-Person</option><option>Online</option><option>Phone</option></select></div>
+              <div class="form-group"><label>Date</label><input type="date" class="form-control" id="nc_book_date"></div>
+              <div class="form-group"><label>Start Time</label><input type="time" class="form-control" id="nc_book_start" value="09:00"></div>
+              <div class="form-group"><label>End Time</label><input type="time" class="form-control" id="nc_book_end" value="10:00"></div>
+              <div class="form-group"><label>Room</label><select class="form-control" id="nc_book_room"><option value="">Auto-assign best available room</option></select></div>
+            </div>
+            <div class="form-group"><label>Appointment Notes</label><textarea class="form-control" id="nc_book_notes" style="min-height:70px" placeholder="Optional appointment notes..."></textarea></div>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--navy)"><input type="checkbox" id="nc_book_now" checked style="width:16px;height:16px">Create this appointment after registration</label>
+          </div>
           <div style="display:flex;justify-content:space-between;margin-top:8px">
             <button class="btn btn-ghost" onclick="nextStep(1)"><i class="fa-solid fa-arrow-left"></i> Back</button>
             <button class="btn btn-primary" onclick="nextStep(3)">Review <i class="fa-solid fa-arrow-right"></i></button>
@@ -733,8 +749,9 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
         <!-- Step 3 -->
         <div class="step-panel" id="step3">
           <h3 style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:18px">Review & Register</h3>
-          <div id="reviewContent" style="background:var(--bg);border-radius:12px;padding:20px;margin-bottom:20px"></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+        <div id="reviewContent" style="background:var(--bg);border-radius:12px;padding:20px;margin-bottom:20px"></div>
+        <div id="reviewAppointmentContent" style="background:linear-gradient(180deg,#fff,#fbfdff);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:20px"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
             <button class="btn btn-ghost" onclick="nextStep(2)"><i class="fa-solid fa-arrow-left"></i> Back</button>
             <button class="btn btn-success" id="registerBtn" onclick="registerClient()"><i class="fa-solid fa-user-check"></i> Register Client</button>
           </div>
@@ -1138,6 +1155,11 @@ async function init() {
   });
 
   await loadRooms();
+  await loadNewClientBookingTherapists();
+  ['nc_book_date','nc_book_start','nc_book_end'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', loadNewClientBookingRoomAvailability);
+  });
   await loadDashboard();
   await loadAllClients();
   loadCalendar();
@@ -1163,6 +1185,12 @@ function showSection(name) {
   if(name==='appointments') loadAppointments();
   if(name==='finance') loadInvoices();
   if(name==='messages') loadMessages();
+  if(name==='new-client') {
+    const today = new Date().toISOString().split('T')[0];
+    const bookDate = document.getElementById('nc_book_date');
+    if (bookDate && !bookDate.value) bookDate.value = today;
+    loadNewClientBookingRoomAvailability();
+  }
 }
 
 // â”€â”€â”€ Dashboard â”€â”€â”€
@@ -1874,9 +1902,48 @@ async function loadRooms() {
   try {
     const r = await apiFetch('/api/rooms');
     allRooms = await r.json();
+    const roomSelect = document.getElementById('nc_book_room');
+    if (roomSelect) {
+      roomSelect.innerHTML = '<option value="">Auto-assign best available room</option>' + allRooms.map(room => `<option value="${room.id}">${formatRoomOption(room)}</option>`).join('');
+    }
   } catch (e) {
     allRooms = [];
   }
+}
+
+async function loadNewClientBookingTherapists() {
+  try {
+    const r = await apiFetch('/api/users');
+    const users = await r.json();
+    const therapists = users.filter(u => u.role === 'therapist' && u.is_active);
+    const sel = document.getElementById('nc_book_therapist');
+    if (sel) {
+      sel.innerHTML = '<option value="">Select therapist...</option>' + therapists.map(t => `<option value="${t.id}">${t.full_name}${t.specialization ? ` - ${t.specialization}` : ''}${t.languages ? ` - ${t.languages}` : ''}</option>`).join('');
+    }
+  } catch (e) {}
+}
+
+async function loadNewClientBookingRoomAvailability() {
+  const roomSelect = document.getElementById('nc_book_room');
+  if (!roomSelect) return;
+  const date = document.getElementById('nc_book_date')?.value;
+  const start = document.getElementById('nc_book_start')?.value;
+  const end = document.getElementById('nc_book_end')?.value || start;
+  if (!date || !start) {
+    roomSelect.innerHTML = '<option value="">Choose a date and time first</option>';
+    return;
+  }
+  try {
+    const params = new URLSearchParams({ start: `${date}T${start}:00`, end: `${date}T${end}:00` });
+    const r = await apiFetch(`/api/rooms/available?${params.toString()}`);
+    const data = await r.json();
+    const available = data.rooms || [];
+    const availableIds = new Set(available.map(room => String(room.id)));
+    roomSelect.innerHTML = '<option value="">Auto-assign best available room</option>' + allRooms.map(room => {
+      const isAvail = availableIds.has(String(room.id));
+      return `<option value="${room.id}" ${isAvail ? '' : 'disabled'}>${formatRoomOption(room)}${isAvail ? '' : ' - busy'}</option>`;
+    }).join('');
+  } catch (e) {}
 }
 
 async function loadBookingRoomAvailability() {
@@ -2515,6 +2582,32 @@ function buildReview() {
       <span style="font-size:12px;font-weight:700;color:var(--text-muted)">${l}</span>
       <span style="font-size:13px;font-weight:600;max-width:60%;text-align:right">${v}</span>
     </div>`).join('');
+
+  const appt = {
+    therapist: document.getElementById('nc_book_therapist').selectedOptions?.[0]?.textContent || 'Not selected',
+    date: document.getElementById('nc_book_date').value || 'Not selected',
+    time: document.getElementById('nc_book_start').value || 'Not selected',
+    end: document.getElementById('nc_book_end').value || 'Not selected',
+    room: document.getElementById('nc_book_room').selectedOptions?.[0]?.textContent || 'Auto-assign',
+    location: document.getElementById('nc_book_location').value || 'In-Person',
+    notes: document.getElementById('nc_book_notes').value || 'None'
+  };
+  document.getElementById('reviewAppointmentContent').innerHTML = `
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:10px">
+      <div>
+        <div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">First Appointment</div>
+        <div style="font-size:16px;font-weight:800;color:var(--navy);margin-top:4px">Optional booking summary</div>
+      </div>
+      <span class="badge badge-${document.getElementById('nc_book_now').checked ? 'green' : 'gray'}">${document.getElementById('nc_book_now').checked ? 'Will be created' : 'Not scheduled'}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;font-size:13px;line-height:1.6">
+      <div><strong style="color:var(--navy)">Therapist:</strong> ${appt.therapist}</div>
+      <div><strong style="color:var(--navy)">Location:</strong> ${appt.location}</div>
+      <div><strong style="color:var(--navy)">Date:</strong> ${appt.date}</div>
+      <div><strong style="color:var(--navy)">Time:</strong> ${appt.time} - ${appt.end}</div>
+      <div><strong style="color:var(--navy)">Room:</strong> ${appt.room}</div>
+      <div><strong style="color:var(--navy)">Notes:</strong> ${appt.notes}</div>
+    </div>`;
 }
 
 async function registerClient() {
@@ -2550,6 +2643,28 @@ async function registerClient() {
     const r = await apiFetch('/api/clients', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const data = await r.json();
     if (data.success) {
+      if (document.getElementById('nc_book_now')?.checked) {
+        const therapistId = document.getElementById('nc_book_therapist').value;
+        const date = document.getElementById('nc_book_date').value;
+        const start = document.getElementById('nc_book_start').value;
+        const end = document.getElementById('nc_book_end').value;
+        if (therapistId && date && start) {
+          await apiFetch('/api/appointments', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+              client_id: data.client_id,
+              therapist_id: therapistId,
+              start_time: `${date}T${start}:00`,
+              end_time: `${date}T${end || start}:00`,
+              type: 'individual',
+              location: document.getElementById('nc_book_location').value,
+              notes: document.getElementById('nc_book_notes').value || '',
+              room_id: document.getElementById('nc_book_room').value || ''
+            })
+          });
+        }
+      }
       document.querySelectorAll('.step-panel').forEach(p=>p.classList.remove('active'));
       document.getElementById('step4').classList.add('active');
       document.getElementById('newClientCode').textContent = data.client_code;
@@ -2561,7 +2676,12 @@ async function registerClient() {
 }
 
 function resetClientForm() {
-  ['nc_name','nc_dob','nc_phone','nc_email','nc_address','nc_ecname','nc_ecphone','nc_concerns','nc_notes','nc_pref_date','nc_pref_time'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  ['nc_name','nc_dob','nc_phone','nc_email','nc_address','nc_ecname','nc_ecphone','nc_concerns','nc_notes','nc_pref_date','nc_pref_time','nc_book_notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  ['nc_book_therapist','nc_book_location','nc_book_room'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  const bookDate = document.getElementById('nc_book_date'); if(bookDate) bookDate.value='';
+  const bookStart = document.getElementById('nc_book_start'); if(bookStart) bookStart.value='09:00';
+  const bookEnd = document.getElementById('nc_book_end'); if(bookEnd) bookEnd.value='10:00';
+  const bookNow = document.getElementById('nc_book_now'); if(bookNow) bookNow.checked=true;
   currentStep = 1;
   nextStep(1);
 }
@@ -2614,25 +2734,56 @@ async function selectAssignClient(cid) {
         <div class="rec-header">
           <div class="rec-avatar">${(t.full_name||'?')[0]}</div>
           <div>
-            <div style="font-size:15px;font-weight:800">${t.full_name}</div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${t.specialization||'General Counseling'}</div>
+            <div style="font-size:15px;font-weight:800;line-height:1.25">${t.full_name}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;line-height:1.5">${t.specialization||'General Counseling'}</div>
             <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
               ${(t.languages||'English').split(',').map(l=>`<span class="badge badge-teal">${l.trim()}</span>`).join('')}
               ${t.gender?`<span class="badge badge-blue">${t.gender}</span>`:''}
             </div>
           </div>
-          <div class="match-badge ${cls}">${score}%</div>
-        </div>
-        <div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
-            <span style="color:var(--text-muted);font-weight:600">CASELOAD</span>
-            <span style="font-weight:700">${t.caseload}/${t.max_caseload}</span>
+          <div style="text-align:right">
+            <div class="match-badge ${cls}">${score}% fit</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:6px">Caseload ${t.caseload}/${t.max_caseload}</div>
           </div>
         </div>
+        <div style="padding:12px;border-radius:12px;background:rgba(4,48,105,.03);border:1px solid rgba(4,48,105,.06)">
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+            <div><div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Specialization</div><div style="font-size:12.5px;font-weight:700;color:var(--navy);margin-top:2px">${t.specialization||'General Counseling'}</div></div>
+            <div><div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Languages</div><div style="font-size:12.5px;font-weight:700;color:var(--navy);margin-top:2px">${(t.languages||'English').split(',').map(l=>l.trim()).join(', ')}</div></div>
+            <div><div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Gender</div><div style="font-size:12.5px;font-weight:700;color:var(--navy);margin-top:2px">${t.gender||'Any'}</div></div>
+            <div><div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Capacity</div><div style="font-size:12.5px;font-weight:700;color:var(--navy);margin-top:2px">${t.caseload}/${t.max_caseload}</div></div>
+          </div>
+          <div class="caseload-bar" style="margin-top:10px"><div class="caseload-fill" style="width:${pct}%;background:${fillColor}"></div></div>
+        </div>
+        <button class="btn btn-primary" onclick="assignTherapist(${cid},${t.id})"><i class="fa-solid fa-user-check"></i>Assign ${t.full_name.split(' ')[0]}</button>
       </div>`}).join('');
     document.getElementById('assignmentModal').classList.add('active');
   } catch(e) {
     console.error('Error loading recommendations', e);
+  }
+}
+
+async function assignTherapist(clientId, therapistId) {
+  try {
+    const r = await apiFetch(`/api/clients/${clientId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ assigned_therapist_id: therapistId })
+    });
+    const d = await r.json();
+    if (d.success) {
+      toast('Therapist assigned successfully!');
+      await loadAllClients();
+      await loadAssignQueue();
+      document.getElementById('recPlaceholder').style.display = 'flex';
+      document.getElementById('recResults').style.display = 'none';
+      selectedAssignClient = null;
+      document.getElementById('assignmentModal').classList.remove('active');
+    } else {
+      toast(d.error || 'Assignment failed', true);
+    }
+  } catch(e) {
+    toast('Assignment failed', true);
   }
 }
 

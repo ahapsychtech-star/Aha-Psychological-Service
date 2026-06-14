@@ -120,7 +120,7 @@
   </div>
 
 <script>
-  const token = window.location.pathname.split('/').pop();
+  const token = new URLSearchParams(window.location.search).get('token') || window.location.pathname.split('/').pop();
   let questions = [];
   let currentIndex = 0;
   let responses = {};

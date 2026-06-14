@@ -926,6 +926,44 @@ def generate_client_code():
     return 'AHA-' + secrets.token_hex(3).upper()
 
 
+def slugify_text(text):
+
+    slug = re.sub(r'[^a-z0-9]+', '-', str(text or '').strip().lower()).strip('-')
+
+    return slug or f'template-{secrets.token_hex(3)}'
+
+
+def unique_assessment_slug(conn, base_name, current_id=None):
+
+    base_slug = slugify_text(base_name)
+
+    slug = base_slug
+
+    suffix = 1
+
+    while True:
+
+        params = [slug]
+
+        query = 'SELECT id FROM assessment_templates WHERE slug=?'
+
+        if current_id is not None:
+
+            query += ' AND id != ?'
+
+            params.append(current_id)
+
+        exists = conn.execute(query, tuple(params)).fetchone()
+
+        if not exists:
+
+            return slug
+
+        suffix += 1
+
+        slug = f'{base_slug}-{suffix}'
+
+
 
 def generate_login_code(length=8):
 
@@ -977,7 +1015,7 @@ def telegram_api(method, payload):
 
     try:
 
-        with urllib_request.urlopen(req, timeout=10) as resp:
+        with urllib_request.urlopen(req, timeout=6) as resp:
 
             return True, json.loads(resp.read().decode('utf-8'))
 
@@ -1021,6 +1059,32 @@ def telegram_api_get(method, params=None, timeout=20):
 
 def send_telegram_message(chat_id, text, parse_mode='HTML'):
 
+    def _compact(value):
+
+        lines = [line.rstrip() for line in str(value or '').replace('\r', '').split('\n')]
+
+        compacted = []
+
+        blank = False
+
+        for line in lines:
+
+            if not line.strip():
+
+                if not blank:
+
+                    compacted.append('')
+
+                blank = True
+
+            else:
+
+                compacted.append(line)
+
+                blank = False
+
+        return '\n'.join(compacted).strip()
+
     if not chat_id:
 
         print(f'[TELEGRAM] send_telegram_message: No chat_id')
@@ -1029,7 +1093,7 @@ def send_telegram_message(chat_id, text, parse_mode='HTML'):
 
     payload = {
         'chat_id': chat_id,
-        'text': text,
+        'text': _compact(text),
         'disable_web_page_preview': True,
         'parse_mode': parse_mode
     }
@@ -1721,6 +1785,141 @@ Source text to rewrite:
 
 """
 
+
+
+def build_note_prompt_v2(raw_text, note_type='progress', client_name='', session_date='', therapist_name=''):
+
+    style = (note_type or 'progress').strip().lower()
+
+    style_map = {
+        'soap': """Return the note in this exact structure:
+
+SOAP NOTE
+
+SUBJECTIVE:
+Use the client’s reported experience, chief concern, mood, and events since last session.
+
+OBJECTIVE:
+Use factual therapist observations only.
+
+ASSESSMENT:
+Describe clinical impression and progress using only the source text.
+
+PLAN:
+Include interventions, homework, and next steps from the source text.
+""",
+        'dap': """Return the note in this exact structure:
+
+DAP NOTE
+
+DATA:
+Include what the client reported and what the therapist observed.
+
+ASSESSMENT:
+Describe the clinical interpretation and current state.
+
+PLAN:
+Include interventions, homework, and follow-up steps from the source text.
+""",
+        'progress': """Return the note in this exact structure:
+
+PROGRESS NOTE
+
+SESSION SUMMARY:
+Write a concise but complete summary of the session.
+
+PROGRESS TOWARD GOALS:
+Describe changes, improvements, and barriers.
+
+INTERVENTIONS:
+Describe therapist interventions and client response.
+
+HOMEWORK/BETWEEN-SESSION TASKS:
+List tasks or coping skills to practice.
+
+RISK ASSESSMENT:
+Summarize safety or risk concerns.
+
+NEXT SESSION:
+Describe next steps and the next focus.
+""",
+        'crisis': """Return the note in this exact structure:
+
+CRISIS NOTE
+
+PRESENTING CRISIS:
+Describe the crisis situation.
+
+RISK ASSESSMENT:
+Include suicidal ideation, plan/intent, means access, and protective factors when available.
+
+INTERVENTIONS:
+List crisis interventions used.
+
+SAFETY PLAN:
+Summarize the safety plan and protective actions.
+
+DISPOSITION:
+Describe the immediate disposition or recommended level of care.
+
+FOLLOW-UP:
+State the follow-up plan.
+"""
+    }
+
+    requested_structure = style_map.get(style, """Return the note in this exact structure:
+
+Counseling Session Summary & Follow Up
+
+Counselor: ____________________________ Session Date: ________________ Time: ________
+
+Client(s) Name: ________________________________________ Code: ____ Session #: ________
+
+Reflect from previous session and specific complaint:
+
+Session treatment goal:
+
+Assessment of progress:
+
+Session intervention:
+
+Therapeutic plan/next steps:
+
+Special Attention:
+""")
+
+    return f"""You are a clinical documentation assistant for Aha Psychological Service.
+
+Rewrite the therapist's draft into a polished, detailed, and factual clinical note.
+
+Clinical rules:
+
+- Preserve every clinically relevant detail already present in the source text.
+- Reorganize the text into the requested structure without deleting meaning.
+- Do not invent symptoms, diagnoses, interventions, risk level, or outcomes.
+- If a detail is missing, write "Not specified" rather than guessing.
+- Improve grammar, spelling, clarity, tone, and professionalism.
+- Keep the content grounded in the source text only.
+- Return plain text only.
+- Do not add commentary, markdown decoration, or extra headings.
+- Do not add blank template prompts that erase the therapist's draft.
+
+Metadata:
+
+Client: {client_name}
+Session date: {session_date}
+Therapist: {therapist_name}
+Format: {style}
+
+Requested structure:
+
+{requested_structure}
+
+Source text:
+
+{raw_text}
+
+"""
 
 
 def extract_ai_sections(text, structured_label='STRUCTURED NOTE:', summary_label='SHORT SUMMARY:'):
@@ -4118,7 +4317,7 @@ def update_user(uid):
 
 @app.route('/api/users/<int:uid>', methods=['DELETE'])
 
-def delete_user(uid):
+def hard_delete_user(uid):
 
     if not require_role('admin'):
 
@@ -4126,9 +4325,13 @@ def delete_user(uid):
 
     with get_db() as conn:
 
-        conn.execute('UPDATE users SET is_active=0 WHERE id=?', (uid,))
+        conn.execute('DELETE FROM users WHERE id=?', (uid,))
 
         conn.commit()
+
+    if current_user():
+
+        log_action(current_user()['id'], 'DELETE_USER', 'users', f'Deleted user id {uid}')
 
     return jsonify({'success': True})
 
@@ -5403,9 +5606,9 @@ def assessment_templates():
 
     data = request.json or {}
 
-    slug = (data.get('slug') or data.get('name', '')).strip().lower().replace(' ', '-')
-
     with get_db() as conn:
+
+        slug = unique_assessment_slug(conn, data.get('slug') or data.get('name', ''))
 
         cur = conn.execute('''INSERT INTO assessment_templates 
 
@@ -5417,7 +5620,7 @@ def assessment_templates():
 
                             int(data.get('is_public', 1)), 1, current_user()['id'], json.dumps(data.get('config', {})),
 
-                            data.get('category', ''), data.get('tags', ''), int(data.get('published', 0)), int(data.get('version', 1)), data.get('author', current_user().get('full_name', ''))))
+                            data.get('category', ''), data.get('tags', ''), int(data.get('published', 0)), int(data.get('version', 1)), data.get('author') or current_user().get('full_name', '')))
 
         conn.commit()
 
@@ -5443,7 +5646,7 @@ def assessment_templates():
 
             
 
-        return jsonify({'success': True, 'id': cur.lastrowid}), 201
+        return jsonify({'success': True, 'id': cur.lastrowid, 'slug': slug}), 201
 
 
 
@@ -5485,13 +5688,15 @@ def assessment_template_detail(tid):
 
         data = request.json or {}
 
+        slug = unique_assessment_slug(conn, data.get('slug') or data.get('name', ''), current_id=tid)
+
         conn.execute('''UPDATE assessment_templates
 
                         SET name=?, slug=?, description=?, form_language=?, is_public=?, updated_at=?, config_json=?, category=?, tags=?, published=?, version=?, author=?
 
                         WHERE id=?''',
 
-                     (data.get('name', ''), (data.get('slug') or data.get('name', '')).strip().lower().replace(' ', '-'),
+                     (data.get('name', ''), slug,
 
                       data.get('description', ''), data.get('form_language', 'English'), int(data.get('is_public', 1)),
 
@@ -5569,7 +5774,7 @@ def duplicate_assessment_template(tid):
 
         new_name = tpl_dict.get('name', 'Template') + ' (Copy)'
 
-        new_slug = new_name.lower().replace(' ', '-') + '-' + str(int(time.time()))
+        new_slug = unique_assessment_slug(conn, new_name + '-' + str(int(time.time())))
 
         new_version = int(tpl_dict.get('version') or 1) + 1
 
@@ -5607,7 +5812,7 @@ def duplicate_assessment_template(tid):
 
         conn.commit()
 
-        return jsonify({'success': True, 'id': new_tid})
+        return jsonify({'success': True, 'id': new_tid, 'slug': new_slug})
 
 
 
@@ -5676,6 +5881,267 @@ def assessment_question_detail(qid):
         conn.commit()
 
         return jsonify({'success': True})
+
+
+
+@app.route('/api/screening-links', methods=['GET', 'POST'])
+
+def screening_links():
+
+    user = current_user()
+
+    if not user:
+
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    with get_db() as conn:
+
+        if request.method == 'GET':
+
+            query = '''
+                SELECT l.*, t.name as template_name, t.description as template_description,
+                       u.full_name as created_by_name, c.full_name as client_name, c.client_code
+                FROM screening_links l
+                LEFT JOIN assessment_templates t ON l.template_id = t.id
+                LEFT JOIN users u ON l.therapist_id = u.id
+                LEFT JOIN clients c ON l.client_id = c.id
+            '''
+
+            params = []
+
+            if user.get('role') == 'therapist':
+
+                query += ' WHERE l.therapist_id = ?'
+
+                params.append(user['id'])
+
+            query += ' ORDER BY l.created_at DESC LIMIT 100'
+
+            rows = conn.execute(query, params).fetchall()
+
+            return jsonify([dict(r) for r in rows])
+
+        data = request.json or {}
+
+        template_id = data.get('template_id')
+
+        if not template_id:
+
+            return jsonify({'error': 'Template is required'}), 400
+
+        template = conn.execute('SELECT * FROM assessment_templates WHERE id=? AND is_active=1', (template_id,)).fetchone()
+
+        if not template:
+
+            return jsonify({'error': 'Template not found'}), 404
+
+        token = secrets.token_urlsafe(12)
+
+        expires_hours = int(data.get('expires_hours', 24))
+
+        expires_at = (datetime.now() + timedelta(hours=max(1, expires_hours))).isoformat()
+
+        cur = conn.execute('''INSERT INTO screening_links (token, therapist_id, template_id, client_id, expires_at)
+
+                              VALUES (?,?,?,?,?)''',
+
+                           (token, user['id'], template_id, data.get('client_id') or None, expires_at))
+
+        conn.commit()
+
+        link_url = f"{request.host_url.rstrip('/')}/screening/{token}"
+
+        return jsonify({'success': True, 'token': token, 'link': link_url, 'expires_at': expires_at, 'id': cur.lastrowid}), 201
+
+
+
+@app.route('/api/screening-links/<token>', methods=['GET'])
+
+def screening_link_detail(token):
+
+    with get_db() as conn:
+
+        link = conn.execute('''SELECT l.*, t.name as template_name, t.description as template_description, t.form_language
+
+                               FROM screening_links l
+
+                               LEFT JOIN assessment_templates t ON l.template_id = t.id
+
+                               WHERE l.token=?''', (token,)).fetchone()
+
+        if not link:
+
+            return jsonify({'success': False, 'error': 'Link not found'}), 404
+
+        if link['expires_at'] and datetime.fromisoformat(str(link['expires_at'])) < datetime.now():
+
+            return jsonify({'success': False, 'error': 'This link has expired'}), 410
+
+        questions = conn.execute('SELECT * FROM assessment_questions WHERE template_id=? ORDER BY sort_order, id', (link['template_id'],)).fetchall()
+
+        template = conn.execute('SELECT * FROM assessment_templates WHERE id=?', (link['template_id'],)).fetchone()
+
+        return jsonify({'success': True, 'link': dict(link), 'template': dict(template) if template else {}, 'questions': [dict(q) for q in questions]})
+
+
+
+@app.route('/api/screening-links/<token>/submit', methods=['POST'])
+
+def screening_link_submit(token):
+
+    data = request.json or {}
+
+    responses = data.get('responses', {})
+
+    with get_db() as conn:
+
+        link = conn.execute('''SELECT l.*, t.name as template_name, t.description as template_description
+
+                               FROM screening_links l
+
+                               LEFT JOIN assessment_templates t ON l.template_id = t.id
+
+                               WHERE l.token=?''', (token,)).fetchone()
+
+        if not link:
+
+            return jsonify({'success': False, 'error': 'Link not found'}), 404
+
+        if link['expires_at'] and datetime.fromisoformat(str(link['expires_at'])) < datetime.now():
+
+            return jsonify({'success': False, 'error': 'This link has expired'}), 410
+
+        if link['used_at']:
+
+            return jsonify({'success': False, 'error': 'This assessment has already been submitted'}), 409
+
+        response_json = json.dumps(responses, ensure_ascii=True)
+
+        summary = make_short_summary(response_json, 3, 500) or 'Assessment submitted.'
+
+        conn.execute('''INSERT INTO assessment_submissions
+
+            (template_id, client_id, appointment_id, source, responses_json, structured_content, short_summary, detailed_summary, created_by)
+
+            VALUES (?,?,?,?,?,?,?,?,?)''',
+
+            (link['template_id'], link['client_id'], None, 'screening_link', response_json, '', summary, '', link['therapist_id']))
+
+        conn.execute('UPDATE screening_links SET used_at=? WHERE id=?', (datetime.now().isoformat(), link['id']))
+
+        conn.commit()
+
+        return jsonify({'success': True})
+
+
+
+@app.route('/screening/<token>')
+
+def screening_redirect(token):
+
+    return redirect(f'/portals/client_screening.html?token={token}')
+
+
+
+@app.route('/api/screening-results', methods=['GET'])
+
+def screening_results():
+
+    user = current_user()
+
+    if not user:
+
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    with get_db() as conn:
+
+        query = '''
+            SELECT s.*, t.name as template_name, t.category as template_category,
+                   c.full_name as client_name, c.client_code, c.phone as client_phone,
+                   u.full_name as created_by_name
+            FROM assessment_submissions s
+            LEFT JOIN assessment_templates t ON s.template_id = t.id
+            LEFT JOIN clients c ON s.client_id = c.id
+            LEFT JOIN users u ON s.created_by = u.id
+        '''
+
+        params = []
+
+        if user.get('role') == 'therapist':
+
+            query += ' WHERE s.created_by = ? OR c.assigned_therapist_id = ?'
+
+            params.extend([user['id'], user['id']])
+
+        query += ' ORDER BY s.created_at DESC LIMIT 100'
+
+        rows = conn.execute(query, params).fetchall()
+
+        return jsonify([dict(r) for r in rows])
+
+
+
+@app.route('/api/referrals', methods=['GET', 'POST'])
+
+def referrals_api():
+
+    user = current_user()
+
+    if not user:
+
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    with get_db() as conn:
+
+        if request.method == 'GET':
+
+            query = '''
+                SELECT r.*, c.full_name as client_name, c.client_code,
+                       u1.full_name as from_therapist_name,
+                       u2.full_name as to_therapist_name
+                FROM referrals r
+                LEFT JOIN clients c ON r.client_id = c.id
+                LEFT JOIN users u1 ON r.from_therapist_id = u1.id
+                LEFT JOIN users u2 ON r.to_therapist_id = u2.id
+            '''
+
+            params = []
+
+            if user.get('role') == 'therapist':
+
+                query += ' WHERE r.from_therapist_id = ? OR r.to_therapist_id = ?'
+
+                params.extend([user['id'], user['id']])
+
+            query += ' ORDER BY r.created_at DESC LIMIT 100'
+
+            rows = conn.execute(query, params).fetchall()
+
+            return jsonify([dict(r) for r in rows])
+
+        data = request.json or {}
+
+        client_id = data.get('client_id')
+
+        to_therapist_id = data.get('to_therapist_id')
+
+        reason = (data.get('reason') or '').strip()
+
+        if not client_id or not to_therapist_id or not reason:
+
+            return jsonify({'error': 'Client, therapist, and reason are required'}), 400
+
+        cur = conn.execute('''INSERT INTO referrals (client_id, from_therapist_id, to_therapist_id, reason, status)
+
+                              VALUES (?,?,?,?,?)''',
+
+                           (client_id, user['id'], to_therapist_id, reason, 'pending'))
+
+        conn.execute('UPDATE clients SET status=? WHERE id=?', ('awaiting_assignment', client_id))
+
+        conn.commit()
+
+        return jsonify({'success': True, 'id': cur.lastrowid}), 201
 
 
 
@@ -5821,11 +6287,11 @@ def ai_structure_note():
 
     data = request.json or {}
 
-    prompt = build_note_prompt(
+    prompt = build_note_prompt_v2(
 
         data.get('raw_text', ''),
 
-        data.get('note_type', 'progress'),
+        data.get('structure_style') or data.get('note_type', 'progress'),
 
         data.get('client_name', ''),
 
