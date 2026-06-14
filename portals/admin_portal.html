@@ -1571,6 +1571,16 @@ let assessmentTemplatesCache=[];
 let assessmentImportFile=null;
 let assessmentImportPreviewData=null;
 
+async function readJsonResponse(res) {
+  const text = await res.text();
+  if (!text) return { ok: res.ok, data: null, raw: '' };
+  try {
+    return { ok: res.ok, data: JSON.parse(text), raw: text };
+  } catch (e) {
+    return { ok: false, data: null, raw: text, error: text.slice(0, 220) };
+  }
+}
+
 const adminShowSection = showSection;
 showSection = function(sec){
   adminShowSection(sec);
@@ -2049,13 +2059,13 @@ async function saveAssessmentTemplate(){
     let tplId = currentAssessmentTemplateId;
     if(tplId){
       const res = await apiFetch(`/api/assessment-templates/${tplId}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
-      const payload = await res.json();
-      if(!res.ok || !payload.success) throw new Error(payload.error || 'Save failed');
+      const parsed = await readJsonResponse(res);
+      if(!parsed.ok || !parsed.data?.success) throw new Error(parsed.data?.error || parsed.error || 'Save failed');
     }else{
       const r = await apiFetch('/api/assessment-templates', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
-      const d = await r.json();
-      if(!r.ok || !d.success){ throw new Error(d.error || 'Failed to create template'); }
-      tplId = d.id;
+      const parsed = await readJsonResponse(r);
+      if(!parsed.ok || !parsed.data?.success){ throw new Error(parsed.data?.error || parsed.error || 'Failed to create template'); }
+      tplId = parsed.data.id;
       currentAssessmentTemplateId = tplId;
     }
     toast('Assessment template saved!');
@@ -2073,6 +2083,8 @@ async function loadAssessmentTemplates(){
     renderAssessmentTemplateGrid(assessmentTemplatesCache);
   }catch(e){
     console.error(e);
+    const el = document.getElementById('assessmentTemplateGrid');
+    if(el) el.innerHTML = '<p style="color:var(--muted)">Could not load the assessment library.</p>';
   }
 }
 
@@ -2094,7 +2106,7 @@ async function openAssessmentTemplate(id){
       label_am: q.label_am,
       question_type: q.question_type,
       required: q.required,
-      options: q.options_json ? JSON.parse(q.options_json) : [],
+      options: (() => { try { return q.options_json ? JSON.parse(q.options_json) : []; } catch (e) { return []; } })(),
       helper_text: q.helper_text,
       sort_order: q.sort_order || 0
     }));

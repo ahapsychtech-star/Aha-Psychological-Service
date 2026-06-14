@@ -20,7 +20,11 @@
       --success: #10b981;
     }
     * { box-sizing: border-box; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
-    body { background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.6; }
+    body { background:
+      radial-gradient(circle at top left, rgba(4,48,105,0.12), transparent 28%),
+      radial-gradient(circle at top right, rgba(255,191,0,0.18), transparent 24%),
+      linear-gradient(180deg, #f8fbff 0%, var(--bg) 100%);
+      color: var(--text); -webkit-font-smoothing: antialiased; line-height: 1.6; min-height: 100vh; }
     
     .header {
       background: #fff; padding: 16px 20px; text-align: center; border-bottom: 1px solid var(--border);
@@ -30,22 +34,55 @@
     
     .container { max-width: 600px; margin: 0 auto; padding: 24px 20px; }
     
-    .card { background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.04); margin-bottom: 20px; border: 1px solid var(--border); }
+    .card { background: rgba(255,255,255,0.94); backdrop-filter: blur(10px); border-radius: 20px; padding: 26px; box-shadow: 0 18px 50px rgba(4,48,105,0.08); margin-bottom: 20px; border: 1px solid rgba(226,232,240,0.95); }
     
     h1 { font-size: 22px; color: var(--navy); margin-bottom: 8px; }
+    .hero {
+      background: linear-gradient(135deg, rgba(4,48,105,0.96), rgba(10,67,140,0.92));
+      color: #fff;
+      border-radius: 24px;
+      padding: 24px;
+      margin-bottom: 18px;
+      box-shadow: 0 20px 60px rgba(4,48,105,0.18);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -20px -40px auto;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: rgba(255,191,0,0.12);
+      filter: blur(6px);
+    }
+    .hero-kicker { font-size: 11px; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; opacity: 0.82; }
+    .hero-title { font-size: 28px; font-weight: 800; line-height: 1.15; margin-top: 8px; }
+    .hero-sub { margin-top: 10px; font-size: 14px; color: rgba(255,255,255,0.82); max-width: 52ch; }
+    .hero-meta { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+    .hero-pill { display:inline-flex; align-items:center; gap:7px; padding:7px 11px; border-radius:999px; background:rgba(255,255,255,0.12); font-size:12px; font-weight:700; }
     .subtitle { font-size: 14px; color: var(--muted); margin-bottom: 20px; }
     
-    .progress-wrap { background: var(--border); height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 24px; }
-    .progress-bar { background: var(--navy); height: 100%; width: 0%; transition: 0.3s; }
+    .progress-wrap { background: rgba(100,116,139,0.16); height: 8px; border-radius: 999px; overflow: hidden; margin-bottom: 12px; }
+    .progress-bar { background: linear-gradient(90deg, var(--navy), var(--gold)); height: 100%; width: 0%; transition: 0.3s; border-radius: 999px; }
+    .progress-copy { display:flex; justify-content:space-between; gap:12px; align-items:center; font-size:12px; color:var(--muted); margin-bottom: 20px; }
     
-    .question-block { margin-bottom: 32px; display: none; animation: fadeIn 0.4s ease; }
+    .question-block { margin-bottom: 0; display: none; animation: fadeIn 0.4s ease; }
     .question-block.active { display: block; }
+    .question-card {
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px;
+      background: linear-gradient(180deg, #fff, #fbfdff);
+      box-shadow: 0 10px 30px rgba(4,48,105,0.05);
+    }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     
     .q-text { font-size: 16px; font-weight: 600; margin-bottom: 12px; color: var(--navy); }
     .q-help { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
     
-    .options { display: flex; flex-direction: column; gap: 10px; }
+    .options { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
     .option-label {
       display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid var(--border);
       border-radius: 12px; cursor: pointer; transition: 0.2s; font-size: 15px; background: #fff;
@@ -59,7 +96,15 @@
     .input-text:focus { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(4,48,105,0.1); }
     textarea.input-text { min-height: 120px; resize: vertical; }
     
-    .nav-buttons { display: flex; justify-content: space-between; margin-top: 32px; gap: 12px; }
+    .nav-buttons { display: flex; justify-content: space-between; margin-top: 24px; gap: 12px; }
+    .empty-state {
+      border: 1px dashed var(--border);
+      background: rgba(4,48,105,0.03);
+      padding: 18px;
+      border-radius: 16px;
+      color: var(--muted);
+      text-align: center;
+    }
     
     .btn { padding: 14px 24px; border-radius: 12px; font-size: 15px; font-weight: 600; border: none; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: 1; }
     .btn-primary { background: var(--navy); color: #fff; }
@@ -85,6 +130,16 @@
   </div>
 
   <div class="container">
+    <div class="hero">
+      <div class="hero-kicker">Aha Psychological Service</div>
+      <div class="hero-title" id="heroTitle">Screening Assessment</div>
+      <div class="hero-sub" id="heroSub">Please answer one step at a time. Your progress is saved automatically while you move through the form.</div>
+      <div class="hero-meta">
+        <div class="hero-pill"><i class="fa-solid fa-lock"></i> Secure link</div>
+        <div class="hero-pill"><i class="fa-solid fa-mobile-screen"></i> Mobile friendly</div>
+        <div class="hero-pill"><i class="fa-solid fa-chart-simple"></i> Progress saved</div>
+      </div>
+    </div>
     <div id="loader">
       <div class="spinner"></div>
       <p>Loading assessment...</p>
@@ -96,13 +151,14 @@
       <div class="card">
         <h1 id="assessmentTitle">Assessment</h1>
         <p class="subtitle" id="assessmentDesc">Please answer the following questions.</p>
-        
         <div class="progress-wrap">
           <div class="progress-bar" id="progressBar"></div>
         </div>
-        
+        <div class="progress-copy">
+          <span id="progressText">Step 1 of 1</span>
+          <span id="progressHint">Read the instructions and continue.</span>
+        </div>
         <form id="qForm"></form>
-        
         <div class="nav-buttons">
           <button class="btn btn-outline" id="btnPrev" type="button" onclick="prevQuestion()" style="display:none"><i class="fa-solid fa-arrow-left"></i> Previous</button>
           <button class="btn btn-primary" id="btnNext" type="button" onclick="nextQuestion()">Next <i class="fa-solid fa-arrow-right"></i></button>
@@ -124,6 +180,11 @@
   let questions = [];
   let currentIndex = 0;
   let responses = {};
+  const structuralTypes = new Set(['instruction', 'info', 'intro', 'heading', 'title', 'paragraph', 'separator', 'note']);
+
+  function safeParseJson(value, fallback) {
+    try { return value ? JSON.parse(value) : fallback; } catch (e) { return fallback; }
+  }
   
   async function loadData() {
     try {
@@ -139,6 +200,8 @@
       questions = d.questions || [];
       document.getElementById('assessmentTitle').textContent = d.template.name;
       document.getElementById('assessmentDesc').textContent = d.template.description || 'Please answer the following questions.';
+      document.getElementById('heroTitle').textContent = d.template.name || 'Screening Assessment';
+      document.getElementById('heroSub').textContent = d.template.description || 'Please answer one step at a time. Your progress is saved automatically while you move through the form.';
       
       // Load saved state from sessionStorage
       const saved = sessionStorage.getItem(`screening_${token}`);
@@ -162,20 +225,36 @@
   
   function renderQuestions() {
     const form = document.getElementById('qForm');
+    if (!questions.length) {
+      form.innerHTML = '<div class="empty-state"><i class="fa-solid fa-triangle-exclamation" style="font-size:20px;margin-bottom:8px;color:var(--warning)"></i><div style="font-weight:800;color:var(--navy);margin-bottom:4px">No questions were found in this assessment</div><div>This link may point to a template that was not saved with questions. Please contact the receptionist or therapist.</div></div>';
+      document.getElementById('btnPrev').style.display = 'none';
+      document.getElementById('btnNext').style.display = 'none';
+      document.getElementById('btnSubmit').style.display = 'none';
+      document.getElementById('progressText').textContent = '0 questions';
+      document.getElementById('progressHint').textContent = 'The template needs questions before a client can complete it.';
+      return;
+    }
     form.innerHTML = questions.map((q, idx) => {
       const isVisible = idx === currentIndex;
       let inputHtml = '';
-      const opts = q.options_json ? JSON.parse(q.options_json) : [];
+      const opts = safeParseJson(q.options_json, []);
       const qKey = q.question_key || `q_${idx}`;
+      const type = String(q.question_type || 'text').toLowerCase();
+      const isStructural = structuralTypes.has(type);
       
-      if(q.question_type === 'single_choice') {
+      if(isStructural) {
+        inputHtml = `<div class="empty-state" style="text-align:left;background:linear-gradient(180deg,#fff,#f8fbff);border-style:solid">
+          <div style="font-weight:800;color:var(--navy);margin-bottom:8px">${q.label_en || 'Instruction'}</div>
+          <div style="white-space:pre-wrap;color:var(--text);line-height:1.8">${q.helper_text || 'Read carefully and continue.'}</div>
+        </div>`;
+      } else if(type === 'single_choice') {
         inputHtml = `<div class="options">` + opts.map((opt, i) => `
           <label class="option-label ${responses[qKey]===opt ? 'selected' : ''}">
             <input type="radio" name="${qKey}" value="${opt}" ${responses[qKey]===opt ? 'checked' : ''} onchange="saveResponse('${qKey}', this.value); updateOptionStyling(this)">
             ${opt}
           </label>
         `).join('') + `</div>`;
-      } else if(q.question_type === 'multiple_choice') {
+      } else if(type === 'multiple_choice') {
         const selected = Array.isArray(responses[qKey]) ? responses[qKey] : [];
         inputHtml = `<div class="options">` + opts.map((opt, i) => `
           <label class="option-label ${selected.includes(opt) ? 'selected' : ''}">
@@ -183,19 +262,21 @@
             ${opt}
           </label>
         `).join('') + `</div>`;
-      } else if(q.question_type === 'textarea') {
+      } else if(type === 'textarea') {
         inputHtml = `<textarea class="input-text" name="${qKey}" placeholder="Type your answer here..." oninput="saveResponse('${qKey}', this.value)">${responses[qKey]||''}</textarea>`;
       } else {
-        inputHtml = `<input type="${q.question_type==='number'?'number':'text'}" class="input-text" name="${qKey}" placeholder="Type your answer here..." value="${responses[qKey]||''}" oninput="saveResponse('${qKey}', this.value)">`;
+        inputHtml = `<input type="${type==='number'?'number':'text'}" class="input-text" name="${qKey}" placeholder="Type your answer here..." value="${responses[qKey]||''}" oninput="saveResponse('${qKey}', this.value)">`;
       }
       
       const qLabel = q.label_en + (q.label_am ? ` <br><span style="font-size:14px;color:#64748b;font-weight:400">${q.label_am}</span>` : '');
       
       return `
         <div class="question-block ${isVisible ? 'active' : ''}" id="qb_${idx}">
-          <div class="q-text">${idx + 1}. ${qLabel} ${q.required ? '<span style="color:var(--danger)">*</span>' : ''}</div>
-          ${q.helper_text ? `<div class="q-help">${q.helper_text}</div>` : ''}
-          ${inputHtml}
+          <div class="question-card">
+            <div class="q-text">${idx + 1}. ${qLabel} ${(!isStructural && q.required) ? '<span style="color:var(--danger)">*</span>' : ''}</div>
+            ${!isStructural && q.helper_text ? `<div class="q-help">${q.helper_text}</div>` : ''}
+            ${inputHtml}
+          </div>
         </div>
       `;
     }).join('');
@@ -231,8 +312,11 @@
   }
   
   function updateNav() {
-    const progress = ((currentIndex) / questions.length) * 100;
-    document.getElementById('progressBar').style.width = `${progress}%`;
+    const total = Math.max(questions.length, 1);
+    const progress = ((currentIndex + 1) / total) * 100;
+    document.getElementById('progressBar').style.width = `${Math.min(100, progress)}%`;
+    document.getElementById('progressText').textContent = `Step ${Math.min(currentIndex + 1, total)} of ${total}`;
+    document.getElementById('progressHint').textContent = questions[currentIndex]?.helper_text || (currentIndex === questions.length - 1 ? 'Review your answer and submit.' : 'Read the instructions and continue.');
     
     document.getElementById('btnPrev').style.display = currentIndex > 0 ? 'inline-flex' : 'none';
     
@@ -248,7 +332,8 @@
   function validateCurrent() {
     const q = questions[currentIndex];
     const qKey = q.question_key || `q_${currentIndex}`;
-    if(q.required) {
+    const type = String(q.question_type || 'text').toLowerCase();
+    if(!structuralTypes.has(type) && q.required) {
       const val = responses[qKey];
       if(!val || (Array.isArray(val) && val.length === 0)) {
         showError('This question is required.');
@@ -261,17 +346,21 @@
   
   function nextQuestion() {
     if(!validateCurrent()) return;
+    if(currentIndex >= questions.length - 1) return;
     document.getElementById(`qb_${currentIndex}`).classList.remove('active');
     currentIndex++;
     document.getElementById(`qb_${currentIndex}`).classList.add('active');
     updateNav();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   
   function prevQuestion() {
+    if(currentIndex <= 0) return;
     document.getElementById(`qb_${currentIndex}`).classList.remove('active');
     currentIndex--;
     document.getElementById(`qb_${currentIndex}`).classList.add('active');
     updateNav();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   
   async function submitAssessment() {
