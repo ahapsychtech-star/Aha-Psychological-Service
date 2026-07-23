@@ -1,9 +1,6 @@
-# Hide backend files from Vercel so it serves static HTML only
-app.py
-db.py
-storage.py
-requirements.txt
-Procfile
+# Allow the Flask backend to deploy with the static site.
+# These files are required by the Vercel Python serverless entrypoint.
+# Keep only local-only artifacts out of the build.
 *.db
 .env
 __pycache__/
