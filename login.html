@@ -226,8 +226,9 @@
     </div>
 
     <script>
-        // Update form action dynamically to point to the correct API base
-        document.getElementById('loginForm').action = window.API_BASE + '/login';
+        // Point the login form at the Flask API route so POST requests reach the backend
+        // instead of the static Vercel route that returns HTTP 405.
+        document.getElementById('loginForm').action = window.API_BASE + '/api/login';
 
         // Show error if URL has ?error=1
         if (window.location.search.includes('error')) {

@@ -62,9 +62,14 @@ app = Flask(__name__, template_folder='.', static_folder='.')
 
 app.secret_key = os.getenv('SECRET_KEY', 'aha_psy_CHANGE_ME_IN_RAILWAY_prod_secret_2024')
 
-UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', 'uploads')
+_IS_VERCEL = bool(os.getenv('VERCEL') or os.getenv('VERCEL_ENV'))
+UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', '/tmp/uploads' if _IS_VERCEL else 'uploads')
 
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+try:
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+except OSError:
+    UPLOAD_FOLDER = '/tmp/uploads'
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -4272,6 +4277,7 @@ else:
 
 # ─────────────────────────────────────────────
 
+@app.route('/api/login', methods=['GET', 'POST'])
 @app.route('/login', methods=['GET', 'POST'])
 
 def login():
