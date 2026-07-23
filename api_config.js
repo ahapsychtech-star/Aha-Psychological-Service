@@ -1,11 +1,13 @@
 /**
  * api_config.js
- * Routes all API calls to the Railway backend from the Vercel frontend.
+ * Uses the same origin on Vercel deployments and falls back to the Railway backend only when needed.
  */
 
 (function () {
-  // Your Railway backend URL
-  const PRODUCTION_API_URL = 'https://web-production-0b7ca.up.railway.app';
+  const FALLBACK_API_URL = 'https://web-production-0b7ca.up.railway.app';
+  const PRODUCTION_API_URL = (typeof window !== 'undefined' && window.location && window.location.origin)
+    ? window.location.origin
+    : FALLBACK_API_URL;
 
   // Expose globally so all JS files can use it
   window.API_BASE = PRODUCTION_API_URL;

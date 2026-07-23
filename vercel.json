@@ -1,9 +1,15 @@
 {
   "version": 2,
+  "functions": {
+    "api/index.py": {
+      "runtime": "@vercel/python@3.14.0"
+    }
+  },
   "buildCommand": null,
   "outputDirectory": ".",
   "framework": null,
   "routes": [
+    { "src": "/api/(.*)", "dest": "/api/index.py" },
     { "src": "/login", "dest": "/login.html" },
     { "src": "/about", "dest": "/about.html" },
     { "src": "/contact", "dest": "/contact.html" },
