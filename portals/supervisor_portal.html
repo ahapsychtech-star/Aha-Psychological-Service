@@ -496,8 +496,7 @@ function showSection(sec){
 }
 
 async function loadAll(){
-  await Promise.all([loadAnalytics(),loadTherapists(),loadClients(),loadAlerts(),loadNotes()]);
-  loadSupRequests();
+  await Promise.all([loadAnalytics(),loadTherapists(),loadClients(),loadAlerts(),loadSupRequests()]);
 }
 
 async function loadAnalytics(){
@@ -575,7 +574,7 @@ function renderTherapistCards(){
 
 async function viewTherapistClients(tid){
   const t=allTherapists.find(x=>x.id==tid);
-  document.getElementById('clientDrawerTitle').textContent=(t?.full_name||'Therapist')+\"'s Clients\";
+  document.getElementById('clientDrawerTitle').textContent=(t?.full_name||'Therapist')+"'s Clients";
   document.getElementById('clientDrawerOverlay').classList.add('open');
   document.getElementById('clientDrawer').classList.add('open');
   const clients=allClients.filter(c=>c.assigned_therapist_id==tid);
@@ -737,7 +736,7 @@ async function loadAllNotes(){
   const tid=document.getElementById('noteTherapistFilter')?.value||'';
   const type=document.getElementById('noteTypeFilter')?.value||'';
   let url='/api/notes?';if(type) url+=`note_type=${type}&`;
-  try{const r=await fetch(url);allNotes=await r.json();
+  try{const r=await apiFetch(url);allNotes=await r.json();
     const filtered=tid?allNotes.filter(n=>n.therapist_id==tid):allNotes;
     document.getElementById('allNotesList').innerHTML=filtered.length?filtered.map(n=>`
       <div style="padding:16px;border-radius:10px;background:var(--bg);margin-bottom:12px;border:1px solid var(--border)">

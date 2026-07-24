@@ -1260,7 +1260,7 @@ async function loadNotes(){
   const type=document.getElementById('noteTypeFilter')?.value||'';
   let url='/api/notes?';
   if(cid) url+=`client_id=${cid}&`;
-  try{const r=await fetch(url);allNotes=await r.json();
+  try{const r=await apiFetch(url);allNotes=await r.json();
     const filtered=type?allNotes.filter(n=>n.note_type===type):allNotes;
     document.getElementById('notesList').innerHTML=filtered.length?filtered.map(n=>`
       <div class="session-card ${n.note_type}">

@@ -716,6 +716,10 @@ def init_db():
 
         ensure_column(conn, 'session_notes', 'ai_summary', 'TEXT')
 
+        ensure_column(conn, 'session_notes', 'supervisor_response', 'TEXT')
+
+        ensure_column(conn, 'session_notes', 'supervisor_action', 'TEXT')
+
         ensure_column(conn, 'assessment_templates', 'category', 'TEXT')
 
         ensure_column(conn, 'assessment_templates', 'tags', 'TEXT')
@@ -5683,6 +5687,7 @@ def get_notes():
         return jsonify({'error': 'Unauthorized'}), 401
 
     client_id = request.args.get('client_id')
+    note_type = request.args.get('note_type')
 
     user = current_user()
 
@@ -5690,17 +5695,63 @@ def get_notes():
 
         if client_id:
 
-            rows = conn.execute('SELECT n.*, u.full_name as therapist_name FROM session_notes n LEFT JOIN users u ON n.therapist_id=u.id WHERE n.client_id=? ORDER BY n.created_at DESC', (client_id,)).fetchall()
+            if note_type:
+                rows = conn.execute('SELECT n.*, u.full_name as therapist_name, c.full_name as client_name FROM session_notes n LEFT JOIN users u ON n.therapist_id=u.id LEFT JOIN clients c ON n.client_id=c.id WHERE n.client_id=? AND n.note_type=? ORDER BY n.created_at DESC', (client_id, note_type)).fetchall()
+            else:
+                rows = conn.execute('SELECT n.*, u.full_name as therapist_name, c.full_name as client_name FROM session_notes n LEFT JOIN users u ON n.therapist_id=u.id LEFT JOIN clients c ON n.client_id=c.id WHERE n.client_id=? ORDER BY n.created_at DESC', (client_id,)).fetchall()
 
         elif user['role'] == 'therapist':
 
-            rows = conn.execute('SELECT n.*, u.full_name as therapist_name, c.full_name as client_name FROM session_notes n LEFT JOIN users u ON n.therapist_id=u.id LEFT JOIN clients c ON n.client_id=c.id WHERE n.therapist_id=? ORDER BY n.created_at DESC', (user['id'],)).fetchall()
+            if note_type:
+                rows = conn.execute('SELECT n.*, u.full_name as therapist_name, c.full_name as client_name FROM session_notes n LEFT JOIN users u ON n.therapist_id=u.id LEFT JOIN clients c ON n.client_id=c.id WHERE n.therapist_id=? AND n.note_type=? ORDER BY n.created_at DESC', (user['id'], note_type)).fetchall()
+            else:
+                rows = conn.execute('SELECT n.*, u.full_name as therapist_name, c.full_name as client_name FROM session_notes n LEFT JOIN users u ON n.therapist_id=u.id LEFT JOIN clients c ON n.client_id=c.id WHERE n.therapist_id=? ORDER BY n.created_at DESC', (user['id'],)).fetchall()
 
         else:
 
-            rows = conn.execute('SELECT n.*, u.full_name as therapist_name, c.full_name as client_name FROM session_notes n LEFT JOIN users u ON n.therapist_id=u.id LEFT JOIN clients c ON n.client_id=c.id ORDER BY n.created_at DESC LIMIT 100').fetchall()
+            if note_type:
+                rows = conn.execute('SELECT n.*, u.full_name as therapist_name, c.full_name as client_name FROM session_notes n LEFT JOIN users u ON n.therapist_id=u.id LEFT JOIN clients c ON n.client_id=c.id WHERE n.note_type=? ORDER BY n.created_at DESC LIMIT 200', (note_type,)).fetchall()
+            else:
+                rows = conn.execute('SELECT n.*, u.full_name as therapist_name, c.full_name as client_name FROM session_notes n LEFT JOIN users u ON n.therapist_id=u.id LEFT JOIN clients c ON n.client_id=c.id ORDER BY n.created_at DESC LIMIT 100').fetchall()
 
     return jsonify([dict(r) for r in rows])
+
+
+@app.route('/api/notes/<int:nid>', methods=['PUT'])
+
+def update_note(nid):
+
+    if not require_role('admin', 'therapist', 'supervisor'):
+
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    data = request.json or {}
+    user = current_user()
+
+    # Build update fields dynamically
+    allowed = ['content', 'structured_content', 'short_summary', 'ai_summary',
+               'note_type', 'supervisor_response', 'supervisor_action']
+    updates = {k: v for k, v in data.items() if k in allowed}
+
+    if not updates:
+        return jsonify({'error': 'No valid fields to update'}), 400
+
+    set_clause = ', '.join(f'{k}=?' for k in updates)
+    values = list(updates.values()) + [nid]
+
+    with get_db() as conn:
+        conn.execute(f'UPDATE session_notes SET {set_clause}, updated_at=? WHERE id=?',
+                     values[:-1] + [datetime.now().isoformat(), nid])
+        conn.commit()
+
+    return jsonify({'success': True})
+
+
+@app.route('/api/reception/clients/<int:cid>', methods=['GET'])
+
+def get_reception_client(cid):
+    """Alias of /api/clients/<cid> for the reception portal."""
+    return get_client(cid)
 
 
 
