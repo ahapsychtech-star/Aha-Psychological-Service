@@ -7124,9 +7124,9 @@ def get_dashboard_analytics():
 
         active_clients = conn.execute("SELECT COUNT(*) FROM clients WHERE status NOT IN ('completed','terminated','inactive')").fetchone()[0]
 
-        new_this_month = conn.execute("SELECT COUNT(*) FROM clients WHERE registration_date >= date_trunc('month', CURRENT_DATE)").fetchone()[0]
+        new_this_month = conn.execute("SELECT COUNT(*) FROM clients WHERE CAST(registration_date AS DATE) >= date_trunc('month', CURRENT_DATE)").fetchone()[0]
 
-        today_appts = conn.execute("SELECT COUNT(*) FROM appointments WHERE start_time::date = CURRENT_DATE AND status='scheduled'").fetchone()[0]
+        today_appts = conn.execute("SELECT COUNT(*) FROM appointments WHERE CAST(start_time AS DATE) = CURRENT_DATE AND status='scheduled'").fetchone()[0]
 
         pending_assignment = conn.execute("SELECT COUNT(*) FROM clients WHERE status IN ('registered','screening_completed') AND assigned_therapist_id IS NULL").fetchone()[0]
 
@@ -7134,7 +7134,7 @@ def get_dashboard_analytics():
 
         total_revenue = conn.execute("SELECT COALESCE(SUM(amount_paid),0) FROM payments").fetchone()[0]
 
-        revenue_this_month = conn.execute("SELECT COALESCE(SUM(amount_paid),0) FROM payments WHERE payment_date >= date_trunc('month', CURRENT_DATE)").fetchone()[0]
+        revenue_this_month = conn.execute("SELECT COALESCE(SUM(amount_paid),0) FROM payments WHERE CAST(payment_date AS DATE) >= date_trunc('month', CURRENT_DATE)").fetchone()[0]
 
         pending_invoices = conn.execute("SELECT COUNT(*) FROM invoices WHERE status='pending'").fetchone()[0]
 
