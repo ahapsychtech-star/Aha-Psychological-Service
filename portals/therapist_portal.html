@@ -455,7 +455,127 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
   background: var(--danger);
 }
 
-</style>
+
+    /* --- Screening Records Modern UI --- */
+    .sr-card {
+      background: linear-gradient(145deg, #ffffff, #f8fbff);
+      border: 1px solid rgba(4, 48, 105, 0.06);
+      border-radius: 16px;
+      padding: 20px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .sr-card:hover {
+      box-shadow: 0 12px 24px rgba(4, 48, 105, 0.08);
+      transform: translateY(-2px);
+    }
+    .sr-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 4px; height: 100%;
+      background: var(--navy);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .sr-card:hover::before { opacity: 1; }
+    
+    .sr-header-dynamic {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(135deg, rgba(4,48,105,0.03), rgba(10,67,140,0.01));
+      padding: 16px 20px;
+      border-radius: 12px;
+      border: 1px solid rgba(4,48,105,0.05);
+      margin-bottom: 20px;
+    }
+
+    /* Live Assessment Modal */
+    .live-assess-overlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(4,48,105,0.6);
+      backdrop-filter: blur(8px);
+      z-index: 10000;
+      display: none;
+      align-items: center; justify-content: center;
+      animation: fadeIn 0.3s ease;
+    }
+    .live-assess-modal {
+      background: #fff;
+      width: 90%; max-width: 700px;
+      max-height: 90vh;
+      border-radius: 24px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+      transform: translateY(20px);
+      animation: slideUp 0.3s ease forwards;
+    }
+    @keyframes slideUp { to { transform: translateY(0); } }
+    .live-assess-hdr {
+      background: linear-gradient(135deg, var(--navy), var(--navy-light));
+      color: #fff;
+      padding: 24px;
+      position: relative;
+    }
+    .live-assess-hdr h2 { font-size: 20px; margin-bottom: 4px; }
+    .live-assess-hdr p { font-size: 13px; opacity: 0.9; }
+    .live-assess-close {
+      position: absolute; top: 20px; right: 20px;
+      background: rgba(255,255,255,0.2); border: none; color: #fff;
+      width: 32px; height: 32px; border-radius: 50%;
+      cursor: pointer; transition: 0.2s;
+    }
+    .live-assess-close:hover { background: rgba(255,255,255,0.4); }
+    .live-assess-body {
+      padding: 24px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    
+    .la-q-block { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .la-q-text { font-size: 15px; font-weight: 600; color: var(--navy); margin-bottom: 12px; }
+    .la-options { display: flex; flex-direction: column; gap: 8px; }
+    .la-option {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px; border: 1px solid var(--border);
+      border-radius: 10px; cursor: pointer; transition: 0.2s;
+    }
+    .la-option:hover { border-color: var(--navy); background: rgba(4,48,105,0.02); }
+    .la-option input { accent-color: var(--navy); width: 16px; height: 16px; }
+
+    /* Print Assessment Report */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #srPrintArea, #srPrintArea * {
+        visibility: visible;
+      }
+      #srPrintArea {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .no-print { display: none !important; }
+      
+      .print-hdr {
+        border-bottom: 2px solid #000;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+      }
+      .print-title { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
+      .print-meta { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 5px; }
+      .print-q { margin-bottom: 12px; page-break-inside: avoid; }
+      .print-q-label { font-weight: bold; font-size: 13px; }
+      .print-q-ans { margin-top: 4px; padding-left: 10px; border-left: 2px solid #ccc; font-size: 14px; }
+    }
+    </style>
+
 </head>
 <body>
 
@@ -641,93 +761,144 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
     <!-- ── REFERRALS ── -->
     
     <section class="section" id="sec-screening-records">
-      <div class="panel">
-        <div class="panel-hdr">
-          <div class="panel-title"><i class="fa-solid fa-clipboard-check"></i> Screening Records & Link Generator</div>
+      <div class="sr-header-dynamic">
+        <div>
+          <div style="font-size:18px;font-weight:800;color:var(--navy)"><i class="fa-solid fa-clipboard-check"></i> Screening Records & Live Assessment</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:4px">Generate links for clients or perform live assessments during a session.</div>
         </div>
-        
-        <div class="grid-2">
-          <!-- Left: Templates & Link Generator -->
-          <div>
-            <div class="panel-title" style="margin-bottom:12px;font-size:15px"><i class="fa-solid fa-book-medical"></i> Assessment Library</div>
-            <div class="form-group">
-              <input type="text" class="form-control" id="srTemplateSearch" placeholder="Search assessments..." oninput="filterSRTemplates()">
+        <div>
+          <button class="btn btn-navy" onclick="openLiveAssessmentModal()"><i class="fa-solid fa-play"></i> Start Live Assessment</button>
+        </div>
+      </div>
+      
+      <div class="grid-2">
+        <!-- Left: Templates & Link Generator -->
+        <div>
+          <div class="panel sr-card" style="padding:0">
+            <div style="padding:16px 20px;border-bottom:1px solid var(--border);background:#f8fafc">
+              <div class="panel-title" style="font-size:15px;margin:0"><i class="fa-solid fa-book-medical"></i> Assessment Library</div>
             </div>
-            <div id="srTemplateList" style="display:flex;flex-direction:column;gap:10px;max-height:400px;overflow-y:auto;padding-right:8px;margin-bottom:20px">
-              <p style="color:var(--muted)">Loading templates...</p>
-            </div>
-            
-            <div id="srLinkGenerator" class="panel" style="background:#f8fafc;display:none;padding:16px">
-              <div class="panel-title" style="margin-bottom:12px;font-size:14px"><i class="fa-solid fa-link"></i> Generate Link: <span id="srSelectedTemplateName" style="color:var(--navy)"></span></div>
-              <input type="hidden" id="srSelectedTemplateId">
-              
+            <div style="padding:16px 20px">
               <div class="form-group">
-                <label>Client (Optional)</label>
-                <select class="form-control" id="srClientSelect">
-                  <option value="">Anonymous / No Client</option>
-                  <!-- Populated by JS from myClients -->
-                </select>
+                <input type="text" class="form-control" id="srTemplateSearch" placeholder="Search assessments..." oninput="filterSRTemplates()">
               </div>
-              <div class="form-group">
-                <label>Link Expires In</label>
-                <select class="form-control" id="srExpiresSelect">
-                  <option value="1">1 Hour</option>
-                  <option value="24" selected>24 Hours</option>
-                  <option value="168">7 Days</option>
-                  <option value="720">30 Days</option>
-                </select>
-              </div>
-              <button class="btn btn-gold btn-sm" style="width:100%" onclick="generateScreeningLink()"><i class="fa-solid fa-magic"></i> Generate Link</button>
-              
-              <div id="srLinkResult" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
-                <label>Copy Link:</label>
-                <div style="display:flex;gap:8px;margin-bottom:12px">
-                  <input type="text" class="form-control" id="srGeneratedUrl" readonly style="font-size:12px;background:#fff">
-                  <button class="btn btn-outline btn-sm" onclick="copyScreeningLink()"><i class="fa-regular fa-copy"></i></button>
-                </div>
-                <div style="text-align:center">
-                  <img id="srQrCode" src="" alt="QR Code" style="width:120px;height:120px;border-radius:8px;border:1px solid var(--border);padding:4px;background:#fff">
-                </div>
+              <div id="srTemplateList" style="display:flex;flex-direction:column;gap:12px;max-height:360px;overflow-y:auto;padding-right:8px;margin-bottom:10px">
+                <p style="color:var(--muted)">Loading templates...</p>
               </div>
             </div>
           </div>
           
-          <!-- Right: Completed Assessments -->
-          <div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-              <div class="panel-title" style="font-size:15px"><i class="fa-solid fa-inbox"></i> Completed Screenings</div>
-              <button class="btn btn-ghost btn-sm" onclick="loadScreeningResults()"><i class="fa-solid fa-arrows-rotate"></i></button>
+          <div id="srLinkGenerator" class="panel sr-card" style="display:none;margin-top:20px;border-color:var(--gold)">
+            <div class="panel-title" style="margin-bottom:12px;font-size:14px;color:var(--navy)"><i class="fa-solid fa-link"></i> Generate Client Link</div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:12px" id="srSelectedTemplateName"></div>
+            <input type="hidden" id="srSelectedTemplateId">
+            
+            <div class="form-group">
+              <label>Select Client (Optional)</label>
+              <select class="form-control" id="srClientSelect">
+                <option value="">Anonymous / No Client</option>
+              </select>
             </div>
-            <div id="srResultsList" style="display:flex;flex-direction:column;gap:10px;max-height:600px;overflow-y:auto;padding-right:8px">
-              <p style="color:var(--muted)">Loading results...</p>
+            <div class="form-group">
+              <label>Link Expires In</label>
+              <select class="form-control" id="srExpiresSelect">
+                <option value="1">1 Hour</option>
+                <option value="24" selected>24 Hours</option>
+                <option value="168">7 Days</option>
+                <option value="720">30 Days</option>
+              </select>
+            </div>
+            <button class="btn btn-gold" style="width:100%" onclick="generateScreeningLink()"><i class="fa-solid fa-magic"></i> Generate Link</button>
+            
+            <div id="srLinkResult" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+              <label>Copy Link:</label>
+              <div style="display:flex;gap:8px;margin-bottom:12px">
+                <input type="text" class="form-control" id="srGeneratedUrl" readonly style="font-size:12px;background:#fff;border-color:var(--gold)">
+                <button class="btn btn-outline btn-sm" onclick="copyScreeningLink()"><i class="fa-regular fa-copy"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Right: Completed Assessments -->
+        <div>
+          <div class="panel sr-card" style="padding:0">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border);background:#f8fafc">
+              <div class="panel-title" style="font-size:15px;margin:0"><i class="fa-solid fa-inbox"></i> Completed Screenings</div>
+              <button class="btn btn-ghost btn-sm" onclick="loadScreeningResults()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+            </div>
+            <div style="padding:16px 20px">
+              <div id="srResultsList" style="display:flex;flex-direction:column;gap:12px;max-height:600px;overflow-y:auto;padding-right:8px">
+                <p style="color:var(--muted)">Loading results...</p>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    
-    
-    <!-- Assessment Result Modal -->
-    <div class="overlay" id="srResultOverlay" onclick="closeScreeningResult()"></div>
-    <div class="modal" id="srResultModal" style="max-width:820px;width:95%">
-      <div class="modal-hdr">
-        <div class="modal-title" id="srResultTitle">Assessment Result</div>
-        <button class="drawer-close" onclick="closeScreeningResult()"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div class="modal-body">
-        <div style="display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border)">
-          <div>
-            <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:var(--muted);text-transform:uppercase">Client</div>
-            <div style="font-weight:800;font-size:18px;color:var(--navy)" id="srResultClient"></div>
+      
+      <!-- Assessment Result / Print Modal -->
+      <div class="overlay" id="srResultOverlay" onclick="closeScreeningResult()"></div>
+      <div class="modal" id="srResultModal" style="max-width:820px;width:95%">
+        <div class="modal-hdr no-print">
+          <div class="modal-title" id="srResultTitle">Assessment Result</div>
+          <button class="drawer-close" onclick="closeScreeningResult()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        
+        <!-- Printable Area -->
+        <div class="modal-body" id="srPrintArea">
+          <div class="print-hdr">
+            <div class="print-title" id="printReportTitle">Clinical Assessment Report</div>
+            <div class="print-meta">
+              <div><strong>Client:</strong> <span id="srResultClient"></span></div>
+              <div><strong>Date:</strong> <span id="srResultDate"></span></div>
+            </div>
           </div>
-          <div style="text-align:right">
-            <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:var(--muted);text-transform:uppercase">Completed At</div>
-            <div style="font-weight:700;font-size:14px" id="srResultDate"></div>
+          
+          <div id="srResultAnswers" style="display:flex;flex-direction:column;gap:12px;margin-bottom:18px"></div>
+          
+          <div class="no-print" style="margin-top:24px;border-top:1px solid var(--border);padding-top:16px">
+            <button class="btn btn-outline" style="width:100%" onclick="window.print()"><i class="fa-solid fa-print"></i> Print Professional Report</button>
           </div>
         </div>
-        <div id="srResultAnswers" style="display:flex;flex-direction:column;gap:12px;margin-bottom:18px"></div>
-        <button class="btn btn-outline" style="width:100%" onclick="window.print()"><i class="fa-solid fa-print"></i> Print Report</button>
       </div>
-    </div>
+      
+      <!-- Live Assessment Modal (Counselor fills it) -->
+      <div class="live-assess-overlay" id="laOverlay">
+        <div class="live-assess-modal">
+          <div class="live-assess-hdr">
+            <button class="live-assess-close" onclick="closeLiveAssessment()"><i class="fa-solid fa-xmark"></i></button>
+            <h2>Live Assessment</h2>
+            <p>Conduct an assessment directly during your session.</p>
+          </div>
+          <div class="live-assess-body">
+            <div class="form-group">
+              <label style="font-weight:600">1. Select Client *</label>
+              <select class="form-control" id="laClientSelect">
+                <!-- populated from myClients -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label style="font-weight:600">2. Select Assessment Template *</label>
+              <select class="form-control" id="laTemplateSelect" onchange="fetchLiveQuestions()">
+                <option value="">Select an assessment...</option>
+                <!-- populated from screeningTemplatesCache -->
+              </select>
+            </div>
+            
+            <div id="laLoader" style="display:none;text-align:center;padding:20px;color:var(--muted)">
+              <i class="fa-solid fa-spinner fa-spin"></i> Loading questions...
+            </div>
+            
+            <div id="laQuestionsContainer" style="display:none;margin-top:24px;border-top:1px solid var(--border);padding-top:20px">
+               <!-- dynamically populated -->
+            </div>
+          </div>
+          <div style="padding:16px 24px;border-top:1px solid var(--border);background:#f8fafc;text-align:right">
+            <button class="btn btn-outline" style="margin-right:8px" onclick="closeLiveAssessment()">Cancel</button>
+            <button class="btn btn-navy" id="laSubmitBtn" style="display:none" onclick="submitLiveAssessment()">Submit Assessment</button>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="section" id="sec-referrals">
@@ -2438,14 +2609,16 @@ function renderScreeningResultAnswers(record) {
     return;
   }
   host.innerHTML = items.map(([key, value]) => `
-    <div style="padding:14px;border:1px solid var(--border);border-radius:12px;background:#fff">
-      <div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">${key}</div>
-      <div style="font-size:14px;font-weight:600;color:var(--text);white-space:pre-wrap;line-height:1.7">${Array.isArray(value) ? value.join(', ') : String(value)}</div>
+    <div class="print-q" style="padding:14px;border:1px solid var(--border);border-radius:12px;background:#fff">
+      <div class="print-q-label" style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">${key}</div>
+      <div class="print-q-ans" style="font-size:14px;font-weight:600;color:var(--text);white-space:pre-wrap;line-height:1.7">${Array.isArray(value) ? value.join(', ') : String(value)}</div>
     </div>`).join('');
 }
 
 function openScreeningResult(record) {
   document.getElementById('srResultTitle').textContent = record.template_name || 'Assessment Result';
+  const printTitle = document.getElementById('printAssessmentName');
+  if (printTitle) printTitle.textContent = record.template_name || 'Clinical Assessment';
   document.getElementById('srResultClient').textContent = `${record.client_name || 'Anonymous'}${record.client_code ? ` (${record.client_code})` : ''}`;
   document.getElementById('srResultDate').textContent = fmtDate(record.created_at || record.completed_at || record.submitted_at);
   renderScreeningResultAnswers(record);
@@ -2683,6 +2856,166 @@ function vcSlotClick(el, isBusy) {
 
 
 init();
+
+// --- Live Assessment Logic ---
+let laQuestions = [];
+
+function openLiveAssessmentModal() {
+  document.getElementById('laOverlay').style.display = 'flex';
+  
+  // Populate clients
+  const clientSel = document.getElementById('laClientSelect');
+  clientSel.innerHTML = '<option value="">Select a client...</option>' + 
+    myClients.map(c => `<option value="${c.id}">${c.full_name} (${c.client_code})</option>`).join('');
+    
+  // Populate templates
+  const tplSel = document.getElementById('laTemplateSelect');
+  tplSel.innerHTML = '<option value="">Select an assessment...</option>' + 
+    screeningTemplatesCache.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+    
+  document.getElementById('laQuestionsContainer').style.display = 'none';
+  document.getElementById('laSubmitBtn').style.display = 'none';
+}
+
+function closeLiveAssessment() {
+  document.getElementById('laOverlay').style.display = 'none';
+  document.getElementById('laQuestionsContainer').innerHTML = '';
+}
+
+async function fetchLiveQuestions() {
+  const tid = document.getElementById('laTemplateSelect').value;
+  const container = document.getElementById('laQuestionsContainer');
+  const btn = document.getElementById('laSubmitBtn');
+  
+  if(!tid) {
+    container.style.display = 'none';
+    btn.style.display = 'none';
+    return;
+  }
+  
+  document.getElementById('laLoader').style.display = 'block';
+  container.style.display = 'none';
+  btn.style.display = 'none';
+  
+  try {
+    const r = await apiFetch(`/api/assessment-templates/${tid}`);
+    const d = await r.json();
+    document.getElementById('laLoader').style.display = 'none';
+    
+    laQuestions = d.questions || [];
+    if(!laQuestions.length) {
+      container.innerHTML = '<p style="color:var(--danger)">No questions found in this template.</p>';
+      container.style.display = 'block';
+      return;
+    }
+    
+    renderLiveQuestions();
+    container.style.display = 'block';
+    btn.style.display = 'inline-flex';
+  } catch(e) {
+    document.getElementById('laLoader').style.display = 'none';
+    toast('Error loading questions', true);
+  }
+}
+
+function renderLiveQuestions() {
+  const container = document.getElementById('laQuestionsContainer');
+  
+  let html = '';
+  laQuestions.forEach((q, idx) => {
+    const qKey = q.question_key || `q_${idx}`;
+    const type = (q.question_type || 'text').toLowerCase();
+    
+    html += `<div class="la-q-block">`;
+    html += `<div class="la-q-text">${idx+1}. ${q.label_en} ${q.label_am ? `<span style="font-size:13.5px;color:var(--muted);font-weight:400"><br>${q.label_am}</span>` : ''}</div>`;
+    
+    if(type === 'boolean') {
+      html += `<div class="la-options">
+        <label class="la-option"><input type="radio" name="la_${qKey}" value="Yes"> Yes</label>
+        <label class="la-option"><input type="radio" name="la_${qKey}" value="No"> No</label>
+      </div>`;
+    } else if(type === 'single_choice') {
+      let opts = [];
+      try { opts = JSON.parse(q.options_json || '[]'); } catch(e){}
+      html += `<div class="la-options">` + opts.map(o => `
+        <label class="la-option"><input type="radio" name="la_${qKey}" value="${o}"> ${o}</label>
+      `).join('') + `</div>`;
+    } else if(type === 'multiple_choice') {
+      let opts = [];
+      try { opts = JSON.parse(q.options_json || '[]'); } catch(e){}
+      html += `<div class="la-options">` + opts.map(o => `
+        <label class="la-option"><input type="checkbox" name="la_${qKey}" value="${o}"> ${o}</label>
+      `).join('') + `</div>`;
+    } else {
+      html += `<input type="text" class="form-control" name="la_${qKey}">`;
+    }
+    html += `</div>`;
+  });
+  
+  container.innerHTML = html;
+}
+
+async function submitLiveAssessment() {
+  const clientId = document.getElementById('laClientSelect').value;
+  const tid = document.getElementById('laTemplateSelect').value;
+  
+  if(!clientId) return toast('Please select a client', true);
+  if(!tid) return toast('Please select an assessment', true);
+  
+  // gather responses
+  const responses = {};
+  let valid = true;
+  
+  laQuestions.forEach((q, idx) => {
+    const qKey = q.question_key || `q_${idx}`;
+    const inputs = document.querySelectorAll(`[name="la_${qKey}"]`);
+    
+    if(inputs.length === 0) return;
+    
+    if(inputs[0].type === 'radio') {
+      const checked = document.querySelector(`[name="la_${qKey}"]:checked`);
+      responses[qKey] = checked ? checked.value : '';
+    } else if(inputs[0].type === 'checkbox') {
+      const checked = Array.from(document.querySelectorAll(`[name="la_${qKey}"]:checked`)).map(n => n.value);
+      responses[qKey] = checked;
+    } else {
+      responses[qKey] = inputs[0].value;
+    }
+  });
+  
+  document.getElementById('laSubmitBtn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+  document.getElementById('laSubmitBtn').disabled = true;
+  
+  try {
+    // 1. Generate link secretly
+    const linkRes = await apiFetch('/api/screening-links', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ template_id: tid, client_id: clientId, expires_hours: 1 })
+    });
+    const linkData = await linkRes.json();
+    if(!linkData.success) throw new Error(linkData.error);
+    
+    // 2. Submit responses to that link
+    const subRes = await apiFetch(`/api/screening-links/${linkData.token}/submit`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ responses })
+    });
+    const subData = await subRes.json();
+    if(!subData.success) throw new Error(subData.error);
+    
+    toast('Assessment saved successfully!');
+    closeLiveAssessment();
+    loadScreeningResults(); // refresh
+  } catch(e) {
+    toast(e.message || 'Error saving assessment', true);
+  } finally {
+    document.getElementById('laSubmitBtn').innerHTML = 'Submit Assessment';
+    document.getElementById('laSubmitBtn').disabled = false;
+  }
+}
+
 </script>
 </body>
 </html>
