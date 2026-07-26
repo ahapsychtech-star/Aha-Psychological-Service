@@ -22,7 +22,7 @@ from urllib import request as urllib_request, error as urllib_error, parse as ur
 
 from datetime import datetime, timedelta
 
-from flask import Flask, request, jsonify, render_template, redirect, url_for, session, send_from_directory
+from flask import Flask, request, jsonify, render_template, redirect, url_for, session, send_from_directory, make_response
 
 from werkzeug.utils import secure_filename
 
@@ -4383,16 +4383,16 @@ def admin():
 # ─────────────────────────────────────────────
 
 @app.route('/portals/<path:filename>')
-
 def serve_portal(filename):
-
     if filename != 'intake_form.html' and not session.get('logged_in'):
-
         return redirect('/login')
-
-    return send_from_directory('portals', filename)
-
-
+    
+    response = make_response(send_from_directory('portals', filename))
+    # Prevent Vercel edge and browser caching for portal files
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route('/book-appointment')
 
