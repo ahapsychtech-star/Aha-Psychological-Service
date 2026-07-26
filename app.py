@@ -55,8 +55,7 @@ import db as _db
 # ─── File storage adapter (Supabase Storage, falls back to local disk) ───
 
 import storage as _storage
-
-
+import seed_assessments_pg
 
 app = Flask(__name__, template_folder='.', static_folder='.')
 
@@ -859,11 +858,14 @@ def init_db():
 
 
         conn.commit()
-
         backfill_missing_appointment_rooms()
 
-
-
+        # Seed default assessment templates
+        try:
+            seed_assessments_pg.seed_all(conn)
+            conn.commit()
+        except Exception as e:
+            print(f"[STARTUP] Error seeding templates: {e}")
 
 
 # ─────────────────────────────────────────────
