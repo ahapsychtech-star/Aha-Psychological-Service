@@ -169,67 +169,103 @@ def seed_srq_amharic(conn):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 3. Hopkins Symptom Checklist (HSCL-25)
+# 3. Hopkins Symptom Checklist (SCL-58)
 # ─────────────────────────────────────────────────────────────────────────────
 
 def seed_hopkins(conn):
-    name = "Hopkins Symptom Checklist (HSCL-25)"
+    # Delete old HSCL-25 entry if it exists, then create the full 58-item SCL
+    for old_name in ["Hopkins Symptom Checklist (HSCL-25)"]:
+        old = conn.execute("SELECT id FROM assessment_templates WHERE name = %s", (old_name,)).fetchone()
+        if old:
+            conn.execute("DELETE FROM assessment_questions WHERE template_id = %s", (old['id'],))
+            conn.execute("DELETE FROM assessment_templates WHERE id = %s", (old['id'],))
+            print(f"  ↳ Removed old '{old_name}'")
+
+    name = "Hopkins Symptom Checklist (SCL-58)"
     tid, inserted = upsert_template(
         conn, name,
-        "A 25-item self-report symptom inventory measuring symptoms of anxiety and depression. "
-        "Rate how much each problem bothered you during the last 7 days.",
-        "Mental Health Screening", "Hopkins, HSCL, anxiety, depression, screening",
+        "A 58-item self-report symptom inventory. Rate how much each problem has bothered you "
+        "during the last 7 days, including today. Scale: 1=Not at all, 2=A little bit, "
+        "3=Quite a bit, 4=Extremely.",
+        "Mental Health Screening", "Hopkins, SCL, SCL-58, anxiety, depression, screening",
         "English"
     )
     if not inserted: return
 
-    options = ["Not at all (1)", "A little bit (2)", "Quite a bit (3)", "Extremely (4)"]
+    options = ["1 - Not at all", "2 - A little bit", "3 - Quite a bit", "4 - Extremely"]
 
-    anxiety_items = [
-        "Suddenly scared for no reason",
-        "Feeling afraid",
-        "Faintness, dizziness, or weakness",
-        "Heart pounding or racing",
-        "Trembling",
-        "Feeling tense or keyed up",
+    items = [
         "Headaches",
-        "Feeling restless or can't sit still",
-        "Spells of terror or panic",
-        "Feeling so restless you couldn't sit still",
-    ]
-
-    depression_items = [
-        "Feeling low in energy, slowed down",
-        "Blaming yourself for things",
-        "Crying easily",
-        "Feeling of being trapped or caught",
-        "Loss of interest in things",
-        "Feeling hopeless about the future",
-        "Feeling sad",
-        "Being bothered by thoughts or feelings",
-        "Having no interest in things",
-        "Feeling everything is an effort",
-        "Feeling worthless",
+        "Nervousness or shakiness inside",
+        "Being unable to get rid of bad thoughts or ideas",
+        "Faintness or dizziness",
+        "Loss of sexual interest or pleasure",
+        "Feeling critical of others",
+        "Bad dreams",
+        "Difficulty in speaking when you are excited",
+        "Trouble remembering things",
+        "Worried about sloppiness or carelessness",
+        "Feeling easily annoyed or irritated",
+        "Pains in the heart or chest",
+        "Itching",
+        "Feeling low in energy or slowed down",
         "Thoughts of ending your life",
-        "Feeling of being lonely",
+        "Sweating",
+        "Trembling",
+        "Feeling confused",
+        "Poor appetite",
+        "Crying easily",
+        "Feeling shy or uneasy with the opposite sex",
+        "A feeling of being trapped or caught",
+        "Suddenly scared for no reason",
+        "Temper outbursts you could not control",
+        "Constipation",
+        "Blaming yourself for things",
+        "Pains in the lower part of your back",
+        "Feeling blocked in getting things done",
+        "Feeling lonely",
         "Feeling blue",
         "Worrying too much about things",
+        "Feeling no interest in things",
+        "Feeling fearful",
+        "Your feelings being easily hurt",
+        "Having to ask others what you should do",
+        "Feeling others do not understand you or are unsympathetic",
+        "Feeling that people are unfriendly or dislike you",
+        "Having to do things very slowly to ensure correctness",
+        "Heart pounding or racing",
+        "Nausea or upset stomach",
+        "Feeling inferior to others",
+        "Soreness of your muscles",
+        "Loose bowel movements",
+        "Trouble falling asleep",
+        "Having to check and double check what you do",
+        "Difficulty making decisions",
+        "Wanting to be alone",
+        "Trouble getting your breath",
+        "Hot or cold spells",
+        "Having to avoid certain things, places or activities because they frighten you",
+        "Your mind going blank",
+        "Numbness or tingling in parts of your body",
+        "A lump in your throat",
+        "Feeling hopeless about the future",
+        "Trouble concentrating",
+        "Feeling weak in parts of your body",
+        "Feeling tense or keyed up",
+        "Heavy feelings in your arms or legs",
     ]
 
-    qs = []
-    for i, q in enumerate(anxiety_items):
-        qs.append({'key': f'hscl_a{i+1}', 'label': f"ANXIETY {i+1}. {q}",
-                   'type': 'single_choice', 'options': options, 'required': True})
-    for i, q in enumerate(depression_items):
-        qs.append({'key': f'hscl_d{i+1}', 'label': f"DEPRESSION {i+1}. {q}",
-                   'type': 'single_choice', 'options': options, 'required': True})
+    insert_questions(conn, tid, [
+        {'key': f'scl_{i+1}', 'label': f"{i+1}. {q}",
+         'type': 'single_choice', 'options': options, 'required': True}
+        for i, q in enumerate(items)
+    ])
+    print(f"  ✓ {name}: {len(items)} questions seeded (id={tid})")
 
-    insert_questions(conn, tid, qs)
-    print(f"  ✓ {name}: {len(qs)} questions seeded (id={tid})")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 4. WHOQOL-BREF
+# 4. WHOQOL-BREF (official version with correct scales per question)
 # ─────────────────────────────────────────────────────────────────────────────
 
 def seed_whoqol(conn):
@@ -237,51 +273,104 @@ def seed_whoqol(conn):
     tid, inserted = upsert_template(
         conn, name,
         "The WHOQOL-BREF is a 26-item instrument assessing quality of life across four domains: "
-        "physical health, psychological, social relationships, and environment.",
+        "Physical Health (Domain 1), Psychological (Domain 2), Social Relationships (Domain 3), "
+        "and Environment (Domain 4). Think about your life in the last four weeks.",
         "Quality of Life", "WHOQOL, WHO, quality of life, wellbeing",
         "English"
     )
     if not inserted: return
 
-    options_5 = ["Very Poor", "Poor", "Neither Poor Nor Good", "Good", "Very Good"]
-    options_5b = ["Very Dissatisfied", "Dissatisfied", "Neither", "Satisfied", "Very Satisfied"]
-    options_5c = ["Not at all", "A little", "A moderate amount", "Very much", "An extreme amount"]
-    options_5d = ["Never", "Seldom", "Quite often", "Very often", "Always"]
+    # Official WHOQOL-BREF response scales
+    qual_scale   = ["1 - Very poor", "2 - Poor", "3 - Neither poor nor good", "4 - Good", "5 - Very good"]
+    sat_scale    = ["1 - Very dissatisfied", "2 - Dissatisfied", "3 - Neither satisfied nor dissatisfied", "4 - Satisfied", "5 - Very satisfied"]
+    extent_scale = ["1 - Not at all", "2 - A little", "3 - A moderate amount", "4 - Very much", "5 - An extreme amount"]
+    # Reverse-coded extent scale (higher = better for pain/treatment need)
+    extent_rev   = ["5 - Not at all", "4 - A little", "3 - A moderate amount", "2 - Very much", "1 - An extreme amount"]
+    complete_scale = ["1 - Not at all", "2 - A little", "3 - Moderately", "4 - Mostly", "5 - Completely"]
+    freq_rev     = ["5 - Never", "4 - Seldom", "3 - Quite often", "2 - Very often", "1 - Always"]
 
     questions = [
-        ("whoqol_1", "How would you rate your quality of life?", options_5),
-        ("whoqol_2", "How satisfied are you with your health?", options_5b),
-        ("whoqol_3", "To what extent do you feel that physical pain prevents you from doing what you need to do?", options_5c),
-        ("whoqol_4", "How much do you need any medical treatment to function in your daily life?", options_5c),
-        ("whoqol_5", "How much do you enjoy life?", options_5c),
-        ("whoqol_6", "To what extent do you feel your life to be meaningful?", options_5c),
-        ("whoqol_7", "How well are you able to concentrate?", options_5c),
-        ("whoqol_8", "How safe do you feel in your daily life?", options_5c),
-        ("whoqol_9", "How healthy is your physical environment?", options_5c),
-        ("whoqol_10", "Do you have enough energy for everyday life?", options_5d),
-        ("whoqol_11", "Are you able to accept your bodily appearance?", options_5d),
-        ("whoqol_12", "Have you enough money to meet your needs?", options_5d),
-        ("whoqol_13", "How available to you is the information that you need in your day-to-day life?", options_5d),
-        ("whoqol_14", "To what extent do you have the opportunity for leisure activities?", options_5d),
-        ("whoqol_15", "How well are you able to get around?", options_5),
-        ("whoqol_16", "How satisfied are you with your sleep?", options_5b),
-        ("whoqol_17", "How satisfied are you with your ability to perform your daily living activities?", options_5b),
-        ("whoqol_18", "How satisfied are you with your capacity for work?", options_5b),
-        ("whoqol_19", "How satisfied are you with yourself?", options_5b),
-        ("whoqol_20", "How satisfied are you with your personal relationships?", options_5b),
-        ("whoqol_21", "How satisfied are you with your sex life?", options_5b),
-        ("whoqol_22", "How satisfied are you with the support you get from your friends?", options_5b),
-        ("whoqol_23", "How satisfied are you with the conditions of your living place?", options_5b),
-        ("whoqol_24", "How satisfied are you with your access to health services?", options_5b),
-        ("whoqol_25", "How satisfied are you with your transport?", options_5b),
-        ("whoqol_26", "How often do you have negative feelings such as blue mood, despair, anxiety, depression?", options_5d),
+        # Q1 - Overall QoL
+        ("whoqol_1",  "How would you rate your quality of life?", qual_scale),
+        # Q2 - Health satisfaction
+        ("whoqol_2",  "How satisfied are you with your health?", sat_scale),
+        # Q3 - Physical pain (reverse: high pain = low QoL)
+        ("whoqol_3",  "To what extent do you feel that physical pain prevents you from doing what you need to do?", extent_rev),
+        # Q4 - Medical treatment dependence (reverse)
+        ("whoqol_4",  "How much do you need any medical treatment to function in your daily life?", extent_rev),
+        # Q5
+        ("whoqol_5",  "How much do you enjoy life?", extent_scale),
+        # Q6
+        ("whoqol_6",  "To what extent do you feel your life to be meaningful?", extent_scale),
+        # Q7
+        ("whoqol_7",  "How well are you able to concentrate?", extent_scale),
+        # Q8
+        ("whoqol_8",  "How safe do you feel in your daily life?", extent_scale),
+        # Q9
+        ("whoqol_9",  "How healthy is your physical environment?", extent_scale),
+        # Q10
+        ("whoqol_10", "Do you have enough energy for everyday life?", complete_scale),
+        # Q11
+        ("whoqol_11", "Are you able to accept your bodily appearance?", complete_scale),
+        # Q12
+        ("whoqol_12", "Have you enough money to meet your needs?", complete_scale),
+        # Q13
+        ("whoqol_13", "How available to you is the information that you need in your day-to-day life?", complete_scale),
+        # Q14
+        ("whoqol_14", "To what extent do you have the opportunity for leisure activities?", complete_scale),
+        # Q15
+        ("whoqol_15", "How well are you able to get around?", qual_scale),
+        # Q16
+        ("whoqol_16", "How satisfied are you with your sleep?", sat_scale),
+        # Q17
+        ("whoqol_17", "How satisfied are you with your ability to perform your daily living activities?", sat_scale),
+        # Q18
+        ("whoqol_18", "How satisfied are you with your capacity for work?", sat_scale),
+        # Q19
+        ("whoqol_19", "How satisfied are you with yourself?", sat_scale),
+        # Q20
+        ("whoqol_20", "How satisfied are you with your personal relationships?", sat_scale),
+        # Q21
+        ("whoqol_21", "How satisfied are you with your sex life?", sat_scale),
+        # Q22
+        ("whoqol_22", "How satisfied are you with the support you get from your friends?", sat_scale),
+        # Q23
+        ("whoqol_23", "How satisfied are you with the conditions of your living place?", sat_scale),
+        # Q24
+        ("whoqol_24", "How satisfied are you with your access to health services?", sat_scale),
+        # Q25
+        ("whoqol_25", "How satisfied are you with your transport?", sat_scale),
+        # Q26 - Negative feelings (reverse: frequent = low QoL)
+        ("whoqol_26", "How often do you have negative feelings such as blue mood, despair, anxiety, depression?", freq_rev),
     ]
 
     insert_questions(conn, tid, [
         {'key': k, 'label': f"{i+1}. {l}", 'type': 'single_choice', 'options': o, 'required': True}
         for i, (k, l, o) in enumerate(questions)
     ])
-    print(f"  ✓ {name}: {len(questions)} questions seeded (id={tid})")
+
+    # Add scoring guide as an informational question
+    conn.execute(
+        """INSERT INTO assessment_questions
+           (template_id, question_key, label_en, question_type, required, options_json, sort_order)
+           VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+        (
+            tid, 'whoqol_scoring',
+            "SCORING GUIDE\n"
+            "Domain 1 - Physical Health (Q3,Q4,Q10,Q15,Q16,Q17,Q18):\n"
+            "  Raw = (6-Q3) + (6-Q4) + Q10 + Q15 + Q16 + Q17 + Q18\n\n"
+            "Domain 2 - Psychological (Q5,Q6,Q7,Q11,Q19,Q26):\n"
+            "  Raw = Q5 + Q6 + Q7 + Q11 + Q19 + (6-Q26)\n\n"
+            "Domain 3 - Social Relationships (Q20,Q21,Q22):\n"
+            "  Raw = Q20 + Q21 + Q22\n\n"
+            "Domain 4 - Environment (Q8,Q9,Q12,Q13,Q14,Q23,Q24,Q25):\n"
+            "  Raw = Q8 + Q9 + Q12 + Q13 + Q14 + Q23 + Q24 + Q25\n\n"
+            "Transform to 0-100 scale: score = (raw - 4) / (4*n) * 100\n"
+            "  where n = number of items in the domain",
+            'info', 0, None, 27
+        )
+    )
+    print(f"  ✓ {name}: {len(questions)} questions + scoring guide seeded (id={tid})")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
