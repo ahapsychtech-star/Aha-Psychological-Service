@@ -670,6 +670,201 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
         </div>
         <!-- Steps bar -->
         <div class="steps-bar">
+  background: var(--danger);
+  z-index: 2;
+  pointer-events: none;
+}
+.vc-current-time::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <img src="https://www.ahaethiopia.com/site/wp-content/uploads/2021/03/aha-logo-2.png" style="height:32px;">
+    <div class="logo-sub">Psychological Services</div>
+  </div>
+  <div class="sidebar-role">
+    <i class="fa-solid fa-headset"></i>
+    <span>Reception Portal</span>
+  </div>
+  <nav class="nav">
+    <div class="nav-section">Main</div>
+    <div class="nav-item active" data-section="dashboard"><i class="fa-solid fa-gauge-high"></i>Dashboard</div>
+    <div class="nav-item" data-section="calendar"><i class="fa-solid fa-calendar-days"></i>Calendar</div>
+    <div class="nav-section">Clients</div>
+    <div class="nav-item" data-section="clients"><i class="fa-solid fa-users"></i>Client Registry</div>
+    <div class="nav-item" data-section="new-client"><i class="fa-solid fa-user-plus"></i>Register Client</div>
+    <div class="nav-item" data-section="assignment"><i class="fa-solid fa-wand-magic-sparkles"></i>Smart Assignment</div>
+    <div class="nav-section">Operations</div>
+    <div class="nav-item" data-section="appointments"><i class="fa-solid fa-calendar-plus"></i>Appointments</div>
+    <div class="nav-item" data-section="finance"><i class="fa-solid fa-file-invoice-dollar"></i>Finance</div>
+    <div class="nav-item" data-section="messages"><i class="fa-solid fa-comments"></i>Messages</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar" id="sidebarAvatar">R</div>
+      <div class="user-info">
+        <div class="name" id="sidebarName">Loading...</div>
+        <div class="role" id="sidebarRole">Receptionist</div>
+      </div>
+      <a href="/logout" class="logout-btn" title="Logout"><i class="fa-solid fa-right-from-bracket"></i></a>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">Dashboard</div>
+    <div class="topbar-clock" id="topbarClock"></div>
+    <div class="topbar-actions">
+      <button class="notif-btn" id="alertBtn" title="Risk Alerts">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span class="notif-badge" id="alertBadge" style="display:none">0</span>
+      </button>
+      <button class="btn btn-gold btn-sm" onclick="openBookModal()"><i class="fa-solid fa-plus"></i>Book Appointment</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- — DASHBOARD — -->
+    <section class="section active" id="sec-dashboard">
+      <div style="margin-bottom:20px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <h1 style="font-size:22px;font-weight:800;color:var(--navy)" id="dashGreeting">Good morning</h1>
+          <p style="color:var(--text-muted);font-size:14px" id="dashDate"></p>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="loadDashboard()"><i class="fa-solid fa-arrows-rotate"></i>Refresh</button>
+      </div>
+
+      <div class="stats-grid" id="dashStats">
+        <div class="stat-card"><div class="stat-icon gold"><i class="fa-solid fa-calendar-check"></i></div><div><div class="stat-val" id="statToday">-</div><div class="stat-label">Today's Appointments</div></div></div>
+        <div class="stat-card"><div class="stat-icon orange"><i class="fa-solid fa-clock"></i></div><div><div class="stat-val" id="statPending">-</div><div class="stat-label">Awaiting Assignment</div></div></div>
+        <div class="stat-card"><div class="stat-icon red"><i class="fa-solid fa-triangle-exclamation"></i></div><div><div class="stat-val pulse-red" id="statAlerts">-</div><div class="stat-label">Active Risk Alerts</div></div></div>
+        <div class="stat-card"><div class="stat-icon blue"><i class="fa-solid fa-person"></i></div><div><div class="stat-val" id="statClients">-</div><div class="stat-label">Active Clients</div></div></div>
+        <div class="stat-card"><div class="stat-icon green"><i class="fa-solid fa-file-invoice-dollar"></i></div><div><div class="stat-val" id="statInvoices">-</div><div class="stat-label">Pending Invoices</div></div></div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Today's Schedule -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="fa-solid fa-calendar-day"></i>Today's Schedule</div>
+            <button class="btn btn-ghost btn-sm" onclick="showSection('calendar')">View Calendar</button>
+          </div>
+          <div id="todaySchedule"><div class="skel" style="height:60px;margin-bottom:10px"></div><div class="skel" style="height:60px;margin-bottom:10px"></div><div class="skel" style="height:60px"></div></div>
+        </div>
+
+        <!-- Pending Assignment Queue -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="fa-solid fa-inbox"></i>Pending Assignment</div>
+            <button class="btn btn-ghost btn-sm" onclick="showSection('assignment')">Smart Assign</button>
+          </div>
+          <div id="pendingQueue"><div class="skel" style="height:50px;margin-bottom:8px"></div><div class="skel" style="height:50px"></div></div>
+        </div>
+      </div>
+
+      <!-- Risk Alerts -->
+      <div class="panel" style="border:1.5px solid rgba(239,68,68,.2)">
+        <div class="panel-header">
+          <div class="panel-title" style="color:var(--danger)"><i class="fa-solid fa-triangle-exclamation"></i>Active Risk Alerts</div>
+        </div>
+        <div id="riskAlertsList"><div class="skel" style="height:50px"></div></div>
+      </div>
+    </section>
+
+    <!-- — CALENDAR — -->
+    <section class="section" id="sec-calendar">
+      <div class="panel">
+        <div class="cal-nav">
+          <button class="btn btn-ghost btn-sm" id="calPrev"><i class="fa-solid fa-chevron-left"></i></button>
+          <h2 id="calTitle"></h2>
+          <button class="btn btn-ghost btn-sm" id="calNext"><i class="fa-solid fa-chevron-right"></i></button>
+          <div class="cal-views">
+            <button class="cal-view-btn active" id="viewMonth" onclick="switchView('month')">Month</button>
+            <button class="cal-view-btn" id="viewWeek" onclick="switchView('week')">Week</button>
+            <button class="cal-view-btn" id="viewDay" onclick="switchView('day')">Day</button>
+          </div>
+        </div>
+        <div class="calendar-legend">
+          <span class="legend-chip"><span class="legend-dot therapist"></span>Therapist color = appointment owner</span>
+          <span class="legend-chip"><span class="legend-dot temporary"></span>Temporary change</span>
+          <span class="legend-chip"><span class="legend-dot permanent"></span>Permanent change</span>
+          <span class="legend-chip"><span class="legend-dot cancelled"></span>Cancelled / no-show</span>
+          <span class="legend-chip"><span class="legend-dot therapist" style="background:var(--navy)"></span>Room badges show the assigned therapy room</span>
+          <span class="legend-chip">Faded cards mean a change has already been applied</span>
+        </div>
+        <div id="calContainer"></div>
+      </div>
+      <!-- Day detail panel -->
+      <div class="panel" id="dayDetailPanel" style="display:none">
+        <div class="panel-header">
+          <div class="panel-title" id="dayDetailTitle"></div>
+          <button class="btn btn-gold btn-sm" onclick="openBookModal()"><i class="fa-solid fa-plus"></i>Book Here</button>
+        </div>
+        <div id="dayDetailList"></div>
+      </div>
+    </section>
+
+    <!-- — CLIENTS — -->
+    <section class="section" id="sec-clients">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-users"></i>Client Registry</div>
+          <button class="btn btn-primary btn-sm" onclick="showSection('new-client')"><i class="fa-solid fa-user-plus"></i>Register New Client</button>
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+          <input type="text" class="form-control" placeholder="Search by name, code, phone..." id="clientSearch" style="flex:1;min-width:200px" oninput="filterClients()">
+          <select class="form-control" id="filterStatus" style="width:180px" onchange="filterClients()">
+            <option value="">All Statuses</option>
+            <option value="registered">Registered</option>
+            <option value="screening_completed">Screening Done</option>
+            <option value="assigned">Assigned</option>
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
+          </select>
+          <select class="form-control" id="filterRisk" style="width:150px" onchange="filterClients()">
+            <option value="">All Risk Levels</option>
+            <option value="low">Low Risk</option>
+            <option value="medium">Medium Risk</option>
+            <option value="high">High Risk</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Code</th><th>Name</th><th>Phone</th><th>Status</th><th>Risk</th>
+              <th>Registered</th><th>Therapist</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="clientsTableBody"><tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- — NEW CLIENT — -->
+    <section class="section" id="sec-new-client">
+      <div class="panel" style="max-width:720px;margin:0 auto">
+        <div class="panel-header">
+          <div class="panel-title"><i class="fa-solid fa-user-plus"></i>Register New Client</div>
+        </div>
+        <!-- Steps bar -->
+        <div class="steps-bar">
           <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
             <div class="step-dot active" id="step1dot">1</div>
             <div class="step-label">Personal Info</div>
@@ -694,14 +889,8 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
             <div class="form-group"><label>Date of Birth *</label><input type="date" class="form-control" id="nc_dob"></div>
             <div class="form-group"><label>Gender *</label><select class="form-control" id="nc_gender"><option value="">Select gender</option><option>Male</option><option>Female</option><option>Other</option><option>Prefer not to say</option></select></div>
             <div class="form-group"><label>Phone Number *</label><input type="tel" class="form-control" id="nc_phone" placeholder="+251 9XX XXX XXXX"></div>
-            <div class="form-group"><label>Email Address</label><input type="email" class="form-control" id="nc_email" placeholder="Optional"></div>
-            <div class="form-group"><label>Address</label><input type="text" class="form-control" id="nc_address" placeholder="City, Sub-city, Woreda"></div>
           </div>
-          <div class="grid-2">
-            <div class="form-group"><label>Emergency Contact Name *</label><input type="text" class="form-control" id="nc_ecname" placeholder="Emergency contact person"></div>
-            <div class="form-group"><label>Emergency Contact Phone *</label><input type="tel" class="form-control" id="nc_ecphone" placeholder="+251 9XX XXX XXXX"></div>
-          </div>
-          <div style="display:flex;justify-content:flex-end;margin-top:8px">
+          <div style="display:flex;justify-content:flex-end;margin-top:16px">
             <button class="btn btn-primary" onclick="nextStep(2)">Next: Preferences <i class="fa-solid fa-arrow-right"></i></button>
           </div>
         </div>
@@ -712,34 +901,51 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
           <div class="grid-2">
             <div class="form-group"><label>Intake Source</label><select class="form-control" id="nc_source"><option>Walk-in</option><option>Referral</option><option>Online</option><option>Phone</option><option>Other</option></select></div>
             <div class="form-group"><label>Preferred Language</label><select class="form-control" id="nc_lang"><option>English</option><option>Amharic</option><option>Oromiffa</option><option>Tigrinya</option><option>Somali</option></select></div>
-            <div class="form-group"><label>Therapist Gender Preference</label><select class="form-control" id="nc_genderpref"><option>No Preference</option><option>Male</option><option>Female</option></select></div>
-            <div class="form-group"><label>Preferred Appointment Date</label><input type="date" class="form-control" id="nc_pref_date"></div>
-            <div class="form-group"><label>Preferred Appointment Time</label><select class="form-control" id="nc_pref_time">
-              <option value="">Select preferred time</option>
-              <option value="Morning (8am–12pm)">Morning (8am–12pm)</option>
-              <option value="Afternoon (12pm–5pm)">Afternoon (12pm–5pm)</option>
-              <option value="Evening (5pm–8pm)">Evening (5pm–8pm)</option>
-              <option value="Any time">Any time</option>
-            </select></div>
           </div>
-          <div class="form-group"><label>Presenting Concerns <span style="color:var(--danger)">*</span></label><textarea class="form-control" id="nc_concerns" rows="4" placeholder="Briefly describe why the client is seeking psychological services — their primary concern, symptoms, or situation..."></textarea></div>
-          <div class="form-group"><label>Additional Notes</label><textarea class="form-control" id="nc_notes" style="min-height:80px" placeholder="Any other relevant information, referral source details, special requirements..."></textarea></div>
+          <div class="form-group"><label>Presenting Concerns <span style="color:var(--danger)">*</span></label><textarea class="form-control" id="nc_concerns" rows="3" placeholder="Briefly describe why the client is seeking psychological services..."></textarea></div>
+          <div class="form-group"><label>Additional Notes</label><textarea class="form-control" id="nc_notes" style="min-height:60px" placeholder="Any other relevant information..."></textarea></div>
+          
           <div class="panel" style="margin:8px 0 18px;background:linear-gradient(180deg,#fff,#fbfdff)">
             <div class="panel-header" style="margin-bottom:12px">
               <div class="panel-title"><i class="fa-solid fa-calendar-plus"></i>Book First Appointment</div>
+              <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--navy);cursor:pointer">
+                <input type="checkbox" id="nc_book_now" onchange="document.getElementById('ncBookFields').style.display = this.checked ? 'block' : 'none'" style="width:16px;height:16px"> Book Now
+              </label>
             </div>
-            <div style="font-size:12.5px;color:var(--text-muted);line-height:1.7;margin-bottom:12px">Optional. If the client is ready, schedule the first visit immediately after registration.</div>
-            <div class="grid-2">
-              <div class="form-group"><label>Therapist</label><select class="form-control" id="nc_book_therapist"><option value="">Select therapist...</option></select></div>
-              <div class="form-group"><label>Location</label><select class="form-control" id="nc_book_location"><option>In-Person</option><option>Online</option><option>Phone</option></select></div>
-              <div class="form-group"><label>Date</label><input type="date" class="form-control" id="nc_book_date"></div>
-              <div class="form-group"><label>Start Time</label><input type="time" class="form-control" id="nc_book_start" value="09:00"></div>
-              <div class="form-group"><label>End Time</label><input type="time" class="form-control" id="nc_book_end" value="10:00"></div>
-              <div class="form-group"><label>Room</label><select class="form-control" id="nc_book_room"><option value="">Auto-assign best available room</option></select></div>
+            
+            <div id="ncBookFields" style="display:none">
+              <div class="grid-2" style="margin-bottom:12px">
+                <div class="form-group"><label>Therapist</label><select class="form-control" id="nc_book_therapist" onchange="ncVcFetchData()"><option value="">Select therapist...</option></select></div>
+                <div class="form-group"><label>Location</label><select class="form-control" id="nc_book_location"><option>In-Person</option><option>Online</option><option>Phone</option></select></div>
+              </div>
+              
+              <!-- Mini Visual Calendar -->
+              <div class="vc-container" id="ncVcContainer" style="border-radius:6px;box-shadow:inset 0 2px 4px rgba(0,0,0,.02)">
+                <div class="vc-header" style="padding:8px 12px">
+                  <div class="vc-nav">
+                    <button type="button" onclick="ncVcNav(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                    <div class="vc-date-label" id="ncVcDateLabel" style="font-size:13px">Loading...</div>
+                    <button type="button" onclick="ncVcNav(1)"><i class="fa-solid fa-chevron-right"></i></button>
+                  </div>
+                  <div class="vc-view-toggle">
+                    <button type="button" id="ncVcBtnDay" onclick="ncVcSetView('day')">Day</button>
+                    <button type="button" id="ncVcBtnWeek" class="active" onclick="ncVcSetView('week')">Week</button>
+                  </div>
+                </div>
+                <div class="vc-grid-wrap" id="ncVcGridWrap" style="max-height:220px">
+                  <div class="vc-grid" id="ncVcGrid"></div>
+                </div>
+              </div>
+              
+              <input type="hidden" id="nc_book_date">
+              <input type="hidden" id="nc_book_start">
+              <input type="hidden" id="nc_book_end">
+              <div id="ncVcSelectedLabel" style="font-size:12px;font-weight:600;color:var(--navy);margin-top:12px;text-align:center;padding:6px;background:rgba(59,130,246,.05);border-radius:6px;display:none"></div>
+              
+              <div class="form-group" style="margin-top:12px"><label>Appointment Notes</label><input type="text" class="form-control" id="nc_book_notes" placeholder="Optional notes for the therapist..."></div>
             </div>
-            <div class="form-group"><label>Appointment Notes</label><textarea class="form-control" id="nc_book_notes" style="min-height:70px" placeholder="Optional appointment notes..."></textarea></div>
-            <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--navy)"><input type="checkbox" id="nc_book_now" checked style="width:16px;height:16px">Create this appointment after registration</label>
           </div>
+          
           <div style="display:flex;justify-content:space-between;margin-top:8px">
             <button class="btn btn-ghost" onclick="nextStep(1)"><i class="fa-solid fa-arrow-left"></i> Back</button>
             <button class="btn btn-primary" onclick="nextStep(3)">Review <i class="fa-solid fa-arrow-right"></i></button>
@@ -2503,6 +2709,201 @@ async function loadMessages() {
     const users = await usersRes.json();
     const to = document.getElementById('msgTo');
     if (to) to.innerHTML = '<option value="">Select recipient...</option>' + users.map(u => `<option value="${u.id}">${u.full_name} (${u.role})</option>`).join('');
+  if (revenue) revenue.style.display = tab === 'revenue' ? 'block' : 'none';
+}
+
+async function loadInvoices() {
+  try {
+    const r = await apiFetch('/api/invoices');
+    allInvoices = await r.json();
+    const tb = document.getElementById('invoiceTableBody');
+    if (!tb) return;
+    if (!allInvoices.length) {
+      tb.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted)">No invoices found</td></tr>`;
+      return;
+    }
+    tb.innerHTML = allInvoices.map(i => `
+      <tr>
+        <td><strong>${i.client_name || '-'}</strong><br><span style="font-size:11px;color:var(--text-muted)">${i.client_code || ''}</span></td>
+        <td>${i.service_name || '-'}</td>
+        <td style="font-weight:700">ETB ${(i.amount || 0).toLocaleString()}</td>
+        <td>${invStatusBadge(i.status)}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${formatDate(i.due_date)}</td>
+        <td>${i.status === 'pending'
+          ? `<button class="btn btn-sm btn-success" onclick="openPaymentFor(${i.id},${i.client_id})"><i class="fa-solid fa-credit-card"></i>Pay</button>`
+          : '<span style="color:var(--text-muted);font-size:12px">Settled</span>'}</td>
+      </tr>`).join('');
+  } catch (e) {}
+}
+
+function openInvoiceModal() {
+  document.getElementById('invoiceOverlay')?.classList.add('active');
+  document.getElementById('invoiceModal')?.classList.add('active');
+  const sel = document.getElementById('invClient');
+  if (sel) sel.innerHTML = '<option value="">Select client...</option>' + allClients.map(c => `<option value="${c.id}">${c.full_name} (${c.client_code})</option>`).join('');
+  apiFetch('/api/services').then(r => r.json()).then(services => {
+    const svc = document.getElementById('invService');
+    if (!svc) return;
+    svc.innerHTML = '<option value="">Select service...</option>' + services.map(s => `<option value="${s.id}" data-price="${s.price}">${s.name} (ETB ${s.price})</option>`).join('');
+    svc.onchange = function () {
+      const opt = this.options[this.selectedIndex];
+      if (opt?.dataset?.price) document.getElementById('invAmount').value = opt.dataset.price;
+    };
+  }).catch(() => {});
+}
+
+function closeInvoiceModal() {
+  document.getElementById('invoiceOverlay')?.classList.remove('active');
+  document.getElementById('invoiceModal')?.classList.remove('active');
+}
+
+async function createInvoice() {
+  const body = {
+    client_id: document.getElementById('invClient').value,
+    service_id: document.getElementById('invService').value,
+    amount: document.getElementById('invAmount').value,
+    notes: document.getElementById('invNotes').value
+  };
+  const r = await apiFetch('/api/invoices', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const d = await r.json();
+  if (d.success) {
+    closeInvoiceModal();
+    toast('Invoice created!');
+    loadInvoices();
+  } else {
+    toast(d.error || 'Failed', true);
+  }
+}
+
+function openPaymentFor(invoiceId, clientId) {
+  document.getElementById('payInvoiceId').value = invoiceId;
+  document.getElementById('payClientId').value = clientId;
+  document.getElementById('paymentOverlay')?.classList.add('active');
+  document.getElementById('paymentModal')?.classList.add('active');
+}
+
+function openInvoiceForClient(cid) {
+  closeClientDrawer();
+  showSection('finance');
+  setTimeout(() => openInvoiceModal(), 300);
+}
+
+function closePaymentModal() {
+  document.getElementById('paymentOverlay')?.classList.remove('active');
+  document.getElementById('paymentModal')?.classList.remove('active');
+}
+
+async function submitPayment() {
+  const body = {
+    invoice_id: document.getElementById('payInvoiceId').value,
+    client_id: document.getElementById('payClientId').value,
+    amount_paid: document.getElementById('payAmount').value,
+    payment_method: document.getElementById('payMethod').value,
+    invoice_status: document.getElementById('payStatus').value,
+    notes: document.getElementById('payNotes').value
+  };
+  const r = await apiFetch('/api/payments', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const d = await r.json();
+  if (d.success) {
+    closePaymentModal();
+    toast('Payment recorded!');
+    loadInvoices();
+  } else {
+    toast(d.error || 'Failed', true);
+  }
+}
+
+function parseNotificationBody(message) {
+  const lines = String(message?.body || '').split(/\r?\n/);
+  const fields = {};
+  for (const line of lines) {
+    const match = line.match(/^([^:]+):\s*(.*)$/);
+    if (match) fields[match[1].trim().toLowerCase()] = match[2].trim();
+  }
+  return { lines, fields };
+}
+
+function notificationTone(subject = '') {
+  const s = String(subject).toLowerCase();
+  if (s.includes('completed')) return { icon: 'fa-circle-check', color: 'var(--success)', bg: 'rgba(10,185,129,.1)', badge: 'badge-green', label: 'Completed' };
+  if (s.includes('cancel')) return { icon: 'fa-ban', color: 'var(--danger)', bg: 'rgba(239,68,68,.1)', badge: 'badge-red', label: 'Cancelled' };
+  if (s.includes('resched') || s.includes('change')) return { icon: 'fa-arrows-rotate', color: 'var(--info)', bg: 'rgba(59,130,246,.1)', badge: 'badge-blue', label: 'Rescheduled' };
+  if (s.includes('no-show')) return { icon: 'fa-triangle-exclamation', color: 'var(--warning)', bg: 'rgba(245,158,11,.12)', badge: 'badge-orange', label: 'No Show' };
+  if (s.includes('pending')) return { icon: 'fa-clock', color: 'var(--text-muted)', bg: 'rgba(100,116,139,.1)', badge: 'badge-gray', label: 'Pending' };
+  return { icon: 'fa-bell', color: 'var(--navy)', bg: 'rgba(4,48,105,.08)', badge: 'badge-indigo', label: 'Update' };
+}
+
+function notificationCard(message) {
+  const parsed = parseNotificationBody(message);
+  const tone = notificationTone(message.subject || '');
+  const f = parsed.fields;
+  const bodyDetails = [
+    f['date/time'] || f['new date/time'] || f['previous date/time'] || '',
+    f['end time'] || f['new end time'] || '',
+    f['reason'] || '',
+    f['scope'] || ''
+  ].filter(Boolean).join(' - ');
+  const rows = [
+    ['Client code', f['client code'] || '-'],
+    ['Therapist', f['therapist'] || '-'],
+    ['Room', f['room'] || '-'],
+    ['Appointment date', f['date/time'] || f['new date/time'] || '-'],
+    ['Time', f['date/time'] || f['new date/time'] || '-'],
+    ['Action performed', message.subject || 'Notification'],
+    ['Reason', f['reason'] || 'Not provided'],
+    ['Timestamp', formatDate(message.sent_at)]
+  ];
+  return `
+    <div class="notify-card">
+      <div class="notify-head">
+        <div class="notify-icon" style="background:${tone.bg};color:${tone.color}">
+          <i class="fa-solid ${tone.icon}"></i>
+        </div>
+        <div class="notify-main">
+          <div class="notify-title-row">
+            <div class="notify-title">${message.subject || 'Notification'}</div>
+            <div class="notify-time">${formatDate(message.sent_at)}</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+            <span class="badge ${tone.badge}">${tone.label}</span>
+            <span class="badge badge-gray">${message.sender_name || 'System'}</span>
+          </div>
+          ${bodyDetails ? `<div class="notify-body" style="margin-top:10px">${bodyDetails}</div>` : ''}
+        </div>
+      </div>
+      <div class="notify-grid">
+        ${rows.map(([label, value]) => `
+          <div class="notify-field">
+            <div class="notify-field-label">${label}</div>
+            <div class="notify-field-value">${value || '-'}</div>
+          </div>`).join('')}
+      </div>
+      <div class="notify-footer">
+        ${f['current status'] ? `<span class="badge badge-indigo">Current status: ${f['current status']}</span>` : ''}
+        ${f['scope'] ? `<span class="badge badge-gold">${f['scope']}</span>` : ''}
+        ${f['previous date/time'] ? `<span class="badge badge-gray">Previous slot recorded</span>` : ''}
+      </div>
+    </div>`;
+}
+
+async function loadMessages() {
+  try {
+    const r = await apiFetch('/api/messages');
+    const msgs = await r.json();
+    const list = document.getElementById('msgList');
+    if (list) list.innerHTML = msgs.map(m => notificationCard(m)).join('') || '<p style="text-align:center;color:var(--text-muted);padding:20px">No messages</p>';
+    const usersRes = await apiFetch('/api/users');
+    const users = await usersRes.json();
+    const to = document.getElementById('msgTo');
+    if (to) to.innerHTML = '<option value="">Select recipient...</option>' + users.map(u => `<option value="${u.id}">${u.full_name} (${u.role})</option>`).join('');
   } catch (e) {}
 }
 
@@ -2548,14 +2949,18 @@ function nextStep(step) {
     if (i < 3) document.getElementById('line'+i).className = 'step-line' + (i < step ? ' done' : '');
   });
 
+  if (step === 2) {
+    loadNewClientBookingTherapists();
+    ncVcInit();
+  }
   if (step === 3) buildReview();
 }
 
 function validateStep(step) {
   if (step === 1) {
-    const required = ['nc_name','nc_dob','nc_gender','nc_phone','nc_ecname','nc_ecphone'];
+    const required = ['nc_name','nc_dob','nc_gender','nc_phone'];
     for (const id of required) {
-      if (!document.getElementById(id)?.value.trim()) { toast('Please fill all required fields (*)', true); return false; }
+      if (!document.getElementById(id)?.value.trim()) { toast('Please fill Name, Date of Birth, Gender, and Phone (*)', true); return false; }
     }
   }
   return true;
@@ -2563,19 +2968,13 @@ function validateStep(step) {
 
 function buildReview() {
   const rows = [
-    ['Full Name', document.getElementById('nc_name').value],
-    ['Date of Birth', document.getElementById('nc_dob').value],
-    ['Gender', document.getElementById('nc_gender').value],
-    ['Phone', document.getElementById('nc_phone').value],
-    ['Email', document.getElementById('nc_email').value||'-'],
-    ['Address', document.getElementById('nc_address').value||'-'],
-    ['Emergency Contact', document.getElementById('nc_ecname').value + ' - ' + document.getElementById('nc_ecphone').value],
-    ['Language Preference', document.getElementById('nc_lang').value],
-    ['Therapist Gender Pref', document.getElementById('nc_genderpref').value],
-    ['Intake Source', document.getElementById('nc_source').value],
-    ['Preferred Date', document.getElementById('nc_pref_date').value||'-'],
-    ['Preferred Time', document.getElementById('nc_pref_time').value||'-'],
-    ['Presenting Concerns', document.getElementById('nc_concerns').value||'-'],
+    ['Full Name', document.getElementById('nc_name')?.value || '-'],
+    ['Date of Birth', document.getElementById('nc_dob')?.value || '-'],
+    ['Gender', document.getElementById('nc_gender')?.value || '-'],
+    ['Phone', document.getElementById('nc_phone')?.value || '-'],
+    ['Language Preference', document.getElementById('nc_lang')?.value || '-'],
+    ['Intake Source', document.getElementById('nc_source')?.value || '-'],
+    ['Presenting Concerns', document.getElementById('nc_concerns')?.value || '-'],
   ];
   document.getElementById('reviewContent').innerHTML = rows.map(([l,v])=>
     `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
@@ -2583,22 +2982,22 @@ function buildReview() {
       <span style="font-size:13px;font-weight:600;max-width:60%;text-align:right">${v}</span>
     </div>`).join('');
 
+  const bookNow = document.getElementById('nc_book_now')?.checked;
   const appt = {
-    therapist: document.getElementById('nc_book_therapist').selectedOptions?.[0]?.textContent || 'Not selected',
-    date: document.getElementById('nc_book_date').value || 'Not selected',
-    time: document.getElementById('nc_book_start').value || 'Not selected',
-    end: document.getElementById('nc_book_end').value || 'Not selected',
-    room: document.getElementById('nc_book_room').selectedOptions?.[0]?.textContent || 'Auto-assign',
-    location: document.getElementById('nc_book_location').value || 'In-Person',
-    notes: document.getElementById('nc_book_notes').value || 'None'
+    therapist: document.getElementById('nc_book_therapist')?.selectedOptions?.[0]?.textContent || 'Not selected',
+    date: document.getElementById('nc_book_date')?.value || 'Not selected',
+    time: document.getElementById('nc_book_start')?.value || 'Not selected',
+    end: document.getElementById('nc_book_end')?.value || 'Not selected',
+    location: document.getElementById('nc_book_location')?.value || 'In-Person',
+    notes: document.getElementById('nc_book_notes')?.value || 'None'
   };
   document.getElementById('reviewAppointmentContent').innerHTML = `
     <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:10px">
       <div>
         <div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">First Appointment</div>
-        <div style="font-size:16px;font-weight:800;color:var(--navy);margin-top:4px">Optional booking summary</div>
+        <div style="font-size:16px;font-weight:800;color:var(--navy);margin-top:4px">Booking summary</div>
       </div>
-      <span class="badge badge-${document.getElementById('nc_book_now').checked ? 'green' : 'gray'}">${document.getElementById('nc_book_now').checked ? 'Will be created' : 'Not scheduled'}</span>
+      <span class="badge badge-${bookNow ? 'green' : 'gray'}">${bookNow ? 'Will be created' : 'Not scheduled'}</span>
     </div>
     <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;font-size:13px;line-height:1.6">
       <div><strong style="color:var(--navy)">Therapist:</strong> ${appt.therapist}</div>
@@ -2614,29 +3013,25 @@ async function registerClient() {
   const btn = document.getElementById('registerBtn');
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registering...';
   btn.disabled = true;
-  const prefDate = document.getElementById('nc_pref_date').value;
-  const prefTime = document.getElementById('nc_pref_time').value;
-  const concerns = document.getElementById('nc_concerns').value;
-  const extraNotes = document.getElementById('nc_notes').value;
+  const concerns = document.getElementById('nc_concerns')?.value || '';
+  const extraNotes = document.getElementById('nc_notes')?.value || '';
   const notesStr = [
     concerns ? `Presenting Concerns:\n${concerns}` : '',
-    prefDate ? `Preferred Appointment Date: ${prefDate}` : '',
-    prefTime ? `Preferred Appointment Time: ${prefTime}` : '',
     extraNotes ? `Additional Notes:\n${extraNotes}` : ''
   ].filter(Boolean).join('\n\n');
 
   const body = {
-    full_name: document.getElementById('nc_name').value,
-    date_of_birth: document.getElementById('nc_dob').value,
-    gender: document.getElementById('nc_gender').value,
-    phone: document.getElementById('nc_phone').value,
-    email: document.getElementById('nc_email').value,
-    address: document.getElementById('nc_address').value,
-    emergency_contact_name: document.getElementById('nc_ecname').value,
-    emergency_contact_phone: document.getElementById('nc_ecphone').value,
-    language_pref: document.getElementById('nc_lang').value,
-    therapist_gender_pref: document.getElementById('nc_genderpref').value,
-    intake_source: document.getElementById('nc_source').value,
+    full_name: document.getElementById('nc_name')?.value || '',
+    date_of_birth: document.getElementById('nc_dob')?.value || '',
+    gender: document.getElementById('nc_gender')?.value || '',
+    phone: document.getElementById('nc_phone')?.value || '',
+    email: document.getElementById('nc_email')?.value || '',
+    address: document.getElementById('nc_address')?.value || '',
+    emergency_contact_name: document.getElementById('nc_ecname')?.value || '',
+    emergency_contact_phone: document.getElementById('nc_ecphone')?.value || '',
+    language_pref: document.getElementById('nc_lang')?.value || '',
+    therapist_gender_pref: document.getElementById('nc_genderpref')?.value || '',
+    intake_source: document.getElementById('nc_source')?.value || '',
     notes: notesStr,
   };
   try {
@@ -2658,9 +3053,9 @@ async function registerClient() {
               start_time: `${date}T${start}:00`,
               end_time: `${date}T${end || start}:00`,
               type: 'individual',
-              location: document.getElementById('nc_book_location').value,
-              notes: document.getElementById('nc_book_notes').value || '',
-              room_id: document.getElementById('nc_book_room').value || ''
+              location: document.getElementById('nc_book_location')?.value || 'In-Person',
+              notes: document.getElementById('nc_book_notes')?.value || '',
+              room_id: document.getElementById('nc_book_room')?.value || ''
             })
           });
         }
@@ -2670,20 +3065,158 @@ async function registerClient() {
       document.getElementById('newClientCode').textContent = data.client_code;
       await loadAllClients();
       toast('Client registered successfully!');
+    } else {
+      toast(data.error || 'Registration failed', true);
     }
-  } catch(e){ toast('Registration failed', true); }
+  } catch(e) { console.error(e); toast('Registration failed', true); }
+  btn.innerHTML = '<i class="fa-solid fa-user-check"></i> Register Client';
   btn.disabled = false;
 }
 
 function resetClientForm() {
-  ['nc_name','nc_dob','nc_phone','nc_email','nc_address','nc_ecname','nc_ecphone','nc_concerns','nc_notes','nc_pref_date','nc_pref_time','nc_book_notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
-  ['nc_book_therapist','nc_book_location','nc_book_room'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
-  const bookDate = document.getElementById('nc_book_date'); if(bookDate) bookDate.value='';
-  const bookStart = document.getElementById('nc_book_start'); if(bookStart) bookStart.value='09:00';
-  const bookEnd = document.getElementById('nc_book_end'); if(bookEnd) bookEnd.value='10:00';
-  const bookNow = document.getElementById('nc_book_now'); if(bookNow) bookNow.checked=true;
+  ['nc_name','nc_dob','nc_phone','nc_email','nc_concerns','nc_notes','nc_book_notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  ['nc_book_therapist','nc_book_location'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  const bookNow = document.getElementById('nc_book_now'); if(bookNow) bookNow.checked=false;
+  const bookFields = document.getElementById('ncBookFields'); if(bookFields) bookFields.style.display='none';
+  const lbl = document.getElementById('ncVcSelectedLabel'); if(lbl) lbl.style.display='none';
+  ncVcAppointments = [];
+  ncVcSelectedStart = null;
+  ncVcSelectedEnd = null;
+  document.getElementById('nc_book_date').value = '';
+  document.getElementById('nc_book_start').value = '';
+  document.getElementById('nc_book_end').value = '';
+  ncVcRender();
   currentStep = 1;
   nextStep(1);
+}
+
+// ─── New Client Mini Visual Calendar (ncVc) ───
+let ncVcCurrentDate = new Date();
+let ncVcView = 'week';
+let ncVcAppointments = [];
+let ncVcSelectedStart = null;
+let ncVcSelectedEnd = null;
+
+function ncVcInit() {
+  ncVcCurrentDate = new Date();
+  ncVcSelectedStart = null;
+  ncVcSelectedEnd = null;
+  const lbl = document.getElementById('ncVcSelectedLabel');
+  if (lbl) lbl.style.display = 'none';
+  document.getElementById('nc_book_date').value = '';
+  document.getElementById('nc_book_start').value = '';
+  document.getElementById('nc_book_end').value = '';
+  ncVcFetchData();
+}
+
+async function ncVcFetchData() {
+  const therapistId = document.getElementById('nc_book_therapist')?.value;
+  try {
+    const r = await apiFetch('/api/appointments');
+    const all = await r.json();
+    // If a therapist is selected, only show that therapist's appointments to highlight their busy slots
+    ncVcAppointments = therapistId ? all.filter(a => String(a.therapist_id) === String(therapistId)) : all;
+  } catch(e) {
+    ncVcAppointments = [];
+  }
+  ncVcRender();
+}
+
+function ncVcNav(dir) {
+  if (ncVcView === 'day') ncVcCurrentDate.setDate(ncVcCurrentDate.getDate() + dir);
+  else ncVcCurrentDate.setDate(ncVcCurrentDate.getDate() + (dir * 7));
+  ncVcSelectedStart = null;
+  ncVcSelectedEnd = null;
+  const lbl = document.getElementById('ncVcSelectedLabel');
+  if (lbl) lbl.style.display = 'none';
+  ncVcRender();
+}
+
+function ncVcSetView(view) {
+  ncVcView = view;
+  document.getElementById('ncVcBtnDay')?.classList.toggle('active', view === 'day');
+  document.getElementById('ncVcBtnWeek')?.classList.toggle('active', view === 'week');
+  ncVcRender();
+}
+
+function ncVcGetWeekDays(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(d.setDate(diff));
+  const days = [];
+  for (let i = 0; i < 5; i++) {
+    const nd = new Date(monday);
+    nd.setDate(monday.getDate() + i);
+    days.push(nd);
+  }
+  return days;
+}
+
+function ncVcRender() {
+  const grid = document.getElementById('ncVcGrid');
+  const label = document.getElementById('ncVcDateLabel');
+  if (!grid || !label) return;
+  const days = ncVcView === 'day' ? [ncVcCurrentDate] : ncVcGetWeekDays(ncVcCurrentDate);
+  label.textContent = ncVcView === 'day'
+    ? days[0].toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric', year:'numeric'})
+    : `${days[0].toLocaleDateString('en-US', {month:'short', day:'numeric'})} – ${days[4].toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}`;
+  let html = `<div class="vc-time-col"><div class="vc-day-header">Time</div>`;
+  for (let h = 8; h <= 19; h++) {
+    const hour = h > 12 ? h - 12 : h;
+    html += `<div class="vc-time-slot">${hour} ${h >= 12 ? 'PM' : 'AM'}</div>`;
+  }
+  html += `</div><div class="vc-days">`;
+  const today = new Date();
+  days.forEach(day => {
+    const isToday = day.toDateString() === today.toDateString();
+    html += `<div class="vc-day-col"><div class="vc-day-header" style="${isToday ? 'color:var(--primary);font-weight:800' : ''}">${day.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'})}</div>`;
+    for (let h = 8; h <= 19; h++) {
+      const slotStart = new Date(day);
+      slotStart.setHours(h, 0, 0, 0);
+      const slotEnd = new Date(day);
+      slotEnd.setHours(h + 1, 0, 0, 0);
+      const slotStartStr = slotStart.toISOString();
+      const slotEndStr = slotEnd.toISOString();
+      const isPast = slotStart < today;
+      const isBusy = ncVcAppointments.some(a => {
+        if (['cancelled','no_show','terminated'].includes(String(a.status||'').toLowerCase())) return false;
+        const aStart = new Date(a.start_time);
+        const aEnd = new Date(a.end_time || a.start_time);
+        return aStart < slotEnd && aEnd > slotStart;
+      });
+      let cls = 'vc-slot';
+      if (isPast) cls += ' busy';
+      else if (isBusy) cls += ' busy';
+      else cls += ' available';
+      if (ncVcSelectedStart === slotStartStr) cls += ' selected';
+      const onclick = (!isPast && !isBusy) ? `onclick="ncVcSlotClick(this, false)"` : '';
+      html += `<div class="${cls}" data-start="${slotStartStr}" data-end="${slotEndStr}" ${onclick}></div>`;
+    }
+    html += `</div>`;
+  });
+  html += `</div>`;
+  grid.innerHTML = html;
+}
+
+function ncVcSlotClick(el, isBusy) {
+  if (isBusy) return;
+  const start = el.dataset.start;
+  const end = el.dataset.end;
+  ncVcSelectedStart = start;
+  ncVcSelectedEnd = end;
+  const dateHidden = document.getElementById('nc_book_date');
+  const startHidden = document.getElementById('nc_book_start');
+  const endHidden = document.getElementById('nc_book_end');
+  if (dateHidden) dateHidden.value = start.slice(0, 10);
+  if (startHidden) startHidden.value = start.slice(11, 16);
+  if (endHidden) endHidden.value = end.slice(11, 16);
+  const lbl = document.getElementById('ncVcSelectedLabel');
+  if (lbl) {
+    lbl.innerHTML = `<i class="fa-solid fa-calendar-check" style="color:var(--success)"></i> Selected: <strong>${new Date(start).toLocaleString('en-US', {weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</strong> – <strong>${new Date(end).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</strong>`;
+    lbl.style.display = 'block';
+  }
+  ncVcRender();
 }
 
 // â”€â”€â”€ Smart Assignment â”€â”€â”€
