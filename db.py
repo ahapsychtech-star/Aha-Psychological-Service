@@ -59,7 +59,23 @@ class _Cursor:
 
     def execute(self, sql, params=None):
         adapted = self._adapt(sql)
+        is_insert = adapted.lstrip().upper().startswith("INSERT")
+        added_returning = False
+
+        if is_insert and "RETURNING" not in adapted.upper():
+            adapted += " RETURNING id"
+            added_returning = True
+
         self._cur.execute(adapted, params or ())
+
+        if added_returning:
+            try:
+                row = self._cur.fetchone()
+                if row and 'id' in row:
+                    self.lastrowid = row['id']
+            except Exception:
+                pass
+
         self.rowcount = self._cur.rowcount
         return self
 
