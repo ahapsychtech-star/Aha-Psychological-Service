@@ -690,56 +690,94 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
         <div class="step-panel active" id="step1">
           <h3 style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:18px">Personal Information</h3>
           <div class="grid-2">
-            <div class="form-group"><label>Full Name *</label><input type="text" class="form-control" id="nc_name" placeholder="Enter full name"></div>
-            <div class="form-group"><label>Date of Birth *</label><input type="date" class="form-control" id="nc_dob"></div>
-            <div class="form-group"><label>Gender *</label><select class="form-control" id="nc_gender"><option value="">Select gender</option><option>Male</option><option>Female</option><option>Other</option><option>Prefer not to say</option></select></div>
-            <div class="form-group"><label>Phone Number *</label><input type="tel" class="form-control" id="nc_phone" placeholder="+251 9XX XXX XXXX"></div>
-            <div class="form-group"><label>Email Address</label><input type="email" class="form-control" id="nc_email" placeholder="Optional"></div>
-            <div class="form-group"><label>Address</label><input type="text" class="form-control" id="nc_address" placeholder="City, Sub-city, Woreda"></div>
+            <div class="form-group"><label>Full Name <span style="color:var(--danger)">*</span></label><input type="text" class="form-control" id="nc_name" placeholder="Enter full name"></div>
+            <div class="form-group"><label>Date of Birth <span style="color:var(--danger)">*</span></label><input type="date" class="form-control" id="nc_dob"></div>
+            <div class="form-group"><label>Gender <span style="color:var(--danger)">*</span></label><select class="form-control" id="nc_gender"><option value="">Select gender</option><option>Male</option><option>Female</option><option>Other</option><option>Prefer not to say</option></select></div>
+            <div class="form-group"><label>Phone <span style="color:var(--danger)">*</span></label><input type="tel" class="form-control" id="nc_phone" placeholder="+251 9XX XXX XXXX"></div>
           </div>
-          <div class="grid-2">
-            <div class="form-group"><label>Emergency Contact Name *</label><input type="text" class="form-control" id="nc_ecname" placeholder="Emergency contact person"></div>
-            <div class="form-group"><label>Emergency Contact Phone *</label><input type="tel" class="form-control" id="nc_ecphone" placeholder="+251 9XX XXX XXXX"></div>
-          </div>
-          <div style="display:flex;justify-content:flex-end;margin-top:8px">
-            <button class="btn btn-primary" onclick="nextStep(2)">Next: Preferences <i class="fa-solid fa-arrow-right"></i></button>
+          <div style="display:flex;justify-content:flex-end;margin-top:16px">
+            <button class="btn btn-primary" onclick="nextStep(2)">Next: Appointment <i class="fa-solid fa-arrow-right"></i></button>
           </div>
         </div>
 
         <!-- Step 2 -->
         <div class="step-panel" id="step2">
-          <h3 style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:18px">Service Preferences &amp; Concerns</h3>
-          <div class="grid-2">
-            <div class="form-group"><label>Intake Source</label><select class="form-control" id="nc_source"><option>Walk-in</option><option>Referral</option><option>Online</option><option>Phone</option><option>Other</option></select></div>
-            <div class="form-group"><label>Preferred Language</label><select class="form-control" id="nc_lang"><option>English</option><option>Amharic</option><option>Oromiffa</option><option>Tigrinya</option><option>Somali</option></select></div>
-            <div class="form-group"><label>Therapist Gender Preference</label><select class="form-control" id="nc_genderpref"><option>No Preference</option><option>Male</option><option>Female</option></select></div>
-            <div class="form-group"><label>Preferred Appointment Date</label><input type="date" class="form-control" id="nc_pref_date"></div>
-            <div class="form-group"><label>Preferred Appointment Time</label><select class="form-control" id="nc_pref_time">
-              <option value="">Select preferred time</option>
-              <option value="Morning (8am–12pm)">Morning (8am–12pm)</option>
-              <option value="Afternoon (12pm–5pm)">Afternoon (12pm–5pm)</option>
-              <option value="Evening (5pm–8pm)">Evening (5pm–8pm)</option>
-              <option value="Any time">Any time</option>
-            </select></div>
+          <h3 style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:18px"><i class="fa-solid fa-calendar-plus" style="color:var(--primary);margin-right:8px"></i>Concerns &amp; First Appointment</h3>
+          <div class="form-group">
+            <label>Presenting Concerns <span style="color:var(--danger)">*</span></label>
+            <textarea class="form-control" id="nc_concerns" rows="3" placeholder="Briefly describe the client's primary concern, symptoms, or situation..."></textarea>
           </div>
-          <div class="form-group"><label>Presenting Concerns <span style="color:var(--danger)">*</span></label><textarea class="form-control" id="nc_concerns" rows="4" placeholder="Briefly describe why the client is seeking psychological services — their primary concern, symptoms, or situation..."></textarea></div>
-          <div class="form-group"><label>Additional Notes</label><textarea class="form-control" id="nc_notes" style="min-height:80px" placeholder="Any other relevant information, referral source details, special requirements..."></textarea></div>
-          <div class="panel" style="margin:8px 0 18px;background:linear-gradient(180deg,#fff,#fbfdff)">
-            <div class="panel-header" style="margin-bottom:12px">
-              <div class="panel-title"><i class="fa-solid fa-calendar-plus"></i>Book First Appointment</div>
-            </div>
-            <div style="font-size:12.5px;color:var(--text-muted);line-height:1.7;margin-bottom:12px">Optional. If the client is ready, schedule the first visit immediately after registration.</div>
-            <div class="grid-2">
-              <div class="form-group"><label>Therapist</label><select class="form-control" id="nc_book_therapist"><option value="">Select therapist...</option></select></div>
-              <div class="form-group"><label>Location</label><select class="form-control" id="nc_book_location"><option>In-Person</option><option>Online</option><option>Phone</option></select></div>
-              <div class="form-group"><label>Date</label><input type="date" class="form-control" id="nc_book_date"></div>
-              <div class="form-group"><label>Start Time</label><input type="time" class="form-control" id="nc_book_start" value="09:00"></div>
-              <div class="form-group"><label>End Time</label><input type="time" class="form-control" id="nc_book_end" value="10:00"></div>
-              <div class="form-group"><label>Room</label><select class="form-control" id="nc_book_room"><option value="">Auto-assign best available room</option></select></div>
-            </div>
-            <div class="form-group"><label>Appointment Notes</label><textarea class="form-control" id="nc_book_notes" style="min-height:70px" placeholder="Optional appointment notes..."></textarea></div>
-            <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--navy)"><input type="checkbox" id="nc_book_now" checked style="width:16px;height:16px">Create this appointment after registration</label>
+          <div class="form-group">
+            <label>Additional Notes <span style="font-size:11px;color:var(--text-muted)">(optional)</span></label>
+            <textarea class="form-control" id="nc_notes" style="min-height:60px" placeholder="Referral details, special requirements..."></textarea>
           </div>
+          <!-- Book First Appointment -->
+          <div style="border:1.5px solid rgba(4,48,105,.12);border-radius:12px;padding:16px;margin-top:4px;background:linear-gradient(135deg,rgba(4,48,105,.025),rgba(59,130,246,.03))">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <div>
+                <div style="font-size:14px;font-weight:800;color:var(--navy)"><i class="fa-solid fa-calendar-days" style="color:var(--primary);margin-right:6px"></i>Book First Appointment</div>
+                <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">Optional — schedule the first session right now</div>
+              </div>
+              <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;font-weight:700;color:var(--navy)">
+                <input type="checkbox" id="nc_book_now" onchange="document.getElementById('ncBookFields').style.display=this.checked?'block':'none'" style="width:16px;height:16px;accent-color:var(--primary)"> Book Now
+              </label>
+            </div>
+            <div id="ncBookFields" style="display:none">
+              <div class="form-group" style="margin-bottom:10px">
+                <label>Assign Therapist <span style="color:var(--danger)">*</span></label>
+                <select class="form-control" id="nc_book_therapist" onchange="ncVcFetchData()">
+                  <option value="">Select therapist...</option>
+                </select>
+              </div>
+              <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">
+                <i class="fa-solid fa-hand-pointer" style="margin-right:4px;color:var(--primary)"></i>Click a slot to select date &amp; time
+              </div>
+              <div class="vc-container" style="border-radius:10px;margin-bottom:10px">
+                <div class="vc-header">
+                  <div class="vc-nav">
+                    <button type="button" onclick="ncVcNav(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                    <div class="vc-date-label" id="ncVcDateLabel">Loading...</div>
+                    <button type="button" onclick="ncVcNav(1)"><i class="fa-solid fa-chevron-right"></i></button>
+                  </div>
+                  <div class="vc-view-toggle">
+                    <button type="button" id="ncVcBtnDay" onclick="ncVcSetView('day')">Day</button>
+                    <button type="button" id="ncVcBtnWeek" class="active" onclick="ncVcSetView('week')">Week</button>
+                  </div>
+                </div>
+                <div class="vc-grid-wrap" style="max-height:240px;overflow-y:auto">
+                  <div class="vc-grid" id="ncVcGrid"></div>
+                </div>
+              </div>
+              <div style="display:flex;gap:12px;font-size:11px;color:var(--text-muted);margin-bottom:10px;flex-wrap:wrap">
+                <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(59,130,246,.18);border:1px solid rgba(59,130,246,.3);margin-right:4px"></span>Available</span>
+                <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);margin-right:4px"></span>Busy</span>
+                <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--primary);margin-right:4px"></span>Selected</span>
+              </div>
+              <input type="hidden" id="nc_book_date">
+              <input type="hidden" id="nc_book_start">
+              <input type="hidden" id="nc_book_end">
+              <div id="ncVcSelectedLabel" style="display:none;font-size:12.5px;font-weight:700;color:var(--navy);padding:8px 12px;background:rgba(59,130,246,.07);border-radius:8px;border:1px solid rgba(59,130,246,.2);margin-bottom:10px"></div>
+              <div class="form-group" style="margin-bottom:10px">
+                <label>Repeat Schedule</label>
+                <select class="form-control" id="nc_recur">
+                  <option value="none">Does not repeat</option>
+                  <option value="weekly_4">Weekly &mdash; 4 sessions</option>
+                  <option value="weekly_8">Weekly &mdash; 8 sessions</option>
+                  <option value="weekly_12">Weekly &mdash; 12 sessions</option>
+                  <option value="biweekly_4">Every 2 weeks &mdash; 4 sessions</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom:10px">
+                <label>Session Location</label>
+                <select class="form-control" id="nc_book_location"><option>In-Person</option><option>Online</option><option>Phone</option></select>
+              </div>
+              <div class="form-group">
+                <label>Appointment Notes <span style="font-size:11px;color:var(--text-muted)">(optional)</span></label>
+                <input type="text" class="form-control" id="nc_book_notes" placeholder="Any notes for the therapist...">
+              </div>
+            </div>
+          </div>
+
           <div style="display:flex;justify-content:space-between;margin-top:8px">
             <button class="btn btn-ghost" onclick="nextStep(1)"><i class="fa-solid fa-arrow-left"></i> Back</button>
             <button class="btn btn-primary" onclick="nextStep(3)">Review <i class="fa-solid fa-arrow-right"></i></button>
@@ -2559,7 +2597,22 @@ function validateStep(step) {
   if (step === 1) {
     const required = ['nc_name','nc_dob','nc_gender','nc_phone'];
     for (const id of required) {
-      if (!document.getElementById(id)?.value.trim()) { toast('Please fill Name, Date of Birth, Gender, and Phone (*)', true); return false; }
+      if (!document.getElementById(id)?.value.trim()) {
+        toast('Please fill Name, Date of Birth, Gender, and Phone', true);
+        return false;
+      }
+    }
+  }
+  if (step === 2) {
+    if (document.getElementById('nc_book_now')?.checked) {
+      if (!document.getElementById('nc_book_therapist')?.value) {
+        toast('Please select a therapist for the appointment', true);
+        return false;
+      }
+      if (!document.getElementById('nc_book_date')?.value) {
+        toast('Please click a time slot on the calendar to select date & time', true);
+        return false;
+      }
     }
   }
   return true;
@@ -2571,102 +2624,135 @@ function buildReview() {
     ['Date of Birth', document.getElementById('nc_dob')?.value || '-'],
     ['Gender', document.getElementById('nc_gender')?.value || '-'],
     ['Phone', document.getElementById('nc_phone')?.value || '-'],
-    ['Language Preference', document.getElementById('nc_lang')?.value || '-'],
-    ['Intake Source', document.getElementById('nc_source')?.value || '-'],
     ['Presenting Concerns', document.getElementById('nc_concerns')?.value || '-'],
   ];
   document.getElementById('reviewContent').innerHTML = rows.map(([l,v])=>
     `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
       <span style="font-size:12px;font-weight:700;color:var(--text-muted)">${l}</span>
-      <span style="font-size:13px;font-weight:600;max-width:60%;text-align:right">${v}</span>
+      <span style="font-size:13px;font-weight:600;max-width:60%;text-align:right;word-break:break-word">${v}</span>
     </div>`).join('');
 
   const bookNow = document.getElementById('nc_book_now')?.checked;
+  const recurSel = document.getElementById('nc_recur');
+  const recurLabel = recurSel?.options[recurSel.selectedIndex]?.text || 'Does not repeat';
+  const startDt = document.getElementById('nc_book_date')?.value;
+  const startTm = document.getElementById('nc_book_start')?.value;
+  const endTm   = document.getElementById('nc_book_end')?.value;
   const appt = {
     therapist: document.getElementById('nc_book_therapist')?.selectedOptions?.[0]?.textContent || 'Not selected',
-    date: document.getElementById('nc_book_date')?.value || 'Not selected',
-    time: document.getElementById('nc_book_start')?.value || 'Not selected',
-    end: document.getElementById('nc_book_end')?.value || 'Not selected',
+    date: startDt || 'Not selected',
+    time: (startTm && endTm) ? `${startTm} – ${endTm}` : 'Not selected',
     location: document.getElementById('nc_book_location')?.value || 'In-Person',
+    recur: recurLabel,
     notes: document.getElementById('nc_book_notes')?.value || 'None'
   };
   document.getElementById('reviewAppointmentContent').innerHTML = `
     <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:10px">
       <div>
-        <div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">First Appointment</div>
-        <div style="font-size:16px;font-weight:800;color:var(--navy);margin-top:4px">Booking summary</div>
+        <div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted)">First Appointment</div>
+        <div style="font-size:15px;font-weight:800;color:var(--navy);margin-top:2px">Booking Summary</div>
       </div>
-      <span class="badge badge-${bookNow ? 'green' : 'gray'}">${bookNow ? 'Will be created' : 'Not scheduled'}</span>
+      <span class="badge badge-${bookNow ? 'green' : 'gray'}">${bookNow ? 'Will be booked' : 'Not scheduled'}</span>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;font-size:13px;line-height:1.6">
+    ${bookNow ? `<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;font-size:13px">
       <div><strong style="color:var(--navy)">Therapist:</strong> ${appt.therapist}</div>
       <div><strong style="color:var(--navy)">Location:</strong> ${appt.location}</div>
       <div><strong style="color:var(--navy)">Date:</strong> ${appt.date}</div>
-      <div><strong style="color:var(--navy)">Time:</strong> ${appt.time} – ${appt.end}</div>
-      <div><strong style="color:var(--navy)">Notes:</strong> ${appt.notes}</div>
-    </div>`;
+      <div><strong style="color:var(--navy)">Time:</strong> ${appt.time}</div>
+      <div style="grid-column:1/-1"><strong style="color:var(--navy)">Schedule:</strong> ${appt.recur}</div>
+      <div style="grid-column:1/-1"><strong style="color:var(--navy)">Notes:</strong> ${appt.notes}</div>
+    </div>` : '<p style="color:var(--text-muted);font-size:13px;margin:0">No appointment will be created.</p>'}`;
 }
 
 async function registerClient() {
   const btn = document.getElementById('registerBtn');
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registering...';
   btn.disabled = true;
+
   const concerns = document.getElementById('nc_concerns')?.value || '';
   const extraNotes = document.getElementById('nc_notes')?.value || '';
   const notesStr = [
     concerns ? `Presenting Concerns:\n${concerns}` : '',
-    extraNotes ? `Additional Notes:\n${extraNotes}` : ''
+    extraNotes ? `Notes:\n${extraNotes}` : ''
   ].filter(Boolean).join('\n\n');
+
+  const therapistId = document.getElementById('nc_book_therapist')?.value || null;
 
   const body = {
     full_name: document.getElementById('nc_name')?.value || '',
     date_of_birth: document.getElementById('nc_dob')?.value || '',
     gender: document.getElementById('nc_gender')?.value || '',
     phone: document.getElementById('nc_phone')?.value || '',
-    email: document.getElementById('nc_email')?.value || '',
-    address: document.getElementById('nc_address')?.value || '',
-    emergency_contact_name: document.getElementById('nc_ecname')?.value || '',
-    emergency_contact_phone: document.getElementById('nc_ecphone')?.value || '',
-    language_pref: document.getElementById('nc_lang')?.value || '',
-    therapist_gender_pref: document.getElementById('nc_genderpref')?.value || '',
-    intake_source: document.getElementById('nc_source')?.value || '',
+    email: '', address: '',
+    emergency_contact_name: '', emergency_contact_phone: '',
+    language_pref: 'English', therapist_gender_pref: 'No Preference', intake_source: 'Walk-in',
     notes: notesStr,
+    assigned_therapist_id: therapistId ? parseInt(therapistId) : null
   };
+
   try {
     const r = await apiFetch('/api/clients', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const data = await r.json();
-    if (data.success) {
-      if (document.getElementById('nc_book_now')?.checked) {
-        const therapistId = document.getElementById('nc_book_therapist').value;
-        const date = document.getElementById('nc_book_date').value;
-        const start = document.getElementById('nc_book_start').value;
-        const end = document.getElementById('nc_book_end').value;
-        if (therapistId && date && start) {
-          await apiFetch('/api/appointments', {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({
-              client_id: data.client_id,
-              therapist_id: therapistId,
-              start_time: `${date}T${start}:00`,
-              end_time: `${date}T${end || start}:00`,
-              type: 'individual',
-              location: document.getElementById('nc_book_location')?.value || 'In-Person',
-              notes: document.getElementById('nc_book_notes')?.value || '',
-              room_id: document.getElementById('nc_book_room')?.value || ''
-            })
-          });
+
+    if (!data.success) {
+      toast(data.error || 'Registration failed', true);
+      btn.innerHTML = '<i class="fa-solid fa-user-check"></i> Register Client';
+      btn.disabled = false;
+      return;
+    }
+
+    if (document.getElementById('nc_book_now')?.checked) {
+      const date = document.getElementById('nc_book_date')?.value;
+      const start = document.getElementById('nc_book_start')?.value;
+      const end = document.getElementById('nc_book_end')?.value;
+      const location = document.getElementById('nc_book_location')?.value || 'In-Person';
+      const notes = document.getElementById('nc_book_notes')?.value || '';
+      const recurVal = document.getElementById('nc_recur')?.value || 'none';
+
+      if (therapistId && date && start) {
+        const dates = [date];
+        if (recurVal !== 'none') {
+          const parts = recurVal.split('_');
+          const interval = parts[0] === 'biweekly' ? 14 : 7;
+          const count = parseInt(parts[1]) || 4;
+          const base = new Date(date);
+          for (let i = 1; i < count; i++) {
+            const next = new Date(base);
+            next.setDate(base.getDate() + interval * i);
+            dates.push(next.toISOString().slice(0,10));
+          }
+        }
+        for (const d of dates) {
+          try {
+            await apiFetch('/api/appointments', {
+              method: 'POST',
+              headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({
+                client_id: data.client_id,
+                therapist_id: parseInt(therapistId),
+                start_time: `${d}T${start}:00`,
+                end_time: `${d}T${end || start}:00`,
+                type: 'individual',
+                location: location,
+                notes: notes,
+                room_id: ''
+              })
+            });
+          } catch(e) { console.error('Appt error:', e); }
         }
       }
-      document.querySelectorAll('.step-panel').forEach(p=>p.classList.remove('active'));
-      document.getElementById('step4').classList.add('active');
-      document.getElementById('newClientCode').textContent = data.client_code;
-      await loadAllClients();
-      toast('Client registered successfully!');
-    } else {
-      toast(data.error || 'Registration failed', true);
     }
-  } catch(e) { console.error(e); toast('Registration failed', true); }
+
+    document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('step4').classList.add('active');
+    document.getElementById('newClientCode').textContent = data.client_code;
+    await loadAllClients();
+    toast('Client registered successfully!');
+  } catch(e) {
+    console.error(e);
+    toast('Registration failed', true);
+  }
+
   btn.innerHTML = '<i class="fa-solid fa-user-check"></i> Register Client';
   btn.disabled = false;
 }
@@ -2726,7 +2812,7 @@ function ncVcNav(dir) {
   ncVcSelectedEnd = null;
   const lbl = document.getElementById('ncVcSelectedLabel');
   if (lbl) lbl.style.display = 'none';
-  ncVcRender();
+  ncVcFetchData();
 }
 
 function ncVcSetView(view) {
@@ -2742,7 +2828,7 @@ function ncVcGetWeekDays(date) {
   const diff = d.getDate() - day + (day === 0 ? -6 : 1);
   const monday = new Date(d.setDate(diff));
   const days = [];
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 7; i++) {
     const nd = new Date(monday);
     nd.setDate(monday.getDate() + i);
     days.push(nd);
@@ -2756,8 +2842,8 @@ function ncVcRender() {
   if (!grid || !label) return;
   const days = ncVcView === 'day' ? [ncVcCurrentDate] : ncVcGetWeekDays(ncVcCurrentDate);
   label.textContent = ncVcView === 'day'
-    ? days[0].toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric', year:'numeric'})
-    : `${days[0].toLocaleDateString('en-US', {month:'short', day:'numeric'})} – ${days[4].toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}`;
+    ? days[0].toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'})
+    : `${days[0].toLocaleDateString('en-US', {month:'short', day:'numeric'})} – ${days[6].toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}`;
   let html = `<div class="vc-time-col"><div class="vc-day-header">Time</div>`;
   for (let h = 8; h <= 19; h++) {
     const hour = h > 12 ? h - 12 : h;
@@ -2787,7 +2873,7 @@ function ncVcRender() {
       else if (isBusy) cls += ' busy';
       else cls += ' available';
       if (ncVcSelectedStart === slotStartStr) cls += ' selected';
-      const onclick = (!isPast && !isBusy) ? `onclick="ncVcSlotClick(this, false)"` : '';
+      const onclick = (!isPast && !isBusy) ? `onclick="ncVcSlotClick(this)"` : '';
       html += `<div class="${cls}" data-start="${slotStartStr}" data-end="${slotEndStr}" ${onclick}></div>`;
     }
     html += `</div>`;
@@ -2796,21 +2882,22 @@ function ncVcRender() {
   grid.innerHTML = html;
 }
 
-function ncVcSlotClick(el, isBusy) {
-  if (isBusy) return;
+function ncVcSlotClick(el) {
   const start = el.dataset.start;
-  const end = el.dataset.end;
+  const end   = el.dataset.end;
   ncVcSelectedStart = start;
-  ncVcSelectedEnd = end;
-  const dateHidden = document.getElementById('nc_book_date');
+  ncVcSelectedEnd   = end;
+  const dateHidden  = document.getElementById('nc_book_date');
   const startHidden = document.getElementById('nc_book_start');
-  const endHidden = document.getElementById('nc_book_end');
-  if (dateHidden) dateHidden.value = start.slice(0, 10);
+  const endHidden   = document.getElementById('nc_book_end');
+  if (dateHidden)  dateHidden.value  = start.slice(0, 10);
   if (startHidden) startHidden.value = start.slice(11, 16);
-  if (endHidden) endHidden.value = end.slice(11, 16);
+  if (endHidden)   endHidden.value   = end.slice(11, 16);
   const lbl = document.getElementById('ncVcSelectedLabel');
   if (lbl) {
-    lbl.innerHTML = `<i class="fa-solid fa-calendar-check" style="color:var(--success)"></i> Selected: <strong>${new Date(start).toLocaleString('en-US', {weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</strong> – <strong>${new Date(end).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</strong>`;
+    const startFmt = new Date(start).toLocaleString('en-US', {weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+    const endFmt   = new Date(end).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    lbl.innerHTML = `<i class="fa-solid fa-calendar-check" style="color:var(--success)"></i> <strong>${startFmt}</strong> – <strong>${endFmt}</strong>`;
     lbl.style.display = 'block';
   }
   ncVcRender();

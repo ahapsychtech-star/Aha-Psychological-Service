@@ -4570,48 +4570,36 @@ def get_clients():
 
 
 @app.route('/api/clients', methods=['POST'])
-
 def create_client():
-
     if not require_role('admin', 'receptionist'):
-
         return jsonify({'error': 'Unauthorized'}), 401
 
     data = request.json or {}
-
     code = generate_client_code()
+    assigned_therapist_id = data.get('assigned_therapist_id') or None
 
     with get_db() as conn:
-
         cur = conn.execute('''INSERT INTO clients (full_name,date_of_birth,gender,phone,email,address,
-
             emergency_contact_name,emergency_contact_phone,language_pref,therapist_gender_pref,
-
-            intake_source,notes,client_code,status)
-
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
-
+            intake_source,notes,client_code,status,assigned_therapist_id)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
             (data.get('full_name',''), data.get('date_of_birth',''), data.get('gender',''),
-
              data.get('phone',''), data.get('email',''), data.get('address',''),
-
              data.get('emergency_contact_name',''), data.get('emergency_contact_phone',''),
-
              data.get('language_pref','English'), data.get('therapist_gender_pref','No Preference'),
-
-             data.get('intake_source','walk-in'), data.get('notes',''), code, 'registered'))
+             data.get('intake_source','walk-in'), data.get('notes',''), code, 'registered',
+             assigned_therapist_id))
 
         client_id = cur.lastrowid
 
         conn.execute('INSERT INTO client_journey (client_id, stage, changed_by, notes) VALUES (?,?,?,?)',
-
                      (client_id, 'registered', current_user()['id'], 'Client registered'))
 
         conn.commit()
 
     log_action(current_user()['id'], 'CREATE_CLIENT', 'clients', f'Registered client {code}')
-
     return jsonify({'success': True, 'client_id': client_id, 'client_code': code}), 201
+
 
 
 
