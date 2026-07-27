@@ -718,6 +718,12 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
           </div>
           <div class="grid-2">
             <div class="form-group">
+              <label>Assign Therapist</label>
+              <select class="form-control" id="nc_book_therapist" onchange="ncVcFetchData();ncLoadRooms()">
+                <option value="">Select therapist...</option>
+              </select>
+            </div>
+            <div class="form-group">
               <label>Therapist Gender Preference</label>
               <select class="form-control" id="nc_genderpref">
                 <option value="No Preference">No Preference</option>
@@ -725,10 +731,10 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
                 <option value="Female">Female Therapist</option>
               </select>
             </div>
-            <div class="form-group">
-              <label>Additional Notes <span style="font-size:11px;color:var(--text-muted)">(optional)</span></label>
-              <textarea class="form-control" id="nc_notes" style="min-height:52px" placeholder="Referral details, special requirements..."></textarea>
-            </div>
+          </div>
+          <div class="form-group">
+            <label>Additional Notes <span style="font-size:11px;color:var(--text-muted)">(optional)</span></label>
+            <textarea class="form-control" id="nc_notes" style="min-height:52px" placeholder="Referral details, special requirements..."></textarea>
           </div>
           <!-- Book First Appointment -->
           <div style="border:1.5px solid rgba(4,48,105,.12);border-radius:12px;padding:16px;margin-top:4px;background:linear-gradient(135deg,rgba(4,48,105,.025),rgba(59,130,246,.03))">
@@ -743,12 +749,6 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
             </div>
             <div id="ncBookFields" style="display:none">
               <div class="grid-2" style="margin-bottom:10px">
-                <div class="form-group" style="margin-bottom:0">
-                  <label>Assign Therapist <span style="color:var(--danger)">*</span></label>
-                  <select class="form-control" id="nc_book_therapist" onchange="ncVcFetchData();ncLoadRooms()">
-                    <option value="">Select therapist...</option>
-                  </select>
-                </div>
                 <div class="form-group" style="margin-bottom:0">
                   <label>Room Assignment</label>
                   <select class="form-control" id="nc_book_room">
@@ -1658,7 +1658,7 @@ async function renderWeekView() {
         const hr = parseInt(t.includes('T')?t.split('T')[1]:t.split(' ')[1]);
         return hr === h;
       });
-      html += `<div class="week-cell">${cellAppts.map((a,ai)=>`<div class="week-appt" style="background:${appointmentVisual(a).palette.base}" onclick='alert("${a.client_name} with ${a.therapist_name}")'>${a.client_name?.split(' ')[0]}</div>`).join('')}</div>`;
+      html += `<div class="week-cell">${cellAppts.map((a,ai)=>`<div class="week-appt" style="background:${appointmentVisual(a).palette.base}" onclick='alert("${a.client_name} with ${a.therapist_name}")'>${a.client_name?.split(' ')[0]} ${a.room_name ? '('+a.room_name+')' : ''}</div>`).join('')}</div>`;
     });
   });
   html += '</div>';
@@ -1689,7 +1689,7 @@ async function showDayDetail(dateStr, label) {
           <div class="event-time">${formatApptTime(a.start_time)}</div>
           <div class="event-info">
             <div class="ev-name">${a.client_name}</div>
-            <div class="ev-sub">${a.therapist_name || '-'} - ${a.type} - ${a.location || '-'}</div>
+            <div class="ev-sub">${a.therapist_name || '-'} - ${a.type} - ${a.location || '-'} ${a.room_name ? '('+a.room_name+')' : ''}</div>
           </div>
           <div class="event-status" onclick="event.stopPropagation()">
             <button class="btn btn-ghost btn-sm" onclick="openClientDrawer(${a.client_id})"><i class="fa-regular fa-user"></i>Client</button>
@@ -2684,6 +2684,7 @@ function buildReview() {
     ['Gender', document.getElementById('nc_gender')?.value || '-'],
     ['Phone', document.getElementById('nc_phone')?.value || '-'],
     ['Presenting Concerns', document.getElementById('nc_concerns')?.value || '-'],
+    ['Assigned Therapist', document.getElementById('nc_book_therapist')?.value ? document.getElementById('nc_book_therapist')?.selectedOptions?.[0]?.textContent : 'Not Assigned']
   ];
   document.getElementById('reviewContent').innerHTML = rows.map(([l,v])=>
     `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
@@ -2930,8 +2931,9 @@ function ncVcRender() {
       slotStart.setHours(h, 0, 0, 0);
       const slotEnd = new Date(day);
       slotEnd.setHours(h + 1, 0, 0, 0);
-      const slotStartStr = slotStart.toISOString();
-      const slotEndStr = slotEnd.toISOString();
+      const pad = n => (n<10?'0':'')+n;
+      const slotStartStr = `${day.getFullYear()}-${pad(day.getMonth()+1)}-${pad(day.getDate())}T${pad(h)}:00:00`;
+      const slotEndStr = `${day.getFullYear()}-${pad(day.getMonth()+1)}-${pad(day.getDate())}T${pad(h+1)}:00:00`;
       const isPast = slotStart < today;
       const isBusy = ncVcAppointments.some(a => {
         if (['cancelled','no_show','terminated'].includes(String(a.status||'').toLowerCase())) return false;
