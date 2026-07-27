@@ -436,23 +436,32 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
   height: 40px;
   border-bottom: 1px solid var(--border);
   cursor: pointer;
-  transition: 0.2s;
+  transition: background 0.15s;
   box-sizing: border-box;
   position: relative;
 }
-.vc-slot:hover {
-  background: rgba(16,185,129,0.05);
-}
 .vc-slot.available {
-  background: rgba(16,185,129,0.02);
+  background: rgba(16,185,129,0.06);
+}
+.vc-slot.available:hover {
+  background: rgba(16,185,129,0.18);
+  border-left: 3px solid #10b981;
 }
 .vc-slot.busy {
-  background: rgba(100,116,139,0.05);
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(239,68,68,0.07),
+    rgba(239,68,68,0.07) 4px,
+    rgba(239,68,68,0.02) 4px,
+    rgba(239,68,68,0.02) 8px
+  );
+  border-left: 3px solid rgba(239,68,68,0.5);
   cursor: not-allowed;
 }
 .vc-slot.selected {
-  background: rgba(59,130,246,0.15) !important;
-  border: 1px solid var(--info);
+  background: rgba(59,130,246,0.2) !important;
+  border-left: 3px solid var(--primary) !important;
+  border-bottom: 1px solid rgba(59,130,246,0.3);
   z-index: 1;
 }
 .vc-appt {
@@ -707,9 +716,19 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
             <label>Presenting Concerns <span style="color:var(--danger)">*</span></label>
             <textarea class="form-control" id="nc_concerns" rows="3" placeholder="Briefly describe the client's primary concern, symptoms, or situation..."></textarea>
           </div>
-          <div class="form-group">
-            <label>Additional Notes <span style="font-size:11px;color:var(--text-muted)">(optional)</span></label>
-            <textarea class="form-control" id="nc_notes" style="min-height:60px" placeholder="Referral details, special requirements..."></textarea>
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Therapist Gender Preference</label>
+              <select class="form-control" id="nc_genderpref">
+                <option value="No Preference">No Preference</option>
+                <option value="Male">Male Therapist</option>
+                <option value="Female">Female Therapist</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Additional Notes <span style="font-size:11px;color:var(--text-muted)">(optional)</span></label>
+              <textarea class="form-control" id="nc_notes" style="min-height:52px" placeholder="Referral details, special requirements..."></textarea>
+            </div>
           </div>
           <!-- Book First Appointment -->
           <div style="border:1.5px solid rgba(4,48,105,.12);border-radius:12px;padding:16px;margin-top:4px;background:linear-gradient(135deg,rgba(4,48,105,.025),rgba(59,130,246,.03))">
@@ -723,14 +742,22 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
               </label>
             </div>
             <div id="ncBookFields" style="display:none">
-              <div class="form-group" style="margin-bottom:10px">
-                <label>Assign Therapist <span style="color:var(--danger)">*</span></label>
-                <select class="form-control" id="nc_book_therapist" onchange="ncVcFetchData()">
-                  <option value="">Select therapist...</option>
-                </select>
+              <div class="grid-2" style="margin-bottom:10px">
+                <div class="form-group" style="margin-bottom:0">
+                  <label>Assign Therapist <span style="color:var(--danger)">*</span></label>
+                  <select class="form-control" id="nc_book_therapist" onchange="ncVcFetchData();ncLoadRooms()">
+                    <option value="">Select therapist...</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom:0">
+                  <label>Room Assignment</label>
+                  <select class="form-control" id="nc_book_room">
+                    <option value="">Auto-assign best available room</option>
+                  </select>
+                </div>
               </div>
               <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">
-                <i class="fa-solid fa-hand-pointer" style="margin-right:4px;color:var(--primary)"></i>Click a slot to select date &amp; time
+                <i class="fa-solid fa-hand-pointer" style="margin-right:4px;color:var(--primary)"></i>Click a <span style="color:#10b981">green slot</span> to pick date &amp; time &mdash; <span style="color:#ef4444">red = already booked</span>
               </div>
               <div class="vc-container" style="border-radius:10px;margin-bottom:10px">
                 <div class="vc-header">
@@ -744,32 +771,36 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
                     <button type="button" id="ncVcBtnWeek" class="active" onclick="ncVcSetView('week')">Week</button>
                   </div>
                 </div>
-                <div class="vc-grid-wrap" style="max-height:240px;overflow-y:auto">
+                <div class="vc-grid-wrap" style="max-height:260px;overflow-y:auto">
                   <div class="vc-grid" id="ncVcGrid"></div>
                 </div>
               </div>
-              <div style="display:flex;gap:12px;font-size:11px;color:var(--text-muted);margin-bottom:10px;flex-wrap:wrap">
-                <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(59,130,246,.18);border:1px solid rgba(59,130,246,.3);margin-right:4px"></span>Available</span>
-                <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);margin-right:4px"></span>Busy</span>
-                <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--primary);margin-right:4px"></span>Selected</span>
+              <!-- Legend -->
+              <div style="display:flex;gap:14px;font-size:11.5px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
+                <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgba(16,185,129,.18);border-left:3px solid #10b981"></span><span style="color:var(--text-muted)">Available — click to select</span></span>
+                <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:repeating-linear-gradient(45deg,rgba(239,68,68,.1),rgba(239,68,68,.1) 4px,rgba(239,68,68,.02) 4px,rgba(239,68,68,.02) 8px);border-left:3px solid rgba(239,68,68,.5)"></span><span style="color:var(--text-muted)">Busy — another client booked</span></span>
+                <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgba(59,130,246,.2);border-left:3px solid var(--primary)"></span><span style="color:var(--text-muted)">Selected</span></span>
               </div>
+              <!-- Hidden fields -->
               <input type="hidden" id="nc_book_date">
               <input type="hidden" id="nc_book_start">
               <input type="hidden" id="nc_book_end">
               <div id="ncVcSelectedLabel" style="display:none;font-size:12.5px;font-weight:700;color:var(--navy);padding:8px 12px;background:rgba(59,130,246,.07);border-radius:8px;border:1px solid rgba(59,130,246,.2);margin-bottom:10px"></div>
-              <div class="form-group" style="margin-bottom:10px">
-                <label>Repeat Schedule</label>
-                <select class="form-control" id="nc_recur">
-                  <option value="none">Does not repeat</option>
-                  <option value="weekly_4">Weekly &mdash; 4 sessions</option>
-                  <option value="weekly_8">Weekly &mdash; 8 sessions</option>
-                  <option value="weekly_12">Weekly &mdash; 12 sessions</option>
-                  <option value="biweekly_4">Every 2 weeks &mdash; 4 sessions</option>
-                </select>
-              </div>
-              <div class="form-group" style="margin-bottom:10px">
-                <label>Session Location</label>
-                <select class="form-control" id="nc_book_location"><option>In-Person</option><option>Online</option><option>Phone</option></select>
+              <div class="grid-2">
+                <div class="form-group" style="margin-bottom:10px">
+                  <label>Repeat Schedule</label>
+                  <select class="form-control" id="nc_recur">
+                    <option value="none">Does not repeat</option>
+                    <option value="weekly_4">Weekly &mdash; 4 sessions</option>
+                    <option value="weekly_8">Weekly &mdash; 8 sessions</option>
+                    <option value="weekly_12">Weekly &mdash; 12 sessions</option>
+                    <option value="biweekly_4">Every 2 weeks &mdash; 4 sessions</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom:10px">
+                  <label>Session Location</label>
+                  <select class="form-control" id="nc_book_location"><option>In-Person</option><option>Online</option><option>Phone</option></select>
+                </div>
               </div>
               <div class="form-group">
                 <label>Appointment Notes <span style="font-size:11px;color:var(--text-muted)">(optional)</span></label>
@@ -778,15 +809,15 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
             </div>
           </div>
 
-          <div style="display:flex;justify-content:space-between;margin-top:8px">
+          <div style="display:flex;justify-content:space-between;margin-top:16px">
             <button class="btn btn-ghost" onclick="nextStep(1)"><i class="fa-solid fa-arrow-left"></i> Back</button>
-            <button class="btn btn-primary" onclick="nextStep(3)">Review <i class="fa-solid fa-arrow-right"></i></button>
+            <button class="btn btn-primary" onclick="nextStep(3)">Review &amp; Register <i class="fa-solid fa-arrow-right"></i></button>
           </div>
         </div>
 
         <!-- Step 3 -->
         <div class="step-panel" id="step3">
-          <h3 style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:18px">Review & Register</h3>
+          <h3 style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:18px">Review &amp; Register</h3>
         <div id="reviewContent" style="background:var(--bg);border-radius:12px;padding:20px;margin-bottom:20px"></div>
         <div id="reviewAppointmentContent" style="background:linear-gradient(180deg,#fff,#fbfdff);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:20px"></div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
@@ -802,8 +833,9 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
             <h2 style="font-size:20px;font-weight:800;color:var(--navy);margin-bottom:8px">Client Registered!</h2>
             <p style="color:var(--text-muted);margin-bottom:6px">Client has been successfully registered.</p>
             <div style="font-size:24px;font-weight:800;color:var(--navy);background:rgba(4,48,105,.06);border-radius:10px;padding:12px 24px;display:inline-block;margin:16px 0" id="newClientCode"></div>
+            <div id="step4AssignMsg" style="font-size:13px;color:var(--success);font-weight:700;margin-bottom:8px;display:none"><i class="fa-solid fa-link"></i> Therapist assigned successfully.</div>
             <div style="display:flex;gap:12px;justify-content:center;margin-top:8px">
-              <button class="btn btn-gold" onclick="showSection('assignment')"><i class="fa-solid fa-wand-magic-sparkles"></i>Assign Therapist</button>
+              <button class="btn btn-gold" id="step4AssignBtn" onclick="showSection('assignment')"><i class="fa-solid fa-wand-magic-sparkles"></i>Assign Therapist</button>
               <button class="btn btn-outline" onclick="resetClientForm()"><i class="fa-solid fa-plus"></i>Register Another</button>
             </div>
           </div>
@@ -1956,9 +1988,36 @@ async function loadNewClientBookingTherapists() {
     const therapists = users.filter(u => u.role === 'therapist' && u.is_active);
     const sel = document.getElementById('nc_book_therapist');
     if (sel) {
-      sel.innerHTML = '<option value="">Select therapist...</option>' + therapists.map(t => `<option value="${t.id}">${t.full_name}${t.specialization ? ` - ${t.specialization}` : ''}${t.languages ? ` - ${t.languages}` : ''}</option>`).join('');
+      sel.innerHTML = '<option value="">Select therapist...</option>' + therapists.map(t => `<option value="${t.id}">${t.full_name}${t.specialization ? ` - ${t.specialization}` : ''}</option>`).join('');
     }
   } catch (e) {}
+}
+
+async function ncLoadRooms() {
+  const roomSelect = document.getElementById('nc_book_room');
+  if (!roomSelect) return;
+  const date  = document.getElementById('nc_book_date')?.value;
+  const start = document.getElementById('nc_book_start')?.value;
+  const end   = document.getElementById('nc_book_end')?.value || start;
+  if (!date || !start) {
+    roomSelect.innerHTML = '<option value="">Auto-assign best available room</option>';
+    return;
+  }
+  try {
+    const params = new URLSearchParams({ start: `${date}T${start}:00`, end: `${date}T${end}:00` });
+    const r = await apiFetch(`/api/rooms/available?${params.toString()}`);
+    const data = await r.json();
+    const available = data.rooms || [];
+    const all = data.all_rooms || available;
+    const availIds = new Set(available.map(rm => String(rm.id)));
+    roomSelect.innerHTML = '<option value="">Auto-assign best available room</option>' +
+      all.map(rm => {
+        const ok = availIds.has(String(rm.id));
+        return `<option value="${rm.id}" ${ok ? '' : 'disabled'}>${rm.name || `Room ${rm.id}`}${ok ? ' ✓' : ' — busy'}</option>`;
+      }).join('');
+  } catch(e) {
+    roomSelect.innerHTML = '<option value="">Auto-assign best available room</option>';
+  }
 }
 
 async function loadNewClientBookingRoomAvailability() {
@@ -2685,7 +2744,9 @@ async function registerClient() {
     phone: document.getElementById('nc_phone')?.value || '',
     email: '', address: '',
     emergency_contact_name: '', emergency_contact_phone: '',
-    language_pref: 'English', therapist_gender_pref: 'No Preference', intake_source: 'Walk-in',
+    language_pref: 'English',
+    therapist_gender_pref: document.getElementById('nc_genderpref')?.value || 'No Preference',
+    intake_source: 'Walk-in',
     notes: notesStr,
     assigned_therapist_id: therapistId ? parseInt(therapistId) : null
   };
@@ -2735,7 +2796,7 @@ async function registerClient() {
                 type: 'individual',
                 location: location,
                 notes: notes,
-                room_id: ''
+                room_id: document.getElementById('nc_book_room')?.value || ''
               })
             });
           } catch(e) { console.error('Appt error:', e); }
@@ -2746,6 +2807,16 @@ async function registerClient() {
     document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
     document.getElementById('step4').classList.add('active');
     document.getElementById('newClientCode').textContent = data.client_code;
+    // Show/hide assign therapist button based on whether one was already chosen
+    const assignBtn = document.getElementById('step4AssignBtn');
+    const assignMsg = document.getElementById('step4AssignMsg');
+    if (therapistId) {
+      if (assignBtn) assignBtn.style.display = 'none';
+      if (assignMsg) assignMsg.style.display = 'block';
+    } else {
+      if (assignBtn) assignBtn.style.display = '';
+      if (assignMsg) assignMsg.style.display = 'none';
+    }
     await loadAllClients();
     toast('Client registered successfully!');
   } catch(e) {
@@ -2901,7 +2972,9 @@ function ncVcSlotClick(el) {
     lbl.style.display = 'block';
   }
   ncVcRender();
+  ncLoadRooms();
 }
+
 
 // â”€â”€â”€ Smart Assignment â”€â”€â”€
 async function loadAssignQueue() {

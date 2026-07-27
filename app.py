@@ -4258,7 +4258,7 @@ def start_telegram_scheduler():
 
 
 
-# Startup: only run on persistent servers (Railway), not Vercel serverless
+# Startup: only run on persistent servers, not Vercel serverless
 _is_vercel = os.getenv('VERCEL', '') or os.getenv('VERCEL_ENV', '')
 if not _is_vercel:
     try:
@@ -4274,6 +4274,35 @@ else:
         init_db()
     except Exception as _e:
         print(f'[VERCEL STARTUP] init_db failed (DB may not be set): {_e}')
+
+    # On Vercel, register Telegram webhook automatically so the bot works
+    def _register_telegram_webhook():
+        token = get_bot_token()
+        if not token:
+            print('[TELEGRAM] No bot token – skipping webhook registration')
+            return
+        vercel_url = os.getenv('VERCEL_URL', '') or os.getenv('VERCEL_BRANCH_URL', '')
+        app_url = os.getenv('APP_URL', '')  # Allow manual override
+        base = app_url or (f'https://{vercel_url}' if vercel_url else '')
+        if not base:
+            print('[TELEGRAM] Could not determine app URL for webhook registration. Set APP_URL env var.')
+            return
+        webhook_url = f'{base.rstrip("/")}/telegram/webhook'
+        try:
+            ok, result = telegram_api('setWebhook', {
+                'url': webhook_url,
+                'allowed_updates': ['message', 'callback_query'],
+                'drop_pending_updates': False
+            })
+            print(f'[TELEGRAM] setWebhook → {webhook_url} → ok={ok}, result={result}')
+        except Exception as exc:
+            print(f'[TELEGRAM] setWebhook failed: {exc}')
+
+    try:
+        _register_telegram_webhook()
+    except Exception as _we:
+        print(f'[TELEGRAM] Webhook registration error: {_we}')
+
 
 
 
@@ -6871,28 +6900,59 @@ def telegram_webhook():
 # ─────────────────────────────────────────────
 
 @app.route('/api/telegram/status', methods=['GET'])
-
 def telegram_status():
-
     if not require_role('admin'):
-
         return jsonify({'error': 'Unauthorized'}), 401
 
     token = get_bot_token()
 
+    # Get current webhook info from Telegram
+    webhook_info = {}
+    if token:
+        ok, result = telegram_api_get('getWebhookInfo')
+        if ok and result.get('ok'):
+            webhook_info = result.get('result', {})
+
     return jsonify({
-
         'success': True,
-
         'configured': bool(token),
-
         'username': TELEGRAM_BOT_USERNAME,
-
         'polling_active': TELEGRAM_POLLING_ACTIVE,
-
         'bot_url': f'https://t.me/{TELEGRAM_BOT_USERNAME}' if TELEGRAM_BOT_USERNAME else '',
-
+        'webhook_url': webhook_info.get('url', ''),
+        'webhook_pending': webhook_info.get('pending_update_count', 0),
+        'last_error': webhook_info.get('last_error_message', ''),
     })
+
+
+@app.route('/api/telegram/register-webhook', methods=['POST'])
+def register_telegram_webhook():
+    if not require_role('admin'):
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    token = get_bot_token()
+    if not token:
+        return jsonify({'error': 'Telegram bot token not configured'}), 400
+
+    data = request.json or {}
+    base = data.get('base_url', '').rstrip('/')
+    if not base:
+        # Try to auto-detect
+        vercel_url = os.getenv('VERCEL_URL', '') or os.getenv('VERCEL_BRANCH_URL', '')
+        app_url = os.getenv('APP_URL', '')
+        base = app_url or (f'https://{vercel_url}' if vercel_url else '')
+        if not base:
+            return jsonify({'error': 'Cannot determine app URL. Pass base_url in the request body or set APP_URL env var.'}), 400
+
+    webhook_url = f'{base}/telegram/webhook'
+    ok, result = telegram_api('setWebhook', {
+        'url': webhook_url,
+        'allowed_updates': ['message', 'callback_query'],
+        'drop_pending_updates': False
+    })
+
+    return jsonify({'success': ok, 'webhook_url': webhook_url, 'telegram_response': result})
+
 
 
 
