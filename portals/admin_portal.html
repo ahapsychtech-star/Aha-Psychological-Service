@@ -661,6 +661,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
             <div>
               <div class="tg-status-title">Telegram bot status</div>
               <div class="tg-status-text" id="tgStatusText">Checking bot configuration...</div>
+              <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="registerTelegramWebhook()"><i class="fa-solid fa-satellite-dish"></i>Register Webhook (Vercel)</button>
             </div>
           </div>
         </div>
@@ -1513,10 +1514,28 @@ async function loadTelegramStatus(){
     const d = await r.json();
     if(!d.success){ throw new Error(d.error || 'status unavailable'); }
     el.innerHTML = d.configured
-      ? `Bot <strong>@${d.username || 'unknown'}</strong> is configured. Polling is <strong>${d.polling_active ? 'active' : 'idle'}</strong>. <a href="${d.bot_url}" target="_blank" style="color:var(--teal);font-weight:700">Open bot</a>`
+      ? `Bot <strong>@${d.username || 'unknown'}</strong> is configured.<br>
+         Polling: <strong>${d.polling_active ? 'Active' : 'Idle / Disabled'}</strong><br>
+         Webhook: <strong>${d.webhook_url || 'Not set'}</strong> ${d.webhook_pending ? `<span style="color:var(--danger)">(${d.webhook_pending} pending)</span>` : ''}<br>
+         <a href="${d.bot_url}" target="_blank" style="color:var(--teal);font-weight:700;display:inline-block;margin-top:6px">Open bot in Telegram</a>`
       : 'Telegram bot token is not configured yet. Set the bot token, then use /start with the generated link code.';
   }catch(e){
     el.textContent = 'Telegram status unavailable right now.';
+  }
+}
+
+async function registerTelegramWebhook(){
+  try {
+    const r = await apiFetch('/api/telegram/register-webhook', {method: 'POST'});
+    const d = await r.json();
+    if(d.success) {
+      toast('Webhook registered successfully: ' + d.webhook_url);
+      loadTelegramStatus();
+    } else {
+      toast(d.error || 'Failed to register webhook', true);
+    }
+  } catch(e) {
+    toast('Error registering webhook', true);
   }
 }
 
