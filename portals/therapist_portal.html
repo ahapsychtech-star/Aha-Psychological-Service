@@ -2558,7 +2558,7 @@ function openScreeningLinkGenerator(templateId, templateName) {
   document.getElementById('srLinkResult').style.display = 'none';
 }
 
-async async function generateScreeningLink() {
+async function generateScreeningLink() {
   const templateId = document.getElementById('srSelectedTemplateId').value;
   const clientId = document.getElementById('srClientSelect').value || '';
   const expiresHours = document.getElementById('srExpiresSelect').value || 24;
