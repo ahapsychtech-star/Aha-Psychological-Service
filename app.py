@@ -6881,14 +6881,10 @@ def telegram_link_codes():
 
 
 
-@app.route('/telegram/webhook', methods=['POST'])
-
+@app.route('/api/telegram/webhook', methods=['POST'])
 def telegram_webhook():
-
     update = request.json or {}
-
     handle_telegram_update(update)
-
     return jsonify({'ok': True})
 
 
@@ -6944,7 +6940,7 @@ def register_telegram_webhook():
         if not base:
             return jsonify({'error': 'Cannot determine app URL. Pass base_url in the request body or set APP_URL env var.'}), 400
 
-    webhook_url = f'{base}/telegram/webhook'
+    webhook_url = f'{base}/api/telegram/webhook'
     ok, result = telegram_api('setWebhook', {
         'url': webhook_url,
         'allowed_updates': ['message', 'callback_query'],
