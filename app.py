@@ -4126,9 +4126,9 @@ Try:
 
 • /contact - Contact info"""
 
-        send_telegram_message(chat_id, default_msg.strip())
+    send_telegram_message(chat_id, default_msg.strip())
 
-        return True
+    return True
 
 
 
