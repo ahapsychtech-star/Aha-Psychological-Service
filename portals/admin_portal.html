@@ -1526,7 +1526,11 @@ async function loadTelegramStatus(){
 
 async function registerTelegramWebhook(){
   try {
-    const r = await apiFetch('/api/telegram/register-webhook', {method: 'POST'});
+    const r = await apiFetch('/api/telegram/register-webhook', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({})
+    });
     const d = await r.json();
     if(d.success) {
       toast('Webhook registered successfully: ' + d.webhook_url);
