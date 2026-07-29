@@ -6933,12 +6933,7 @@ def register_telegram_webhook():
     data = request.json or {}
     base = data.get('base_url', '').rstrip('/')
     if not base:
-        # Try to auto-detect
-        vercel_url = os.getenv('VERCEL_URL', '') or os.getenv('VERCEL_BRANCH_URL', '')
-        app_url = os.getenv('APP_URL', '')
-        base = app_url or (f'https://{vercel_url}' if vercel_url else '')
-        if not base:
-            return jsonify({'error': 'Cannot determine app URL. Pass base_url in the request body or set APP_URL env var.'}), 400
+        base = request.host_url.rstrip('/')
 
     webhook_url = f'{base}/api/telegram/webhook'
     ok, result = telegram_api('setWebhook', {
