@@ -3657,38 +3657,57 @@ Type /contact to reach us"""
                 print(f'[TELEGRAM] Invalid code: {code}')
 
                 send_telegram_message(chat_id, '❌ Invalid or expired linking code.\n\nPlease get a new code from the admin portal.')
+            send_telegram_message(chat_id, f"👋 Welcome back, <b>{user['full_name']}</b>!\n\nYour account is already linked. Type /help to see commands.", parse_mode="HTML")
 
-                return True
-
-            
-
-            user = conn.execute('SELECT * FROM users WHERE id=?', (link['user_id'],)).fetchone()
-
-            if not user:
-
-                send_telegram_message(chat_id, '❌ User not found. Please try again.')
-
-                return True
-
-            
-
-            conn.execute('UPDATE users SET telegram_chat_id=?, telegram_username=?, telegram_linked_at=? WHERE id=?',
-
-                         (chat_id, telegram_username, datetime.now().isoformat(), link['user_id']))
-
-            conn.execute('UPDATE telegram_link_codes SET used_at=?, telegram_chat_id=?, telegram_username=? WHERE id=?',
-
-                         (datetime.now().isoformat(), chat_id, telegram_username, link['id']))
-
-            conn.commit()
+            return True
 
         
 
-        print(f'[TELEGRAM] Account linked for user_id={link["user_id"]}')
+        if code:
 
-        success_msg = f"""
+            # Code provided - validate and link
 
-✅ Account Linked Successfully!
+            with get_db() as conn:
+
+                link = conn.execute('SELECT * FROM telegram_link_codes WHERE code=? AND used_at IS NULL', (code,)).fetchone()
+
+                if not link:
+
+                    print(f'[TELEGRAM] Invalid code: {code}')
+
+                    send_telegram_message(chat_id, '❌ Invalid or expired linking code.\n\nPlease get a new code from the admin portal.')
+
+                    return True
+
+                
+
+                user = conn.execute('SELECT * FROM users WHERE id=?', (link['user_id'],)).fetchone()
+
+                if not user:
+
+                    send_telegram_message(chat_id, '❌ User not found. Please try again.')
+
+                    return True
+
+                
+
+                conn.execute('UPDATE users SET telegram_chat_id=?, telegram_username=?, telegram_linked_at=? WHERE id=?',
+
+                             (chat_id, telegram_username, datetime.now().isoformat(), link['user_id']))
+
+                conn.execute('UPDATE telegram_link_codes SET used_at=?, telegram_chat_id=?, telegram_username=? WHERE id=?',
+
+                             (datetime.now().isoformat(), chat_id, telegram_username, link['id']))
+
+                conn.commit()
+
+            
+
+            print(f'[TELEGRAM] Account linked for user_id={link["user_id"]}')
+
+            success_msg = f"""
+
+✅ <b>Account Linked Successfully!</b>
 
 
 
@@ -3716,7 +3735,26 @@ You will now receive notifications about your appointments and messages from Aha
 
 Let's get started! 📅"""
 
-        send_telegram_message(chat_id, success_msg.strip())
+            send_telegram_message(chat_id, success_msg.strip(), parse_mode="HTML")
+
+            return True
+
+        else:
+
+            if user:
+
+                send_telegram_message(chat_id, f"👋 Welcome back, <b>{user['full_name']}</b>!\n\nYour account is already linked. Type /help to see commands.", parse_mode="HTML")
+
+            else:
+
+                send_telegram_message(chat_id, """👋 <b>Welcome to Aha Psychological Service!</b>
+
+                
+To access your portal features via Telegram, you need to link your account.
+1. Log in to your <a href='https://aha-psychological-service.vercel.app'>Aha Portal</a>
+2. Go to <b>Settings -> Telegram Integration</b>
+3. Click <b>'Generate Link Code'</b>
+4. Come back here and reply with: <code>/start YOUR_CODE</code>""", parse_mode="HTML")
 
         return True
 
@@ -3726,13 +3764,11 @@ Let's get started! 📅"""
 
     if not user:
 
-        send_telegram_message(chat_id, """
-
-❌ Your account is not linked yet.
+        send_telegram_message(chat_id, """❌ <b>Your account is not linked yet.</b>
 
 
 
-Send /start to link your account and get started!""")
+Send <code>/start</code> for instructions on how to link your account!""", parse_mode="HTML")
 
         return True
 
@@ -3744,15 +3780,11 @@ Send /start to link your account and get started!""")
 
         with get_db() as conn:
 
-            # Check if user is therapist or client
-
             user_role = user.get('role', 'receptionist')
 
             
 
             if user_role == 'therapist':
-
-                # Show therapist's client appointments
 
                 appts = conn.execute('''SELECT * FROM appointments 
 
@@ -3762,9 +3794,7 @@ Send /start to link your account and get started!""")
 
                     (user['id'], datetime.now().isoformat())).fetchall()
 
-            else:
-
-                # Show user's own appointments (if client)
+            elif user_role == 'client':
 
                 appts = conn.execute('''SELECT * FROM appointments 
 
@@ -3774,17 +3804,23 @@ Send /start to link your account and get started!""")
 
                     (user['id'], datetime.now().isoformat())).fetchall()
 
+            else:
+
+                send_telegram_message(chat_id, "👩‍💼 As staff, you can view all schedules on the <a href='https://aha-psychological-service.vercel.app/admin'>Admin Portal</a>.", parse_mode='HTML')
+
+                return True
+
         
 
         if not appts:
 
-            send_telegram_message(chat_id, "📭 No upcoming appointments scheduled.\n\nPlease contact your administrator to schedule an appointment.")
+            send_telegram_message(chat_id, "📭 <b>No upcoming appointments scheduled.</b>\n\nPlease contact reception to schedule an appointment.", parse_mode="HTML")
 
             return True
 
         
 
-        msg = f"📅 Your Upcoming Appointments ({len(appts)}):\n\n"
+        msg = f"📅 <b>Your Upcoming Appointments ({len(appts)}):</b>\n\n"
 
         for i, appt in enumerate(appts, 1):
 
@@ -3792,7 +3828,7 @@ Send /start to link your account and get started!""")
 
                 appt_dict = dict(appt)
 
-                msg += f"{i}. {appt_dict['client_name']}\n"
+                msg += f"<b>{i}. {appt_dict['client_name']}</b>\n"
 
                 msg += f"   📅 {str(appt_dict['start_time'])[:10]} at {str(appt_dict['start_time'])[11:16]}\n"
 
@@ -3806,7 +3842,9 @@ Send /start to link your account and get started!""")
 
         
 
-        send_telegram_message(chat_id, msg)
+        msg += "<a href='https://aha-psychological-service.vercel.app'>Open Portal 🌐</a>"
+
+        send_telegram_message(chat_id, msg, parse_mode="HTML")
 
         return True
 
@@ -4088,9 +4126,9 @@ Try:
 
 • /contact - Contact info"""
 
-    send_telegram_message(chat_id, default_msg.strip())
+        send_telegram_message(chat_id, default_msg.strip())
 
-    return True
+        return True
 
 
 
@@ -4762,9 +4800,14 @@ def update_client(cid):
 
             if client:
 
-                notify_user(data['assigned_therapist_id'], 'New client assigned',
+                body = f"""You have been assigned a new client!
 
-                            f'Client: {client["full_name"]}\nCode: {client["client_code"]}')
+<b>Client:</b> {client["full_name"]}
+<b>Code:</b> {client["client_code"]}
+
+<a href='https://aha-psychological-service.vercel.app/admin'>Open Admin Portal 🌐</a>"""
+
+                notify_user(data['assigned_therapist_id'], '🎉 New Client Assigned', body)
 
     except Exception:
 
