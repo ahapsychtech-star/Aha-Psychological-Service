@@ -1427,123 +1427,90 @@ def _appointment_notification_body(appt, action, reason='', old_start_time=None,
 
 
 
+
 def build_appointment_message(appt, action, reason='', old_start_time=None, old_end_time=None, change_scope=''):
-
-    """Build a professional notification message for therapists - NO client names, only codes"""
-
-    client_code = appt.get('client_code') or 'N/A'
-
-    therapist = appt.get('therapist_name') or 'Unassigned'
-
-    new_start = appt.get('start_time') or ''
-
-    new_end = appt.get('end_time') or ''
-
-    appt_type = appt.get('type', 'Counseling')
-
-    location = appt.get('location', 'Office')
-
+    client_name = appt.get('client_name') or 'Client'
+    therapist_name = appt.get('therapist_name') or 'Therapist'
     
+    # Format date strings beautifully if possible
+    def fdt(val):
+        if not val: return ''
+        try:
+            # Parse ISO e.g. 2026-07-30T10:00:00
+            val = str(val)
+            d, t = val.split('T') if 'T' in val else val.split(' ')
+            t = t[:5] # HH:MM
+            return f"<b>{d}</b> at <b>{t}</b>"
+        except:
+            return f"<b>{val}</b>"
 
-    # Create professional header based on action
-
-    action_emoji = {
-
-        'created': '✅ New Appointment',
-
-        'cancelled': '❌ Appointment Cancelled',
-
-        'rescheduled': '🔄 Appointment Rescheduled',
-
-        'changed': '📝 Appointment Modified',
-
-        'terminated': '🛑 Appointment Terminated',
-
-        'no_show': '⏭️ No-Show Marked',
-
-        'completed': '✔️ Appointment Completed',
-
-    }.get(action, '📋 Appointment Update')
-
+    new_start = fdt(appt.get('start_time'))
+    old_start = fdt(old_start_time)
     
-
-    lines = [
-
-        f"{action_emoji}",
-
-        "",
-
-        f"📌 Client Code: {client_code}",
-
-        f"👨‍⚕️ Therapist: {therapist}",
-
-        f"💼 Type: {appt_type}",
-
-        f"📍 Location: {location}",
-
-    ]
-
+    room = appt.get('room_name') or appt.get('location') or 'Not specified'
+    appt_type = (appt.get('type') or 'Session').title()
+    status = (appt.get('status') or 'scheduled').replace('_', ' ').title()
     
-
-    if action == 'cancelled' or action == 'terminated':
-
-        lines.append("")
-
-        lines.append(f"📅 Original Date/Time: {new_start}")
-
-        if new_end:
-
-            lines.append(f"⏱️  Duration: {new_start} - {new_end}")
-
-        if reason:
-
-            lines.append(f"💬 Reason: {reason}")
-
-    elif action in ('rescheduled', 'changed'):
-
-        if old_start_time:
-
-            lines.append("")
-
-            lines.append(f"📅 Previous: {old_start_time}")
-
-            if old_end_time:
-
-                lines.append(f"⏱️  ({old_end_time})")
-
-        lines.append("")
-
-        lines.append(f"📅 New Date/Time: {new_start}")
-
-        if new_end:
-
-            lines.append(f"⏱️  New Duration: {new_start} - {new_end}")
-
-        if reason:
-
-            lines.append(f"💬 Reason: {reason}")
-
-    else:
-
-        lines.append("")
-
-        lines.append(f"📅 Date/Time: {new_start}")
-
-        if new_end:
-
-            lines.append(f"⏱️  Duration: {new_start} - {new_end}")
-
-    
-
-    status = (appt.get('status') or 'scheduled').replace('_', ' ').strip()
-
+    lines = [f"👤 <b>Client:</b> {client_name}"]
+    lines.append(f"👨‍⚕️ <b>Therapist:</b> {therapist_name}")
+    lines.append(f"🏷️ <b>Type:</b> {appt_type}")
+    lines.append(f"🚪 <b>Location:</b> {room}")
+    lines.append(f"📊 <b>Status:</b> {status}")
     lines.append("")
-
-    lines.append(f"Status: {status.title()}")
-
     
+    if action in ('cancelled', 'terminated'):
+        lines.append(f"❌ <b>Cancelled / Terminated</b>")
+        lines.append(f"📅 Was: {new_start}")
+        if reason:
+            lines.append(f"💬 Reason: {reason}")
+    elif action == 'no_show':
+        lines.append(f"⚠️ <b>Client No-Show</b>")
+        lines.append(f"📅 Date: {new_start}")
+        if reason:
+            lines.append(f"💬 Note: {reason}")
+    elif action in ('rescheduled', 'changed'):
+        lines.append(f"🔄 <b>Schedule Changed</b>")
+        if change_scope == 'permanent':
+            lines.append(f"<i>(This is a permanent change to the recurring series)</i>")
+        if old_start:
+            lines.append(f"📅 Previous: {old_start}")
+        lines.append(f"📅 New Time: {new_start}")
+        if reason:
+            lines.append(f"💬 Reason: {reason}")
+    else:
+        lines.append(f"📅 <b>Date/Time:</b> {new_start}")
+        if reason:
+            lines.append(f"💬 Note: {reason}")
 
     return '\n'.join(lines)
+
+
+def notify_user(user_id, subject, body):
+    with get_db() as conn:
+        user = conn.execute('SELECT id, full_name, telegram_chat_id, role FROM users WHERE id=?', (user_id,)).fetchone()
+    
+    if not user:
+        return
+        
+    chat_id = user['telegram_chat_id']
+    if not chat_id:
+        return
+        
+    text = f"🔔 <b>{subject}</b>\n\n{body}"
+    
+    # Build inline button specific to the user role
+    role = user['role']
+    base_url = 'https://aha-psychological-service.vercel.app'
+    portal = f"{base_url}/portals/{role}_portal.html" if role in ('therapist', 'receptionist', 'admin') else base_url
+    
+    markup = {
+        'inline_keyboard': [
+            [{'text': '🌐 Open Portal', 'web_app': {'url': portal}}]
+        ]
+    }
+    
+    send_telegram_message(chat_id, text, parse_mode='HTML', reply_markup=markup)
+
 
 def notify_appointment_update(appt, action, reason='', old_start_time=None, old_end_time=None, change_scope=''):
 
@@ -1578,42 +1545,6 @@ def notify_appointment_update(appt, action, reason='', old_start_time=None, old_
     notify_user(appt.get('therapist_id'), subject, body)
 
     return subject, body
-
-
-
-def notify_user(user_id, subject, body):
-
-    with get_db() as conn:
-
-        user = conn.execute('SELECT id, full_name, telegram_chat_id, role FROM users WHERE id=?', (user_id,)).fetchone()
-
-    if not user:
-
-        return
-
-    text = f"<b>{subject}</b>\n\n{body}"
-
-    send_telegram_message(user['telegram_chat_id'], text)
-
-    if current_user():
-
-        try:
-
-            with get_db() as conn:
-
-                conn.execute(
-
-                    'INSERT INTO messages (sender_id, recipient_id, subject, body, channel) VALUES (?,?,?,?,?)',
-
-                    (current_user()['id'], user_id, subject, body, 'telegram')
-
-                )
-
-                conn.commit()
-
-        except Exception:
-
-            pass
 
 
 
@@ -3530,7 +3461,19 @@ def notify_daily_schedule(date_str=None):
 
 
 def handle_telegram_update(update):
-    PORTAL_URL = 'https://aha-psychological-service.vercel.app'
+    BASE_URL = 'https://aha-psychological-service.vercel.app'
+
+    def get_portal_url(user_obj=None):
+        if not user_obj:
+            return BASE_URL
+        role = user_obj.get('role', '')
+        if role == 'therapist':
+            return f'{BASE_URL}/portals/therapist_portal.html'
+        elif role == 'receptionist':
+            return f'{BASE_URL}/portals/reception_portal.html'
+        elif role == 'admin':
+            return f'{BASE_URL}/portals/admin_portal.html'
+        return BASE_URL
 
     # helpers
     def kb(*rows):
@@ -3550,14 +3493,14 @@ def handle_telegram_update(update):
     def msg(chat_id, text, markup=None):
         send_telegram_message(chat_id, text, parse_mode='HTML', reply_markup=markup)
 
-    def portal_btn(label='🌐 Open Portal'):
-        return kb([[(label, f'WEBAPP:{PORTAL_URL}')]])
+    def portal_btn(user_obj=None, label='🌐 Open Portal'):
+        return kb([[(label, f'WEBAPP:{get_portal_url(user_obj)}')]])
 
-    def main_menu_kb():
+    def main_menu_kb(user_obj=None):
         return kb(
             [('📅 Appointments', '/appointments'), ('👤 Profile', '/profile')],
             [('❓ Help', '/help'), ('📞 Contact', '/contact')],
-            [(f'🌐 Open Portal', f'WEBAPP:{PORTAL_URL}')]
+            [(f'🌐 Open Portal', f'WEBAPP:{get_portal_url(user_obj)}')]
         )
 
     # parse incoming message — handle both messages and callback_query
@@ -3600,7 +3543,7 @@ def handle_telegram_update(update):
                 f"👋 Welcome back, <b>{user['full_name'] or user['username']}</b>!\n\n"
                 f"{role_emoji} <i>{user['role'].capitalize()}</i> · Aha Psychological Service\n\n"
                 f"What would you like to do today?",
-                main_menu_kb())
+                main_menu_kb(user))
             return True
 
         if not code:
@@ -3612,7 +3555,7 @@ def handle_telegram_update(update):
                 "3️⃣ Click <b>Generate Link Code</b>\n"
                 "4️⃣ Reply here with: <code>/start YOUR_CODE</code>\n\n"
                 "Need help? Type /help",
-                kb([[(f'🌐 Open Portal', f'URL:{PORTAL_URL}')]]))
+                kb([[(f'🌐 Open Portal', f'URL:{BASE_URL}')]]))
             return True
 
         # validate and link
@@ -3626,7 +3569,7 @@ def handle_telegram_update(update):
                 msg(chat_id,
                     "❌ <b>Invalid or expired code.</b>\n\n"
                     "Please generate a new one from the Admin Portal.",
-                    kb([[(f'🌐 Get New Code', f'URL:{PORTAL_URL}')]]))
+                    kb([[(f'🌐 Get New Code', f'URL:{BASE_URL}')]]))
                 return True
 
             linked_user = conn.execute('SELECT * FROM users WHERE id=?', (link['user_id'],)).fetchone()
@@ -3664,7 +3607,7 @@ def handle_telegram_update(update):
         msg(chat_id,
             "❌ <b>Your account is not linked yet.</b>\n\n"
             "Send /start to see how to link your account.",
-            kb([[(f'🌐 Open Portal', f'URL:{PORTAL_URL}')]]))
+            kb([[(f'🌐 Open Portal', f'URL:{BASE_URL}')]]))
         return True
 
     # /appointments
@@ -3700,7 +3643,7 @@ def handle_telegram_update(update):
             msg(chat_id,
                 "📭 <b>No upcoming appointments.</b>\n\n"
                 "All appointments will appear here once scheduled.",
-                portal_btn('📅 Schedule on Portal'))
+                portal_btn(user, '📅 Schedule on Portal'))
             return True
 
         lines_out = [f"📅 <b>Upcoming Appointments ({len(appts)})</b>\n"]
@@ -3718,7 +3661,7 @@ def handle_telegram_update(update):
                 + "\n"
             )
 
-        msg(chat_id, '\n'.join(lines_out), portal_btn('📅 Full Schedule on Portal'))
+        msg(chat_id, '\n'.join(lines_out), portal_btn(user, '📅 Full Schedule on Portal'))
         return True
 
     # /profile
@@ -3738,7 +3681,7 @@ def handle_telegram_update(update):
             f"🔗 <i>Telegram linked ✅</i>",
             kb(
                 [('⬅️ Main Menu', '/start')],
-                [(f'🌐 Edit Profile on Portal', f'URL:{PORTAL_URL}')]
+                [(f'🌐 Edit Profile on Portal', f'URL:{get_portal_url(user)}')]
             ))
         return True
 
@@ -3756,7 +3699,7 @@ def handle_telegram_update(update):
             "/help — Show this message\n"
             "/contact — Contact information\n\n"
             "Or tap the buttons below to navigate!",
-            main_menu_kb())
+            main_menu_kb(user))
         return True
 
     # /contact
@@ -3770,7 +3713,7 @@ def handle_telegram_update(update):
             "Saturday: 10:00 AM – 4:00 PM\n"
             "Sunday: Closed\n\n"
             "💬 <i>For urgent matters, please call us directly.</i>",
-            portal_btn('🌐 Visit Website'))
+            portal_btn(user, '🌐 Visit Website'))
         return True
 
     # /cancel (unlink)
@@ -3801,14 +3744,14 @@ def handle_telegram_update(update):
         msg(chat_id,
             "✅ <b>No changes made.</b>\n\n"
             "Your account is still connected!",
-            main_menu_kb())
+            main_menu_kb(user))
         return True
 
     # default / unknown
     msg(chat_id,
         f"👋 Hi <b>{user.get('full_name') or user.get('username')}</b>!\n\n"
         f"I did not recognise that command. Use the menu below 👇",
-        main_menu_kb())
+        main_menu_kb(user))
     return True
 
 
@@ -7342,6 +7285,74 @@ def serve_static(path):
 
     return "Not Found", 404
 
+
+
+
+# ─────────────────────────────────────────────
+# CRON JOB ENDPOINTS (Triggered by Vercel Cron)
+# ─────────────────────────────────────────────
+
+def verify_cron_request():
+    auth_header = request.headers.get('Authorization')
+    cron_secret = os.getenv('CRON_SECRET')
+    if cron_secret and auth_header != f"Bearer {cron_secret}":
+        return False
+    return True
+
+@app.route('/api/cron/daily-schedule', methods=['GET'])
+def cron_daily_schedule():
+    if not verify_cron_request():
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        # Call the existing function that handles daily schedule logic
+        notify_daily_schedule()
+        return jsonify({'success': True, 'message': 'Daily schedule notifications sent'}), 200
+    except Exception as e:
+        print(f"[CRON] Daily schedule error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/cron/upcoming-sessions', methods=['GET'])
+def cron_upcoming_sessions():
+    if not verify_cron_request():
+        return jsonify({'error': 'Unauthorized'}), 401
+        
+    try:
+        # We need to find appointments starting in exactly 30 minutes
+        # Since cron runs every 10 mins, we check if start_time is between 25 and 35 mins from now
+        now = datetime.now()
+        start_window = (now + timedelta(minutes=25)).isoformat()
+        end_window = (now + timedelta(minutes=35)).isoformat()
+        
+        with get_db() as conn:
+            appts = conn.execute(
+                """SELECT a.*, c.full_name as client_name, c.client_code as client_code, u.full_name as therapist_name,
+                          r.name as room_name, r.code as room_code, r.color as room_color
+                   FROM appointments a
+                   LEFT JOIN clients c ON a.client_id=c.id
+                   LEFT JOIN users u ON a.therapist_id=u.id
+                   LEFT JOIN rooms r ON a.room_id=r.id
+                   WHERE a.status IN ('scheduled', 'confirmed') 
+                   AND a.start_time >= ? AND a.start_time <= ?""",
+                (start_window, end_window)
+            ).fetchall()
+            
+            count = 0
+            for row in appts:
+                appt = dict(row)
+                therapist_id = appt.get('therapist_id')
+                if therapist_id:
+                    # Send telegram notification
+                    time_str = appt.get('start_time', '')[11:16] if appt.get('start_time') else 'soon'
+                    subject = "Session starting in 30 minutes"
+                    body = build_appointment_message(appt, 'reminder')
+                    notify_user(therapist_id, subject, body)
+                    count += 1
+                    
+        return jsonify({'success': True, 'message': f'Sent {count} upcoming session reminders'}), 200
+    except Exception as e:
+        print(f"[CRON] Upcoming sessions error: {e}")
+        return jsonify({'error': str(e)}), 500
 
 
 if __name__ == '__main__':

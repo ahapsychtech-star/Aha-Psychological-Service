@@ -14,5 +14,15 @@
     { "src": "/team", "dest": "/team.html" },
     { "src": "/blog", "dest": "/blog.html" },
     { "src": "/book-appointment", "dest": "/portals/intake_form.html" }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/daily-schedule",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/upcoming-sessions",
+      "schedule": "*/10 * * * *"
+    }
   ]
 }
