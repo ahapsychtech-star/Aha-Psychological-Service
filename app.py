@@ -1241,7 +1241,7 @@ def telegram_api_get(method, params=None, timeout=20):
 
 
 
-def send_telegram_message(chat_id, text, parse_mode='HTML'):
+def send_telegram_message(chat_id, text, parse_mode='HTML', reply_markup=None):
 
     def _compact(value):
 
@@ -1281,6 +1281,9 @@ def send_telegram_message(chat_id, text, parse_mode='HTML'):
         'disable_web_page_preview': True,
         'parse_mode': parse_mode
     }
+
+    if reply_markup:
+        payload['reply_markup'] = reply_markup
 
     ok, result = telegram_api('sendMessage', payload)
 
