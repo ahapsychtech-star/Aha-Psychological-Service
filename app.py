@@ -3527,609 +3527,286 @@ def notify_daily_schedule(date_str=None):
 
 
 def handle_telegram_update(update):
+    PORTAL_URL = 'https://aha-psychological-service.vercel.app'
 
-    message = update.get('message') or update.get('edited_message') or {}
+    # helpers
+    def kb(*rows):
+        keyboard = []
+        for row in rows:
+            btn_row = []
+            for label, target in row:
+                if target.startswith('URL:'):
+                    btn_row.append({'text': label, 'url': target[4:]})
+                elif target.startswith('WEBAPP:'):
+                    btn_row.append({'text': label, 'web_app': {'url': target[7:]}})
+                else:
+                    btn_row.append({'text': label, 'callback_data': target})
+            keyboard.append(btn_row)
+        return {'inline_keyboard': keyboard}
 
-    text = (message.get('text') or '').strip()
+    def msg(chat_id, text, markup=None):
+        send_telegram_message(chat_id, text, parse_mode='HTML', reply_markup=markup)
 
-    chat = message.get('chat') or {}
+    def portal_btn(label='🌐 Open Portal'):
+        return kb([[(label, f'WEBAPP:{PORTAL_URL}')]])
 
-    chat_id = str(chat.get('id') or '')
+    def main_menu_kb():
+        return kb(
+            [('📅 Appointments', '/appointments'), ('👤 Profile', '/profile')],
+            [('❓ Help', '/help'), ('📞 Contact', '/contact')],
+            [(f'🌐 Open Portal', f'WEBAPP:{PORTAL_URL}')]
+        )
 
-    telegram_username = message.get('from', {}).get('username', '')
+    # parse incoming message — handle both messages and callback_query
+    callback_query = update.get('callback_query')
+    if callback_query:
+        chat_id = str(callback_query.get('from', {}).get('id', ''))
+        text = callback_query.get('data', '')
+        telegram_api('answerCallbackQuery', {'callback_query_id': callback_query['id']})
+        telegram_username = callback_query.get('from', {}).get('username', '')
+    else:
+        message = update.get('message') or update.get('edited_message') or {}
+        text = (message.get('text') or '').strip()
+        chat = message.get('chat') or {}
+        chat_id = str(chat.get('id') or '')
+        telegram_username = message.get('from', {}).get('username', '')
 
-    user_first_name = message.get('from', {}).get('first_name', 'User')
+    if not chat_id:
+        return False
 
-    raw_command = text.split(maxsplit=1)[0] if text.startswith('/') else ''
+    raw_command = text.split(maxsplit=1)[0].lower() if text.startswith('/') else ''
+    command = raw_command.split('@', 1)[0] if raw_command else ''
+    command_args = text[len(raw_command):].strip() if raw_command else ''
 
-    command = raw_command.split('@', 1)[0].lower() if raw_command else ''
+    print(f'[TELEGRAM] update: chat_id={chat_id}, command={command!r}, text={text[:60]!r}')
 
-    start_match = re.match(r'^/start(?:@\w+)?(?:\s+(.*))?$', text, re.IGNORECASE | re.DOTALL)
-
-    command_args = (start_match.group(1) or '').strip() if start_match else (text[len(raw_command):].strip() if raw_command else '')
-
-    
-
-    print(f'[TELEGRAM] handle_telegram_update: chat_id={chat_id}, text={text[:50]}')
-
-    
-
-    # Get user from database
-
+    # lookup linked user
     user = None
-
     with get_db() as conn:
+        user = conn.execute(
+            'SELECT * FROM users WHERE telegram_chat_id=?', (chat_id,)
+        ).fetchone()
 
-        user = conn.execute('SELECT * FROM users WHERE telegram_chat_id=?', (chat_id,)).fetchone()
-
-    
-
-    # /START COMMAND - Account linking
-
+    # /start
     if command == '/start':
+        code = command_args.strip()
 
-        code = command_args
-
-        
-
-        if user:
-
-            # Already linked
-
-            welcome_msg = f"""
-
-🎉 Welcome back, {user['full_name'] or user['username']}!
-
-
-
-You are already linked to Aha Psychological Service.
-
-
-
-What would you like to do?
-
-• 📅 View Appointments
-
-• 👤 My Profile
-
-• ❓ Help & Support
-
-• 📞 Contact Us
-
-
-
-Type a command or use the buttons below!"""
-
-            send_telegram_message(chat_id, welcome_msg.strip())
-
+        if user and not code:
+            role_emoji = {'admin': '🔐', 'therapist': '👨‍⚕️', 'receptionist': '👩‍💼', 'client': '👤'}.get(user['role'], '👤')
+            msg(chat_id,
+                f"👋 Welcome back, <b>{user['full_name'] or user['username']}</b>!\n\n"
+                f"{role_emoji} <i>{user['role'].capitalize()}</i> · Aha Psychological Service\n\n"
+                f"What would you like to do today?",
+                main_menu_kb())
             return True
-
-        
 
         if not code:
-
-            # No code provided
-
-            intro_msg = f"""
-
-👋 Welcome to Aha Psychological Service!
-
-
-
-To get started, you need a linking code from the admin portal.
-
-
-
-📋 How to link your account:
-
-1. Log in to the admin portal
-
-2. Go to your profile settings
-
-3. Find the "Telegram Linking" section
-
-4. Copy your one-time linking code
-
-5. Send: /start YOUR_CODE
-
-
-
-🆘 Need help?
-
-Type /help for more information
-
-Type /contact to reach us"""
-
-            send_telegram_message(chat_id, intro_msg.strip())
-
+            msg(chat_id,
+                "👋 <b>Welcome to Aha Psychological Service!</b>\n\n"
+                "To get started, link your staff account:\n\n"
+                "1️⃣ Log in to the <b>Admin Portal</b>\n"
+                "2️⃣ Go to <b>Settings → Telegram</b>\n"
+                "3️⃣ Click <b>Generate Link Code</b>\n"
+                "4️⃣ Reply here with: <code>/start YOUR_CODE</code>\n\n"
+                "Need help? Type /help",
+                kb([[(f'🌐 Open Portal', f'URL:{PORTAL_URL}')]]))
             return True
 
-        
-
-        # Code provided - validate and link
-
+        # validate and link
         with get_db() as conn:
-
-            link = conn.execute('SELECT * FROM telegram_link_codes WHERE code=? AND used_at IS NULL', (code,)).fetchone()
+            link = conn.execute(
+                'SELECT * FROM telegram_link_codes WHERE code=? AND used_at IS NULL',
+                (code,)
+            ).fetchone()
 
             if not link:
-
-                print(f'[TELEGRAM] Invalid code: {code}')
-
-                send_telegram_message(chat_id, '❌ Invalid or expired linking code.\n\nPlease get a new code from the admin portal.')
-            send_telegram_message(chat_id, f"👋 Welcome back, <b>{user['full_name']}</b>!\n\nYour account is already linked. Type /help to see commands.", parse_mode="HTML")
-
-            return True
-
-        
-
-        if code:
-
-            # Code provided - validate and link
-
-            with get_db() as conn:
-
-                link = conn.execute('SELECT * FROM telegram_link_codes WHERE code=? AND used_at IS NULL', (code,)).fetchone()
-
-                if not link:
-
-                    print(f'[TELEGRAM] Invalid code: {code}')
-
-                    send_telegram_message(chat_id, '❌ Invalid or expired linking code.\n\nPlease get a new code from the admin portal.')
-
-                    return True
-
-                
-
-                user = conn.execute('SELECT * FROM users WHERE id=?', (link['user_id'],)).fetchone()
-
-                if not user:
-
-                    send_telegram_message(chat_id, '❌ User not found. Please try again.')
-
-                    return True
-
-                
-
-                conn.execute('UPDATE users SET telegram_chat_id=?, telegram_username=?, telegram_linked_at=? WHERE id=?',
-
-                             (chat_id, telegram_username, datetime.now().isoformat(), link['user_id']))
-
-                conn.execute('UPDATE telegram_link_codes SET used_at=?, telegram_chat_id=?, telegram_username=? WHERE id=?',
-
-                             (datetime.now().isoformat(), chat_id, telegram_username, link['id']))
-
-                conn.commit()
-
-            
-
-            print(f'[TELEGRAM] Account linked for user_id={link["user_id"]}')
-
-            success_msg = f"""
-
-✅ <b>Account Linked Successfully!</b>
-
-
-
-Welcome, {user['full_name'] or user['username']}!
-
-Role: {user['role'].upper()}
-
-
-
-You will now receive notifications about your appointments and messages from Aha Psychological Service.
-
-
-
-🎯 Quick Start:
-
-• /appointments - View your upcoming appointments
-
-• /profile - View your profile
-
-• /help - Get help with commands
-
-• /cancel - Unlink your account
-
-
-
-Let's get started! 📅"""
-
-            send_telegram_message(chat_id, success_msg.strip(), parse_mode="HTML")
-
-            return True
-
-        else:
-
-            if user:
-
-                send_telegram_message(chat_id, f"👋 Welcome back, <b>{user['full_name']}</b>!\n\nYour account is already linked. Type /help to see commands.", parse_mode="HTML")
-
-            else:
-
-                send_telegram_message(chat_id, """👋 <b>Welcome to Aha Psychological Service!</b>
-
-                
-To access your portal features via Telegram, you need to link your account.
-1. Log in to your <a href='https://aha-psychological-service.vercel.app'>Aha Portal</a>
-2. Go to <b>Settings -> Telegram Integration</b>
-3. Click <b>'Generate Link Code'</b>
-4. Come back here and reply with: <code>/start YOUR_CODE</code>""", parse_mode="HTML")
-
-        return True
-
-    
-
-    # User must be linked for all other commands
-
-    if not user:
-
-        send_telegram_message(chat_id, """❌ <b>Your account is not linked yet.</b>
-
-
-
-Send <code>/start</code> for instructions on how to link your account!""", parse_mode="HTML")
-
-        return True
-
-    
-
-    # /APPOINTMENTS - View appointments
-
-    if command in ('/appointments', '/appointment', '/appts', 'appointments', 'my appointments'):
-
-        with get_db() as conn:
-
-            user_role = user.get('role', 'receptionist')
-
-            
-
-            if user_role == 'therapist':
-
-                appts = conn.execute('''SELECT * FROM appointments 
-
-                    WHERE therapist_id=? AND status IN ('scheduled', 'confirmed') 
-
-                    AND start_time > ? ORDER BY start_time LIMIT 10''',
-
-                    (user['id'], datetime.now().isoformat())).fetchall()
-
-            elif user_role == 'client':
-
-                appts = conn.execute('''SELECT * FROM appointments 
-
-                    WHERE client_id=? AND status IN ('scheduled', 'confirmed') 
-
-                    AND start_time > ? ORDER BY start_time LIMIT 10''',
-
-                    (user['id'], datetime.now().isoformat())).fetchall()
-
-            else:
-
-                send_telegram_message(chat_id, "👩‍💼 As staff, you can view all schedules on the <a href='https://aha-psychological-service.vercel.app/admin'>Admin Portal</a>.", parse_mode='HTML')
-
+                msg(chat_id,
+                    "❌ <b>Invalid or expired code.</b>\n\n"
+                    "Please generate a new one from the Admin Portal.",
+                    kb([[(f'🌐 Get New Code', f'URL:{PORTAL_URL}')]]))
                 return True
 
-        
+            linked_user = conn.execute('SELECT * FROM users WHERE id=?', (link['user_id'],)).fetchone()
 
-        if not appts:
+            if not linked_user:
+                msg(chat_id, "❌ User not found. Please contact your administrator.")
+                return True
 
-            send_telegram_message(chat_id, "📭 <b>No upcoming appointments scheduled.</b>\n\nPlease contact reception to schedule an appointment.", parse_mode="HTML")
+            conn.execute(
+                'UPDATE users SET telegram_chat_id=?, telegram_username=?, telegram_linked_at=? WHERE id=?',
+                (chat_id, telegram_username, datetime.now().isoformat(), link['user_id'])
+            )
+            conn.execute(
+                'UPDATE telegram_link_codes SET used_at=?, telegram_chat_id=?, telegram_username=? WHERE id=?',
+                (datetime.now().isoformat(), chat_id, telegram_username, link['id'])
+            )
+            conn.commit()
+            user = linked_user
 
-            return True
-
-        
-
-        msg = f"📅 <b>Your Upcoming Appointments ({len(appts)}):</b>\n\n"
-
-        for i, appt in enumerate(appts, 1):
-
-            try:
-
-                appt_dict = dict(appt)
-
-                msg += f"<b>{i}. {appt_dict['client_name']}</b>\n"
-
-                msg += f"   📅 {str(appt_dict['start_time'])[:10]} at {str(appt_dict['start_time'])[11:16]}\n"
-
-                msg += f"   ⏱️  {appt_dict.get('type', 'Counseling')} - {appt_dict.get('location', 'Office')}\n\n"
-
-            except Exception as e:
-
-                print(f'[TELEGRAM] Error processing appointment: {e}')
-
-                continue
-
-        
-
-        msg += "<a href='https://aha-psychological-service.vercel.app'>Open Portal 🌐</a>"
-
-        send_telegram_message(chat_id, msg, parse_mode="HTML")
-
+        role_emoji = {'admin': '🔐', 'therapist': '👨‍⚕️', 'receptionist': '👩‍💼', 'client': '👤'}.get(user['role'], '👤')
+        msg(chat_id,
+            f"✅ <b>Account linked successfully!</b>\n\n"
+            f"Welcome, <b>{user['full_name'] or user['username']}</b>!\n"
+            f"{role_emoji} <i>{user['role'].capitalize()}</i>\n\n"
+            f"You will now receive instant notifications for:\n"
+            f"• 📅 Appointment reminders\n"
+            f"• 🎉 New client assignments\n"
+            f"• 📨 Internal messages\n\n"
+            f"Tap a button below to get started 👇",
+            main_menu_kb())
         return True
 
-    
-
-    # /PROFILE - View profile
-
-    if command in ('/profile', 'profile', '/me', 'me'):
-
-        role_display = {
-
-            'therapist': '👨‍⚕️ Therapist',
-
-            'receptionist': '👩‍💼 Receptionist',
-
-            'admin': '🔐 Administrator',
-
-            'client': '👤 Client'
-
-        }.get(user.get('role', 'user'), user.get('role', 'User').upper())
-
-        
-
-        profile_msg = f"""
-
-👤 Your Profile
-
-
-
-────────────────────
-
-🆔 Account Information
-
-────────────────────
-
-Name: {user['full_name'] or 'Not set'}
-
-Username: @{user['username']}
-
-Role: {role_display}
-
-Status: {'✅ Active' if user['is_active'] else '❌ Inactive'}
-
-
-
-────────────────────
-
-📋 Contact Details
-
-────────────────────
-
-Email: {user['email'] or 'Not set'}
-
-Phone: {user['phone'] or 'Not set'}
-
-
-
-────────────────────
-
-📚 Professional Info
-
-────────────────────
-
-Specialization: {user.get('specialization') or 'N/A'}
-
-Languages: {user.get('languages', 'English')}
-
-Linked to Telegram: ✅ Yes
-
-"""
-
-        send_telegram_message(chat_id, profile_msg.strip())
-
+    # all other commands require a linked account
+    if not user:
+        msg(chat_id,
+            "❌ <b>Your account is not linked yet.</b>\n\n"
+            "Send /start to see how to link your account.",
+            kb([[(f'🌐 Open Portal', f'URL:{PORTAL_URL}')]]))
         return True
 
-    
-
-    # /SETTINGS - Account settings
-
-    if command in ('/settings', 'settings', '/config'):
-
-        settings_msg = """
-
-⚙️ Account Settings
-
-
-
-Available Options:
-
-• /profile - View your profile
-
-• /change-password - Change password
-
-• /notifications - Notification preferences
-
-• /privacy - Privacy settings
-
-
-
-💡 More features coming soon!
-
-
-
-Need help? Type /help
-
-"""
-
-        send_telegram_message(chat_id, settings_msg.strip())
-
-        return True
-
-    
-
-    # /HELP - Show help
-
-    if command in ('/help', 'help', '?', '/commands'):
-
-        help_msg = f"""
-
-📖 Available Commands
-
-
-
-🔐 Account:
-
-• /start - Link/re-link your account
-
-• /profile - View your profile
-
-• /settings - Account settings
-
-• /cancel - Unlink your account
-
-
-
-📅 Appointments:
-
-• /appointments - View your upcoming appointments
-
-• /appts - Short for appointments
-
-
-
-❓ Support:
-
-• /help - Show this help message
-
-• /contact - Contact information
-
-
-
-💡 Just type a command or select from the options below!"""
-
-        send_telegram_message(chat_id, help_msg.strip())
-
-        return True
-
-    
-
-    # /CONTACT - Contact information
-
-    if command in ('/contact', 'contact', '/support'):
-
-        contact_msg = """
-
-📞 Contact Aha Psychological Service
-
-
-
-📧 Email: info@ahapsychological.com
-
-📱 Phone: +1 (555) 123-4567
-
-🌐 Website: www.ahapsychological.com
-
-📍 Address: [Your Office Address]
-
-
-
-Hours:
-
-Monday - Friday: 9:00 AM - 6:00 PM
-
-Saturday: 10:00 AM - 4:00 PM
-
-Sunday: Closed
-
-
-
-💬 For urgent matters, please call us directly."""
-
-        send_telegram_message(chat_id, contact_msg.strip())
-
-        return True
-
-    
-
-    # /CANCEL - Unlink account
-
-    if command in ('/cancel', '/unlink', 'cancel'):
-
-        confirm_msg = """
-
-⚠️ Are you sure you want to unlink your account?
-
-
-
-You will:
-
-• Stop receiving appointment notifications
-
-• Need to re-link to use this bot again
-
-
-
-Reply with:
-
-• YES to confirm unlinking
-
-• NO to cancel"""
-
-        send_telegram_message(chat_id, confirm_msg)
-
-        return True
-
-    
-
-    # Handle cancellation confirmation
-
-    if text.upper() == 'YES':
+    # /appointments
+    if command in ('/appointments', '/appointment', '/appts'):
+        user_role = user.get('role', '')
+        appts = []
 
         with get_db() as conn:
+            if user_role == 'therapist':
+                appts = conn.execute(
+                    """SELECT a.*, c.full_name as client_name, r.name as room_name
+                       FROM appointments a
+                       LEFT JOIN clients c ON a.client_id=c.id
+                       LEFT JOIN rooms r ON a.room_id=r.id
+                       WHERE a.therapist_id=? AND a.status IN ('scheduled','confirmed')
+                       AND a.start_time > ? ORDER BY a.start_time LIMIT 10""",
+                    (user['id'], datetime.now().isoformat())
+                ).fetchall()
+            elif user_role in ('admin', 'receptionist'):
+                appts = conn.execute(
+                    """SELECT a.*, c.full_name as client_name, r.name as room_name,
+                              u.full_name as therapist_name
+                       FROM appointments a
+                       LEFT JOIN clients c ON a.client_id=c.id
+                       LEFT JOIN rooms r ON a.room_id=r.id
+                       LEFT JOIN users u ON a.therapist_id=u.id
+                       WHERE a.status IN ('scheduled','confirmed')
+                       AND a.start_time > ? ORDER BY a.start_time LIMIT 10""",
+                    (datetime.now().isoformat(),)
+                ).fetchall()
 
+        if not appts:
+            msg(chat_id,
+                "📭 <b>No upcoming appointments.</b>\n\n"
+                "All appointments will appear here once scheduled.",
+                portal_btn('📅 Schedule on Portal'))
+            return True
+
+        lines_out = [f"📅 <b>Upcoming Appointments ({len(appts)})</b>\n"]
+        for i, a in enumerate(appts, 1):
+            d = dict(a)
+            date_str = str(d.get('start_time', ''))[:10]
+            time_str = str(d.get('start_time', ''))[11:16]
+            room = d.get('room_name') or d.get('location') or 'TBD'
+            therapist = d.get('therapist_name', '')
+            lines_out.append(
+                f"<b>{i}.</b> {d.get('client_name','Client')}\n"
+                f"   📆 {date_str} at {time_str}\n"
+                f"   🚪 Room: {room}"
+                + (f"\n   👨‍⚕️ {therapist}" if therapist and user_role in ('admin', 'receptionist') else '')
+                + "\n"
+            )
+
+        msg(chat_id, '\n'.join(lines_out), portal_btn('📅 Full Schedule on Portal'))
+        return True
+
+    # /profile
+    if command in ('/profile', '/me'):
+        role_emoji = {'admin': '🔐', 'therapist': '👨‍⚕️', 'receptionist': '👩‍💼', 'client': '👤'}.get(user['role'], '👤')
+        status = '✅ Active' if user.get('is_active') else '❌ Inactive'
+        msg(chat_id,
+            f"👤 <b>Your Profile</b>\n\n"
+            f"<b>Name:</b> {user.get('full_name') or 'Not set'}\n"
+            f"<b>Username:</b> @{user.get('username', '')}\n"
+            f"<b>Role:</b> {role_emoji} {user['role'].capitalize()}\n"
+            f"<b>Status:</b> {status}\n\n"
+            f"<b>Email:</b> {user.get('email') or '—'}\n"
+            f"<b>Phone:</b> {user.get('phone') or '—'}\n\n"
+            f"<b>Specialization:</b> {user.get('specialization') or '—'}\n"
+            f"<b>Languages:</b> {user.get('languages') or 'English'}\n\n"
+            f"🔗 <i>Telegram linked ✅</i>",
+            kb(
+                [('⬅️ Main Menu', '/start')],
+                [(f'🌐 Edit Profile on Portal', f'URL:{PORTAL_URL}')]
+            ))
+        return True
+
+    # /help
+    if command in ('/help', '/?', '/commands'):
+        msg(chat_id,
+            "📖 <b>Available Commands</b>\n\n"
+            "<b>🔐 Account</b>\n"
+            "/start — Link or re-link your account\n"
+            "/profile — View your profile\n"
+            "/cancel — Unlink your account\n\n"
+            "<b>📅 Appointments</b>\n"
+            "/appointments — View upcoming appointments\n\n"
+            "<b>❓ Support</b>\n"
+            "/help — Show this message\n"
+            "/contact — Contact information\n\n"
+            "Or tap the buttons below to navigate!",
+            main_menu_kb())
+        return True
+
+    # /contact
+    if command in ('/contact', '/support'):
+        msg(chat_id,
+            "📞 <b>Contact Aha Psychological Service</b>\n\n"
+            "📧 <b>Email:</b> info@ahapsychological.com\n"
+            "🌐 <b>Website:</b> aha-psychological-service.vercel.app\n\n"
+            "🕐 <b>Hours:</b>\n"
+            "Mon–Fri: 9:00 AM – 6:00 PM\n"
+            "Saturday: 10:00 AM – 4:00 PM\n"
+            "Sunday: Closed\n\n"
+            "💬 <i>For urgent matters, please call us directly.</i>",
+            portal_btn('🌐 Visit Website'))
+        return True
+
+    # /cancel (unlink)
+    if command in ('/cancel', '/unlink'):
+        msg(chat_id,
+            "⚠️ <b>Unlink your account?</b>\n\n"
+            "You will stop receiving Telegram notifications.\n"
+            "You can re-link at any time.\n\n"
+            "Tap <b>Confirm Unlink</b> below to proceed.",
+            kb(
+                [('🔴 Confirm Unlink', 'CONFIRM_UNLINK')],
+                [('✅ Keep Connected', 'CANCEL_UNLINK')]
+            ))
+        return True
+
+    # inline button callbacks
+    if text == 'CONFIRM_UNLINK':
+        with get_db() as conn:
             conn.execute('UPDATE users SET telegram_chat_id=NULL WHERE id=?', (user['id'],))
-
             conn.commit()
-
-        send_telegram_message(chat_id, """
-
-✅ Your account has been unlinked.
-
-
-
-Thank you for using Aha Psychological Service!
-
-To re-link, send /start <code>""")
-
+        msg(chat_id,
+            "✅ <b>Account unlinked.</b>\n\n"
+            "You have been disconnected from Telegram notifications.\n"
+            "Send /start anytime to reconnect.")
         return True
 
-    
-
-    if text.upper() == 'NO':
-
-        send_telegram_message(chat_id, "✓ Unlinking cancelled. You are still connected!")
-
+    if text == 'CANCEL_UNLINK':
+        msg(chat_id,
+            "✅ <b>No changes made.</b>\n\n"
+            "Your account is still connected!",
+            main_menu_kb())
         return True
 
-    
-
-    # Default response
-
-    default_msg = f"""
-
-👋 Hi {user['full_name'] or user['username']}!
-
-
-
-I didn't understand that command.
-
-
-
-Try:
-
-• /appointments - View appointments
-
-• /profile - View profile
-
-• /help - Show all commands
-
-• /contact - Contact info"""
-
-    send_telegram_message(chat_id, default_msg.strip())
-
+    # default / unknown
+    msg(chat_id,
+        f"👋 Hi <b>{user.get('full_name') or user.get('username')}</b>!\n\n"
+        f"I did not recognise that command. Use the menu below 👇",
+        main_menu_kb())
     return True
-
 
 
 def telegram_polling_loop():
@@ -4317,22 +3994,20 @@ else:
     def _register_telegram_webhook():
         token = get_bot_token()
         if not token:
-            print('[TELEGRAM] No bot token – skipping webhook registration')
+            print('[TELEGRAM] No bot token - skipping webhook registration')
             return
-        vercel_url = os.getenv('VERCEL_URL', '') or os.getenv('VERCEL_BRANCH_URL', '')
-        app_url = os.getenv('APP_URL', '')  # Allow manual override
-        base = app_url or (f'https://{vercel_url}' if vercel_url else '')
-        if not base:
-            print('[TELEGRAM] Could not determine app URL for webhook registration. Set APP_URL env var.')
-            return
-        webhook_url = f'{base.rstrip("/")}/telegram/webhook'
+        app_url = os.getenv('APP_URL', '').rstrip('/')
+        if not app_url:
+            # Fall back to known production domain - works across all deployments
+            app_url = 'https://aha-psychological-service.vercel.app'
+        webhook_url = f'{app_url}/api/telegram/webhook'
         try:
             ok, result = telegram_api('setWebhook', {
                 'url': webhook_url,
                 'allowed_updates': ['message', 'callback_query'],
                 'drop_pending_updates': False
             })
-            print(f'[TELEGRAM] setWebhook → {webhook_url} → ok={ok}, result={result}')
+            print(f'[TELEGRAM] Auto setWebhook -> {webhook_url} -> ok={ok}')
         except Exception as exc:
             print(f'[TELEGRAM] setWebhook failed: {exc}')
 
