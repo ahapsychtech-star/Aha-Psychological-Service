@@ -2684,13 +2684,17 @@ function openAppointmentEditor(apptId, mode='temporary'){
     openWith(appt);
     return;
   }
-  fetch(`/api/appointments/${apptId}`)
-    .then(r => r.ok ? r.json() : null)
+  // Not in local cache — fetch directly from API
+  fetch(`/api/appointments/${apptId}`, {credentials: 'include'})
+    .then(r => {
+      if(!r.ok) throw new Error('Not found');
+      return r.json();
+    })
     .then(d => {
-      if(!d || d.error){ toast('Appointment not found', true); return; }
+      if(!d || d.error){ toast('Appointment not found — try refreshing the page', true); return; }
       openWith(d);
     })
-    .catch(() => toast('Appointment not found', true));
+    .catch(err => { console.error('openAppointmentEditor fetch error', err); toast('Could not load appointment. Please try refreshing.', true); });
 }
 
 function closeAppointmentEditor(){
@@ -2839,8 +2843,9 @@ async function showDayDetail(dateStr, label) {
     }
     document.getElementById('dayDetailList').innerHTML = appts.sort((a,b)=>new Date(a.start_time)-new Date(b.start_time)).map(a => {
       const visual = appointmentVisual(a);
+      const isFinalized = ['completed','cancelled','no_show'].includes(a.status);
       return `
-      <div class="day-event ${visual.cls}" style="background:linear-gradient(135deg, ${visual.palette.base}, ${visual.palette.dark});" onclick="openClientDrawer(${a.client_id})">
+      <div class="day-event ${visual.cls}" style="background:linear-gradient(135deg, ${visual.palette.base}, ${visual.palette.dark});cursor:pointer" onclick="openClientDrawer(${a.client_id})">
         <div class="event-time">
           <div>${formatApptTime(a.start_time)}</div>
           <div style="font-size:10px;opacity:.7;margin-top:2px">${formatDate(a.start_time)}</div>
@@ -2853,10 +2858,16 @@ async function showDayDetail(dateStr, label) {
             ${a.change_scope ? `<span class="badge badge-gray">${a.change_scope}</span>` : ''}
             <span class="badge badge-indigo">${a.room_name || a.room_code || 'Room not set'}</span>
             ${a.cancel_reason ? `<span class="badge badge-red">Reason logged</span>` : ''}
-            <button class="btn btn-primary btn-sm" onclick="bookFollowUp(${a.client_id}, ${a.therapist_id})" title="Book Follow-up"><i class="fa-solid fa-calendar-plus"></i></button>
-            <button class="btn btn-gold btn-sm" onclick="openAppointmentEditor(${a.id},'permanent')"><i class="fa-solid fa-calendar-days"></i></button>
-            <button class="btn btn-danger btn-sm" onclick="openAppointmentEditor(${a.id},'cancelled')"><i class="fa-solid fa-ban"></i></button>
           </div>
+          ${isFinalized ? `<div style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:600;margin-top:6px">Session finalized</div>` : `
+          <div class="event-actions" style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px" onclick="event.stopPropagation()">
+            <button class="btn btn-primary btn-sm" onclick="bookFollowUp(${a.client_id}, ${a.therapist_id})" title="Book Follow-up Session"><i class="fa-solid fa-calendar-plus"></i> Follow-up</button>
+            <button class="btn btn-success btn-sm" onclick="updateApptStatus(${a.id},'completed')" title="Mark Complete"><i class="fa-solid fa-check"></i> Complete</button>
+            <button class="btn btn-outline btn-sm" onclick="openAppointmentEditor(${a.id},'temporary')" title="Temporary Change" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);color:#fff"><i class="fa-solid fa-clock-rotate-left"></i> Reschedule</button>
+            <button class="btn btn-gold btn-sm" onclick="openAppointmentEditor(${a.id},'permanent')" title="Permanent Change"><i class="fa-solid fa-calendar-days"></i> Permanent</button>
+            <button class="btn btn-warning btn-sm" onclick="updateApptStatus(${a.id},'no_show')" title="No Show" style="background:#f59e0b;color:#fff;border:none"><i class="fa-solid fa-user-slash"></i> No-show</button>
+            <button class="btn btn-danger btn-sm" onclick="openAppointmentEditor(${a.id},'cancelled')" title="Cancel Session"><i class="fa-solid fa-ban"></i> Cancel</button>
+          </div>`}
         </div>
       </div>`;
     }).join('');
