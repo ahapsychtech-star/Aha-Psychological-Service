@@ -20,7 +20,12 @@ import html
 
 from urllib import request as urllib_request, error as urllib_error, parse as urllib_parse
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:  # pragma: no cover - Python < 3.9 fallback
+    ZoneInfo = None
 
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session, send_from_directory, make_response
 
@@ -71,6 +76,9 @@ except OSError:
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+APP_BASE_URL = os.getenv('APP_BASE_URL', 'https://aha-psychological-service.vercel.app').rstrip('/')
+EAT = ZoneInfo('Africa/Addis_Ababa') if ZoneInfo else timezone(timedelta(hours=3))
 
 
 
@@ -933,6 +941,51 @@ def current_user():
 
 
 
+def now_in_eat():
+
+    return datetime.now(EAT)
+
+
+def _ensure_eat_datetime(value):
+
+    if not value:
+
+        return None
+
+    try:
+
+        dt = datetime.fromisoformat(str(value).replace('Z', '+00:00'))
+
+    except Exception:
+
+        return None
+
+    if dt.tzinfo is None:
+
+        return dt.replace(tzinfo=EAT)
+
+    return dt.astimezone(EAT)
+
+
+def portal_url_for_role(role):
+
+    role = normalize_role(role)
+
+    portal_paths = {
+
+        'therapist': '/portals/therapist_portal.html',
+
+        'receptionist': '/portals/reception_portal.html',
+
+        'admin': '/portals/admin_portal.html',
+
+        'supervisor': '/portals/supervisor_portal.html',
+
+    }
+
+    return APP_BASE_URL + portal_paths.get(role, '/login')
+
+
 def require_role(*roles):
 
     user = current_user()
@@ -1301,9 +1354,13 @@ def _telegram_safe(value, default='Not specified'):
 
 def _appointment_notification_body(appt, action, reason='', old_start_time=None, old_end_time=None, change_scope=''):
 
+    client_name = _telegram_safe(appt.get('client_name') or 'Client')
+
     client_code = _telegram_safe(appt.get('client_code') or 'Not specified')
 
     therapist = _telegram_safe(appt.get('therapist_name') or 'Unassigned therapist')
+
+    therapist_id = appt.get('therapist_id')
 
     room_source = appt.get('room')
 
@@ -1327,6 +1384,10 @@ def _appointment_notification_body(appt, action, reason='', old_start_time=None,
 
         current_status = 'No-show'
 
+    session_type = _telegram_safe((appt.get('type') or 'Session').replace('_', ' ').title())
+
+    location = _telegram_safe(appt.get('location') or 'Not specified')
+
     current_start = _telegram_safe(format_datetime_readable(appt.get('start_time')))
 
     current_end = _telegram_safe(format_datetime_readable(appt.get('end_time')))
@@ -1337,15 +1398,37 @@ def _appointment_notification_body(appt, action, reason='', old_start_time=None,
 
     scope_label = 'Temporary change' if scope == 'temporary' else 'Permanent change' if scope == 'permanent' else 'Administrative update'
 
+    action_title = {
+
+        'created': 'New session scheduled',
+
+        'changed': 'Session updated',
+
+        'rescheduled': 'Session rescheduled',
+
+        'cancelled': 'Session cancelled',
+
+        'terminated': 'Session terminated',
+
+        'no_show': 'Session marked no-show',
+
+    }.get(action, 'Appointment update')
+
     lines = [
 
-        '📋 <b>Appointment details</b>',
+        f'📋 <b>{action_title}</b>',
 
         '',
 
-        f'• <b>Client code:</b> <code>{client_code}</code>',
+        f'• <b>Client:</b> {client_name} <code>{client_code}</code>',
 
         f'• <b>Therapist:</b> {therapist}',
+
+        f'• <b>Therapist ID:</b> <code>{therapist_id or "Not assigned"}</code>',
+
+        f'• <b>Session type:</b> {session_type}',
+
+        f'• <b>Location:</b> {location}',
 
         f'• <b>Room:</b> {room}',
 
@@ -1427,7 +1510,6 @@ def _appointment_notification_body(appt, action, reason='', old_start_time=None,
 
 
 
-
 def build_appointment_message(appt, action, reason='', old_start_time=None, old_end_time=None, change_scope=''):
     client_name = appt.get('client_name') or 'Client'
     therapist_name = appt.get('therapist_name') or 'Therapist'
@@ -1488,27 +1570,22 @@ def build_appointment_message(appt, action, reason='', old_start_time=None, old_
 def notify_user(user_id, subject, body):
     with get_db() as conn:
         user = conn.execute('SELECT id, full_name, telegram_chat_id, role FROM users WHERE id=?', (user_id,)).fetchone()
-    
+
     if not user:
         return
-        
+
     chat_id = user['telegram_chat_id']
     if not chat_id:
         return
-        
-    text = f"🔔 <b>{subject}</b>\n\n{body}"
-    
-    # Build inline button specific to the user role
-    role = user['role']
-    base_url = 'https://aha-psychological-service.vercel.app'
-    portal = f"{base_url}/portals/{role}_portal.html" if role in ('therapist', 'receptionist', 'admin') else base_url
-    
+
+    text = f"\U0001f514 <b>{subject}</b>\n\n{body}"
+    portal = portal_url_for_role(user['role'])
     markup = {
         'inline_keyboard': [
-            [{'text': '🌐 Open Portal', 'web_app': {'url': portal}}]
+            [{'text': '\U0001f310 Open Portal', 'web_app': {'url': portal}}]
         ]
     }
-    
+
     send_telegram_message(chat_id, text, parse_mode='HTML', reply_markup=markup)
 
 
@@ -1590,22 +1667,15 @@ def safe_date_filter(start_value, end_value):
 
 def format_datetime_readable(value):
 
-    if not value:
+    dt = _ensure_eat_datetime(value)
+
+    if not dt:
 
         return 'Not specified'
 
-    try:
+    hour = dt.strftime('%I').lstrip('0') or '12'
 
-        dt = datetime.fromisoformat(str(value).replace('Z', '+00:00'))
-
-        hour = dt.strftime('%I').lstrip('0') or '12'
-
-        return f"{dt.strftime('%B')} {dt.day}, {dt.year} at {hour}:{dt.strftime('%M')} {dt.strftime('%p')}"
-
-    except Exception:
-
-        return str(value)
-
+    return f"{dt.strftime('%B')} {dt.day}, {dt.year} at {hour}:{dt.strftime('%M')} {dt.strftime('%p')} EAT"
 
 
 def room_display_name(room):
@@ -3414,7 +3484,25 @@ def notify_appointment_update(appt, action, reason='', old_start_time=None, old_
 
 def notify_daily_schedule(date_str=None):
 
-    date_str = date_str or datetime.now().strftime('%Y-%m-%d')
+    if date_str:
+
+        try:
+
+            target_day = datetime.fromisoformat(str(date_str)).date()
+
+        except Exception:
+
+            target_day = now_in_eat().date()
+
+    else:
+
+        target_day = now_in_eat().date()
+
+
+    day_start = datetime(target_day.year, target_day.month, target_day.day, 0, 0, 0, tzinfo=EAT)
+
+    day_end = day_start + timedelta(days=1)
+
 
     with get_db() as conn:
 
@@ -3426,54 +3514,74 @@ def notify_daily_schedule(date_str=None):
 
             JOIN appointments a ON a.therapist_id=u.id
 
-            WHERE u.role='therapist' AND u.is_active=1 AND a.start_time::date = %s::date
+            WHERE u.role='therapist' AND u.is_active=1
 
-        """, (date_str,)).fetchall()
+              AND a.start_time >= ? AND a.start_time < ?
+
+        """, (day_start.isoformat(), day_end.isoformat())).fetchall()
 
         for therapist in therapists:
 
             appts = conn.execute("""
 
-                SELECT a.start_time, a.end_time, c.full_name as client_name, a.location, a.type
+                SELECT a.start_time, a.end_time, c.full_name as client_name, c.client_code, a.location, a.type, r.name as room_name, r.code as room_code
 
                 FROM appointments a
 
                 LEFT JOIN clients c ON a.client_id=c.id
 
-                WHERE a.therapist_id=? AND a.start_time::date = %s::date AND a.status='scheduled'
+                LEFT JOIN rooms r ON a.room_id=r.id
+
+                WHERE a.therapist_id=? AND a.start_time >= ? AND a.start_time < ? AND a.status IN ('scheduled', 'confirmed')
 
                 ORDER BY a.start_time ASC
 
-            """, (therapist['id'], date_str)).fetchall()
+            """, (therapist['id'], day_start.isoformat(), day_end.isoformat())).fetchall()
 
             if not appts:
 
                 continue
 
-            lines = [f"<b>Today's schedule for {therapist['full_name']}</b>", '']
+            lines = [
 
-            for appt in appts:
+                f'\U0001f305 <b>Good morning, {therapist["full_name"]}</b>',
 
-                lines.append(f"• {appt['start_time']} - {appt['client_name']} ({appt['type']}, {appt['location']})")
+                f'Here is your schedule for <b>{target_day.strftime("%A, %B %d, %Y")}</b> (Ethiopia time).',
 
-            send_telegram_message(therapist['telegram_chat_id'], '\n'.join(lines))
+                '',
 
+                f'You have <b>{len(appts)}</b> session(s) today.',
+
+                '',
+
+            ]
+
+            for idx, appt in enumerate(appts, 1):
+
+                room_name = appt['room_name'] or appt['room_code'] or 'Unassigned room'
+
+                lines.append(
+
+                    f'{idx}. <b>{format_datetime_readable(appt["start_time"])} </b> - {appt["client_name"] or "Client"} <code>{appt["client_code"] or "No code"}</code>\\n'
+
+                    f'   \u2022 Session type: {appt["type"] or "Session"}\\n'
+
+                    f'   \u2022 Location: {appt["location"] or "Not specified"}\\n'
+
+                    f'   \u2022 Room: {room_name}'
+
+                )
+
+            send_telegram_message(therapist['telegram_chat_id'], '\\n'.join(lines), parse_mode='HTML')
 
 
 def handle_telegram_update(update):
-    BASE_URL = 'https://aha-psychological-service.vercel.app'
+    BASE_URL = APP_BASE_URL
 
     def get_portal_url(user_obj=None):
         if not user_obj:
-            return BASE_URL
-        role = user_obj.get('role', '')
-        if role == 'therapist':
-            return f'{BASE_URL}/portals/therapist_portal.html'
-        elif role == 'receptionist':
-            return f'{BASE_URL}/portals/reception_portal.html'
-        elif role == 'admin':
-            return f'{BASE_URL}/portals/admin_portal.html'
-        return BASE_URL
+            return f'{BASE_URL}/login'
+        return portal_url_for_role(user_obj.get('role', ''))
 
     # helpers
     def kb(*rows):
@@ -3555,7 +3663,7 @@ def handle_telegram_update(update):
                 "3️⃣ Click <b>Generate Link Code</b>\n"
                 "4️⃣ Reply here with: <code>/start YOUR_CODE</code>\n\n"
                 "Need help? Type /help",
-                kb([[(f'🌐 Open Portal', f'URL:{BASE_URL}')]]))
+                kb([[(f'🌐 Open Portal', f'URL:{BASE_URL}/login')]]))
             return True
 
         # validate and link
@@ -3569,7 +3677,7 @@ def handle_telegram_update(update):
                 msg(chat_id,
                     "❌ <b>Invalid or expired code.</b>\n\n"
                     "Please generate a new one from the Admin Portal.",
-                    kb([[(f'🌐 Get New Code', f'URL:{BASE_URL}')]]))
+                    kb([[(f'🌐 Get New Code', f'URL:{BASE_URL}/login')]]))
                 return True
 
             linked_user = conn.execute('SELECT * FROM users WHERE id=?', (link['user_id'],)).fetchone()
@@ -3607,7 +3715,7 @@ def handle_telegram_update(update):
         msg(chat_id,
             "❌ <b>Your account is not linked yet.</b>\n\n"
             "Send /start to see how to link your account.",
-            kb([[(f'🌐 Open Portal', f'URL:{BASE_URL}')]]))
+            kb([[(f'🌐 Open Portal', f'URL:{BASE_URL}/login')]]))
         return True
 
     # /appointments
@@ -4567,8 +4675,6 @@ def create_appointment():
     with get_db() as conn:
 
         if is_recurring:
-
-            from datetime import datetime, timedelta
 
             start_dt = datetime.fromisoformat(data.get('start_time'))
 
@@ -7316,14 +7422,12 @@ def cron_daily_schedule():
 def cron_upcoming_sessions():
     if not verify_cron_request():
         return jsonify({'error': 'Unauthorized'}), 401
-        
+
     try:
-        # We need to find appointments starting in exactly 30 minutes
-        # Since cron runs every 10 mins, we check if start_time is between 25 and 35 mins from now
-        now = datetime.now()
+        now = now_in_eat()
         start_window = (now + timedelta(minutes=25)).isoformat()
         end_window = (now + timedelta(minutes=35)).isoformat()
-        
+
         with get_db() as conn:
             appts = conn.execute(
                 """SELECT a.*, c.full_name as client_name, c.client_code as client_code, u.full_name as therapist_name,
@@ -7332,23 +7436,33 @@ def cron_upcoming_sessions():
                    LEFT JOIN clients c ON a.client_id=c.id
                    LEFT JOIN users u ON a.therapist_id=u.id
                    LEFT JOIN rooms r ON a.room_id=r.id
-                   WHERE a.status IN ('scheduled', 'confirmed') 
-                   AND a.start_time >= ? AND a.start_time <= ?""",
+                   WHERE a.status IN ('scheduled', 'confirmed')
+                   AND a.start_time >= ? AND a.start_time < ?
+                   ORDER BY a.start_time ASC""",
                 (start_window, end_window)
             ).fetchall()
-            
+
             count = 0
             for row in appts:
                 appt = dict(row)
                 therapist_id = appt.get('therapist_id')
-                if therapist_id:
-                    # Send telegram notification
-                    time_str = appt.get('start_time', '')[11:16] if appt.get('start_time') else 'soon'
-                    subject = "Session starting in 30 minutes"
-                    body = build_appointment_message(appt, 'reminder')
-                    notify_user(therapist_id, subject, body)
-                    count += 1
-                    
+                if not therapist_id:
+                    continue
+                subject = 'Session starting in 30 minutes'
+                body = [
+                    '⏰ <b>Your next session starts in about 30 minutes</b>',
+                    '',
+                    f'• <b>Client:</b> {_telegram_safe(appt.get("client_name") or "Client")} <code>{_telegram_safe(appt.get("client_code") or "No code")}</code>',
+                    f'• <b>When:</b> {_telegram_safe(format_datetime_readable(appt.get("start_time")))}',
+                    f'• <b>Ends:</b> {_telegram_safe(format_datetime_readable(appt.get("end_time")))}',
+                    f'• <b>Location:</b> {_telegram_safe(appt.get("location") or "Not specified")}',
+                    f'• <b>Room:</b> {_telegram_safe(appt.get("room_name") or appt.get("room_code") or "Unassigned")}',
+                    '',
+                    'Please review your portal for any last-minute updates.'
+                ]
+                notify_user(therapist_id, subject, '\n'.join(body))
+                count += 1
+
         return jsonify({'success': True, 'message': f'Sent {count} upcoming session reminders'}), 200
     except Exception as e:
         print(f"[CRON] Upcoming sessions error: {e}")

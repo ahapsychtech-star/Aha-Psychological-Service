@@ -502,10 +502,33 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
 
 /* Mobile Responsiveness for Modals and Calendar */
 @media (max-width: 768px) {
+  .sidebar {
+    position: relative;
+    width: 100%;
+    height: auto;
+    bottom: auto;
+    left: auto;
+    top: auto;
+  }
+  .main {
+    margin-left: 0;
+    min-width: 0;
+  }
+  .topbar {
+    height: auto;
+    padding: 12px 14px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .modal-content,
+  .drawer,
+  .appt-editor-modal {
+    width: 96vw;
+    max-width: 96vw;
+    max-height: 88vh;
+  }
   .modal-content {
-    width: 95%;
-    margin: 10% auto;
-    max-height: 85vh;
+    margin: 6vh auto;
     overflow-y: auto;
   }
   .cal-day-header {
@@ -536,6 +559,11 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
   .header-actions {
     flex-direction: column;
     gap: 8px;
+  }
+  .grid-2,
+  .grid-3,
+  .grid-4 {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1712,6 +1740,1178 @@ async function renderDayView() {
   document.getElementById('calNext').onclick = () => { calDate.setDate(calDate.getDate()+1); renderCalendar(); };
   await showDayDetail(dateStr, calDate.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}));
   document.getElementById('calContainer').innerHTML = '';
+}
+
+
+async function loadAllClients() {
+  try {
+    const r = await fetch('/api/clients');
+    allClients = await r.json();
+    renderClientsTable();
+  } catch(e){}
+}
+
+function filterClients() { renderClientsTable(); }
+
+function renderClientsTable() {
+  const q = (document.getElementById('clientSearch')?.value||'').toLowerCase();
+  const st = document.getElementById('filterStatus')?.value||'';
+  const risk = document.getElementById('filterRisk')?.value||'';
+  const filtered = allClients.filter(c =>
+    (!q || c.full_name?.toLowerCase().includes(q) || c.client_code?.toLowerCase().includes(q) || c.phone?.includes(q)) &&
+    (!st || c.status === st) && (!risk || c.risk_level === risk));
+  const tb = document.getElementById('clientsTableBody');
+  if (!tb) return;
+  if (!filtered.length) { tb.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted)">No clients found</td></tr>`; return; }
+  tb.innerHTML = filtered.map(c => `
+    <tr style="cursor:pointer" onclick="openClientDrawer(${c.id})">
+      <td><span style="font-family:monospace;font-size:12px;font-weight:700;color:var(--navy)">${c.client_code||'â€”'}</span></td>
+      <td><strong>${c.full_name}</strong></td>
+      <td>${c.phone||'â€”'}</td>
+      <td>${statusBadge(c.status)}</td>
+      <td>${riskBadge(c.risk_level)}</td>
+      <td style="font-size:12px;color:var(--text-muted)">${formatDate(c.registration_date)}</td>
+      <td style="font-size:13px">${c.therapist_name||'<span style="color:var(--text-muted)">Unassigned</span>'}</td>
+      <td onclick="event.stopPropagation()" style="display:flex;gap:4px">
+        <button class="btn btn-sm btn-ghost" onclick="openClientDrawer(${c.id})"><i class="fa-solid fa-eye"></i></button>
+        <button class="btn btn-sm btn-gold" onclick="selectAndAssign(${c.id})"><i class="fa-solid fa-user-check"></i></button>
+      </td>
+    </tr>`).join('');
+}
+
+async function openClientDrawer(cid) {
+  currentDrawerClient = cid;
+  currentDrawerTab = 'info';
+  document.getElementById('clientDrawer').classList.add('open');
+  document.getElementById('clientDrawerOverlay').classList.add('active');
+  document.getElementById('drawerClientName').textContent = 'Loading...';
+  document.getElementById('drawerContent').innerHTML = `<div class="skel" style="height:200px"></div>`;
+  try {
+    const r = await fetch(`/api/clients/${cid}`);
+    const data = await r.json();
+    document.getElementById('drawerClientName').textContent = data.client.full_name;
+    switchDrawerTab('info', data);
+  } catch(e){}
+}
+
+function closeClientDrawer() {
+  document.getElementById('clientDrawer').classList.remove('open');
+  document.getElementById('clientDrawerOverlay').classList.remove('active');
+}
+
+function switchDrawerTab(tab, data) {
+  currentDrawerTab = tab;
+  document.querySelectorAll('#drawerTabs button').forEach(b => {
+    b.className = b.textContent.trim().toLowerCase().startsWith(tab.charAt(0).toUpperCase()+tab.slice(1)) ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
+  });
+  if (!data) { fetch(`/api/clients/${currentDrawerClient}`).then(r=>r.json()).then(d => renderDrawerTab(tab,d)); return; }
+  renderDrawerTab(tab, data);
+}
+
+function renderDrawerTab(tab, data) {
+  const c = data.client;
+  const el = document.getElementById('drawerContent');
+  if (tab==='info') {
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding:16px;background:var(--bg);border-radius:12px">
+        <div style="width:56px;height:56px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800">${c.full_name[0]}</div>
+        <div><div style="font-size:17px;font-weight:800">${c.full_name}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${c.client_code} Â· Registered ${formatDate(c.registration_date)}</div>
+          <div style="margin-top:6px;display:flex;gap:6px">${statusBadge(c.status)}${riskBadge(c.risk_level)}</div></div>
+      </div>
+      ${infoRow('Phone',c.phone)}${infoRow('Email',c.email)}${infoRow('Gender',c.gender)}
+      ${infoRow('Date of Birth',c.date_of_birth)}${infoRow('Address',c.address)}
+      <div style="margin:14px 0;border-top:1px solid var(--border);padding-top:14px;font-size:13px;font-weight:700;color:var(--text-muted)">EMERGENCY CONTACT</div>
+      ${infoRow('Name',c.emergency_contact_name)}${infoRow('Phone',c.emergency_contact_phone)}
+      <div style="margin:14px 0;border-top:1px solid var(--border);padding-top:14px;font-size:13px;font-weight:700;color:var(--text-muted)">PREFERENCES</div>
+      ${infoRow('Language',c.language_pref)}${infoRow('Therapist Preference',c.therapist_gender_pref)}
+      ${infoRow('Intake Source',c.intake_source)}${infoRow('Assigned Therapist',c.therapist_name||'Unassigned')}
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn btn-gold btn-sm" onclick="selectAndAssign(${c.id})"><i class="fa-solid fa-user-check"></i>Assign Therapist</button>
+        <button class="btn btn-outline btn-sm" onclick="openInvoiceForClient(${c.id})"><i class="fa-solid fa-file-invoice"></i>Create Invoice</button>
+      </div>`;
+  } else if (tab==='journey') {
+    const j = data.journey;
+    el.innerHTML = j.length ? `<div class="timeline">${j.map(e=>`
+      <div class="timeline-item">
+        <div class="timeline-dot"><i class="fa-solid fa-arrow-right" style="font-size:10px"></i></div>
+        <div class="timeline-content">
+          <div class="timeline-date">${formatDate(e.changed_at)} by ${e.changed_by_name||'System'}</div>
+          <div class="timeline-text">${e.stage.replace(/_/g,' ').toUpperCase()}</div>
+          ${e.notes?`<div style="font-size:12px;color:var(--text-muted);margin-top:4px">${e.notes}</div>`:''}
+        </div>
+      </div>`).join('')}</div>` : '<p style="color:var(--text-muted)">No journey records.</p>';
+  } else if (tab==='appointments') {
+    const a = data.appointments;
+    el.innerHTML = a.length ? `<div style="display:flex;flex-direction:column;gap:10px">${a.map(ap=>`
+      <div style="padding:12px;border-radius:12px;background:linear-gradient(180deg,#fff,#fbfdff);border:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div style="width:44px;height:44px;border-radius:12px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-calendar-check"></i></div>
+        <div style="flex:1;min-width:180px"><div style="font-size:13px;font-weight:800;color:var(--navy)">${formatDate(ap.start_time)} - ${formatTime(ap.start_time)}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:3px">${ap.type} - ${ap.therapist_name||'TBA'} - ${ap.location||'Location not set'}</div>
+          <div style="margin-top:6px">${statusBadge(ap.status)}${ap.change_scope ? ` <span class="badge badge-${ap.change_scope==='permanent'?'gold':'orange'}">${ap.change_scope}</span>` : ''}</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-left:auto">
+          <button class="btn btn-gold btn-sm" onclick="openBookModal(${c.id}, ${ap.therapist_id || 'null'})"><i class="fa-solid fa-rotate-right"></i>Continue</button>
+          <button class="btn btn-outline btn-sm" onclick="openClientDrawer(${c.id})"><i class="fa-solid fa-eye"></i>Open Profile</button>
+        </div>
+      </div>`).join('')}</div>` : '<p style="color:var(--text-muted)">No appointments.</p>';
+  } else if (tab==='finance') {
+    const inv = data.invoices;
+    el.innerHTML = inv.length ? `<div>${inv.map(i=>`
+      <div style="padding:12px;border-radius:8px;background:var(--bg);margin-bottom:8px;display:flex;align-items:center;gap:10px">
+        <i class="fa-solid fa-file-invoice-dollar" style="color:var(--navy)"></i>
+        <div><div style="font-size:13px;font-weight:700">ETB ${(i.amount||0).toLocaleString()}</div>
+          <div style="font-size:12px;color:var(--text-muted)">Due: ${formatDate(i.due_date)}</div></div>
+        <div style="margin-left:auto">${invStatusBadge(i.status)}</div>
+        ${i.status==='pending'?`<button class="btn btn-sm btn-success" onclick="openPaymentFor(${i.id},${i.client_id})">Pay</button>`:''}
+      </div>`).join('')}</div>` : '<p style="color:var(--text-muted)">No invoices.</p>';
+  }
+}
+
+function infoRow(label, val) {
+  return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+    <span style="font-size:12px;font-weight:700;color:var(--text-muted)">${label.toUpperCase()}</span>
+    <span style="font-size:13px;font-weight:600">${val||'â€”'}</span>
+  </div>`;
+}
+
+// â”€â”€â”€ New Client â”€â”€â”€
+let currentStep = 1;
+
+function nextStep(step) {
+  if (step > 1 && !validateStep(currentStep)) return;
+  currentStep = step;
+  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('step'+step).classList.add('active');
+
+  [1,2,3].forEach(i => {
+    const dot = document.getElementById('step'+i+'dot');
+    dot.className = 'step-dot' + (i < step ? ' done' : i === step ? ' active' : '');
+    if (i < 3) document.getElementById('line'+i).className = 'step-line' + (i < step ? ' done' : '');
+  });
+
+  if (step === 3) buildReview();
+}
+
+function validateStep(step) {
+  if (step === 1) {
+    const required = ['nc_name','nc_dob','nc_gender','nc_phone','nc_ecname','nc_ecphone'];
+    for (const id of required) {
+      if (!document.getElementById(id)?.value.trim()) { toast('Please fill all required fields (*)', true); return false; }
+    }
+  }
+  return true;
+}
+
+function buildReview() {
+  const rows = [
+    ['Full Name', document.getElementById('nc_name').value],
+    ['Date of Birth', document.getElementById('nc_dob').value],
+    ['Gender', document.getElementById('nc_gender').value],
+    ['Phone', document.getElementById('nc_phone').value],
+    ['Email', document.getElementById('nc_email').value||'â€”'],
+    ['Address', document.getElementById('nc_address').value||'â€”'],
+    ['Emergency Contact', document.getElementById('nc_ecname').value + ' Â· ' + document.getElementById('nc_ecphone').value],
+    ['Language Preference', document.getElementById('nc_lang').value],
+    ['Therapist Gender Pref', document.getElementById('nc_genderpref').value],
+    ['Intake Source', document.getElementById('nc_source').value],
+    ['Presenting Concerns', document.getElementById('nc_concerns').value||'â€”'],
+  ];
+  document.getElementById('reviewContent').innerHTML = rows.map(([l,v])=>
+    `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:12px;font-weight:700;color:var(--text-muted)">${l}</span>
+      <span style="font-size:13px;font-weight:600;max-width:60%;text-align:right">${v}</span>
+    </div>`).join('');
+}
+
+async function registerClient() {
+  const btn = document.getElementById('registerBtn');
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registering...';
+  btn.disabled = true;
+  const body = {
+    full_name: document.getElementById('nc_name').value,
+    date_of_birth: document.getElementById('nc_dob').value,
+    gender: document.getElementById('nc_gender').value,
+    phone: document.getElementById('nc_phone').value,
+    email: document.getElementById('nc_email').value,
+    address: document.getElementById('nc_address').value,
+    emergency_contact_name: document.getElementById('nc_ecname').value,
+    emergency_contact_phone: document.getElementById('nc_ecphone').value,
+    language_pref: document.getElementById('nc_lang').value,
+    therapist_gender_pref: document.getElementById('nc_genderpref').value,
+    intake_source: document.getElementById('nc_source').value,
+    notes: document.getElementById('nc_notes').value,
+  };
+  try {
+    const r = await fetch('/api/clients', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data = await r.json();
+    if (data.success) {
+      document.querySelectorAll('.step-panel').forEach(p=>p.classList.remove('active'));
+      document.getElementById('step4').classList.add('active');
+      document.getElementById('newClientCode').textContent = data.client_code;
+      await loadAllClients();
+      toast('Client registered successfully!');
+    }
+  } catch(e){ toast('Registration failed', true); }
+  btn.disabled = false;
+}
+
+function resetClientForm() {
+  ['nc_name','nc_dob','nc_phone','nc_email','nc_address','nc_ecname','nc_ecphone','nc_concerns','nc_notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  currentStep = 1;
+  nextStep(1);
+}
+
+// â”€â”€â”€ Smart Assignment â”€â”€â”€
+async function loadAssignQueue() {
+  try {
+    const r = await fetch('/api/clients');
+    const clients = await r.json();
+    const pending = clients.filter(c => ['registered','screening_completed','awaiting_assignment'].includes(c.status) && !c.assigned_therapist_id);
+    const el = document.getElementById('assignQueue');
+    if (!pending.length) {
+      el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--success)"><i class="fa-solid fa-circle-check" style="font-size:32px;margin-bottom:10px"></i><p style="font-weight:700">All clients assigned!</p></div>`;
+    } else {
+      el.innerHTML = pending.map(c => `
+        <div class="queue-card" id="qc-${c.id}" onclick="selectAssignClient(${c.id})">
+          <div class="queue-name">${c.full_name} <span class="queue-code">${c.client_code}</span></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+            ${riskBadge(c.risk_level)}<span class="badge badge-blue">${c.language_pref}</span>
+            <span class="badge badge-gray">${c.therapist_gender_pref}</span>
+          </div>
+        </div>`).join('');
+    }
+  } catch(e){}
+}
+
+async function selectAssignClient(cid) {
+  selectedAssignClient = cid;
+  document.querySelectorAll('.queue-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('qc-'+cid)?.classList.add('selected');
+
+  document.getElementById('recPlaceholder').style.display='none';
+  document.getElementById('recResults').style.display='block';
+  document.getElementById('recList').innerHTML = '<div style="text-align:center;padding:30px"><i class="fa-solid fa-spinner fa-spin" style="font-size:24px;color:var(--navy)"></i><p style="margin-top:10px;color:var(--text-muted)">Analyzing match criteria...</p></div>';
+
+  const client = allClients.find(c=>c.id===cid);
+  if(client) document.getElementById('selectedClientBadge').innerHTML = `<span style="font-size:13px;font-weight:700;color:var(--navy)">${client.full_name}</span>`;
+
+  try {
+    const r = await fetch('/api/assign/recommend', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({client_id:cid})});
+    const data = await r.json();
+    const recs = data.recommendations;
+    if (!recs.length) { document.getElementById('recList').innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px">No therapists available</p>'; return; }
+    document.getElementById('recList').innerHTML = recs.map(t => {
+      const score = t.match_score;
+      const cls = score>=80?'match-high':score>=60?'match-mid':'match-low';
+      const fillColor = score>=80?'var(--success)':score>=60?'var(--warning)':'var(--danger)';
+      const pct = Math.min(100,(t.caseload/Math.max(t.max_caseload,1))*100);
+      return `<div class="rec-card">
+        <div class="rec-header">
+          <div class="rec-avatar">${(t.full_name||'?')[0]}</div>
+          <div>
+            <div style="font-size:15px;font-weight:800">${t.full_name}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${t.specialization||'General Counseling'}</div>
+            <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+              ${(t.languages||'English').split(',').map(l=>`<span class="badge badge-teal">${l.trim()}</span>`).join('')}
+              ${t.gender?`<span class="badge badge-blue">${t.gender}</span>`:''}
+            </div>
+          </div>
+          <div class="match-badge ${cls}">${score}%</div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+            <span style="color:var(--text-muted);font-weight:600">CASELOAD</span>
+            <span style="font-weight:700">${t.caseload}/${t.max_caseload}</span>
+          </div>
+      ${infoRow('Language',c.language_pref)}${infoRow('Therapist Preference',c.therapist_gender_pref)}
+      ${infoRow('Intake Source',c.intake_source)}${infoRow('Assigned Therapist',c.therapist_name||'Unassigned')}
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn btn-gold btn-sm" onclick="selectAndAssign(${c.id})"><i class="fa-solid fa-user-check"></i>Assign Therapist</button>
+        <button class="btn btn-outline btn-sm" onclick="openInvoiceForClient(${c.id})"><i class="fa-solid fa-file-invoice"></i>Create Invoice</button>
+      </div>`;
+  } else if (tab==='journey') {
+    const j = data.journey;
+    el.innerHTML = j.length ? `<div class="timeline">${j.map(e=>`
+      <div class="timeline-item">
+        <div class="timeline-dot"><i class="fa-solid fa-arrow-right" style="font-size:10px"></i></div>
+        <div class="timeline-content">
+          <div class="timeline-date">${formatDate(e.changed_at)} by ${e.changed_by_name||'System'}</div>
+          <div class="timeline-text">${e.stage.replace(/_/g,' ').toUpperCase()}</div>
+          ${e.notes?`<div style="font-size:12px;color:var(--text-muted);margin-top:4px">${e.notes}</div>`:''}
+        </div>
+      </div>`).join('')}</div>` : '<p style="color:var(--text-muted)">No journey records.</p>';
+  } else if (tab==='appointments') {
+    const a = data.appointments;
+    el.innerHTML = a.length ? `<div style="display:flex;flex-direction:column;gap:10px">${a.map(ap=>`
+      <div style="padding:12px;border-radius:12px;background:linear-gradient(180deg,#fff,#fbfdff);border:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div style="width:44px;height:44px;border-radius:12px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-calendar-check"></i></div>
+        <div style="flex:1;min-width:180px"><div style="font-size:13px;font-weight:800;color:var(--navy)">${formatDate(ap.start_time)} - ${formatTime(ap.start_time)}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:3px">${ap.type} - ${ap.therapist_name||'TBA'} - ${ap.location||'Location not set'}</div>
+          <div style="margin-top:6px">${statusBadge(ap.status)}${ap.change_scope ? ` <span class="badge badge-${ap.change_scope==='permanent'?'gold':'orange'}">${ap.change_scope}</span>` : ''}</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-left:auto">
+          <button class="btn btn-gold btn-sm" onclick="openBookModal(${c.id}, ${ap.therapist_id || 'null'})"><i class="fa-solid fa-rotate-right"></i>Continue</button>
+          <button class="btn btn-outline btn-sm" onclick="openClientDrawer(${c.id})"><i class="fa-solid fa-eye"></i>Open Profile</button>
+        </div>
+      </div>`).join('')}</div>` : '<p style="color:var(--text-muted)">No appointments.</p>';
+  } else if (tab==='finance') {
+    const inv = data.invoices;
+    el.innerHTML = inv.length ? `<div>${inv.map(i=>`
+      <div style="padding:12px;border-radius:8px;background:var(--bg);margin-bottom:8px;display:flex;align-items:center;gap:10px">
+        <i class="fa-solid fa-file-invoice-dollar" style="color:var(--navy)"></i>
+        <div><div style="font-size:13px;font-weight:700">ETB ${(i.amount||0).toLocaleString()}</div>
+          <div style="font-size:12px;color:var(--text-muted)">Due: ${formatDate(i.due_date)}</div></div>
+        <div style="margin-left:auto">${invStatusBadge(i.status)}</div>
+        ${i.status==='pending'?`<button class="btn btn-sm btn-success" onclick="openPaymentFor(${i.id},${i.client_id})">Pay</button>`:''}
+      </div>`).join('')}</div>` : '<p style="color:var(--text-muted)">No invoices.</p>';
+  }
+}
+
+function infoRow(label, val) {
+  return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+    <span style="font-size:12px;font-weight:700;color:var(--text-muted)">${label.toUpperCase()}</span>
+    <span style="font-size:13px;font-weight:600">${val||'—'}</span>
+  </div>`;
+}
+
+// ——— New Client ———
+let currentStep = 1;
+
+function nextStep(step) {
+  if (step > 1 && !validateStep(currentStep)) return;
+  currentStep = step;
+  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('step'+step).classList.add('active');
+
+  [1,2,3].forEach(i => {
+    const dot = document.getElementById('step'+i+'dot');
+    dot.className = 'step-dot' + (i < step ? ' done' : i === step ? ' active' : '');
+    if (i < 3) document.getElementById('line'+i).className = 'step-line' + (i < step ? ' done' : '');
+  });
+
+  if (step === 3) buildReview();
+}
+
+function validateStep(step) {
+  if (step === 1) {
+    const required = ['nc_name','nc_dob','nc_gender','nc_phone','nc_ecname','nc_ecphone'];
+    for (const id of required) {
+      if (!document.getElementById(id)?.value.trim()) { toast('Please fill all required fields (*)', true); return false; }
+    }
+  }
+  return true;
+}
+
+function buildReview() {
+  const rows = [
+    ['Full Name', document.getElementById('nc_name').value],
+    ['Date of Birth', document.getElementById('nc_dob').value],
+    ['Gender', document.getElementById('nc_gender').value],
+    ['Phone', document.getElementById('nc_phone').value],
+    ['Email', document.getElementById('nc_email').value||'—'],
+    ['Address', document.getElementById('nc_address').value||'—'],
+    ['Emergency Contact', document.getElementById('nc_ecname').value + ' · ' + document.getElementById('nc_ecphone').value],
+    ['Language Preference', document.getElementById('nc_lang').value],
+    ['Therapist Gender Pref', document.getElementById('nc_genderpref').value],
+    ['Intake Source', document.getElementById('nc_source').value],
+    ['Presenting Concerns', document.getElementById('nc_concerns').value||'—'],
+  ];
+  document.getElementById('reviewContent').innerHTML = rows.map(([l,v])=>
+    `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:12px;font-weight:700;color:var(--text-muted)">${l}</span>
+      <span style="font-size:13px;font-weight:600;max-width:60%;text-align:right">${v}</span>
+    </div>`).join('');
+}
+
+async function registerClient() {
+  const btn = document.getElementById('registerBtn');
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registering...';
+  btn.disabled = true;
+  const body = {
+    full_name: document.getElementById('nc_name').value,
+    date_of_birth: document.getElementById('nc_dob').value,
+    gender: document.getElementById('nc_gender').value,
+    phone: document.getElementById('nc_phone').value,
+    email: document.getElementById('nc_email').value,
+    address: document.getElementById('nc_address').value,
+    emergency_contact_name: document.getElementById('nc_ecname').value,
+    emergency_contact_phone: document.getElementById('nc_ecphone').value,
+    language_pref: document.getElementById('nc_lang').value,
+    therapist_gender_pref: document.getElementById('nc_genderpref').value,
+    intake_source: document.getElementById('nc_source').value,
+    notes: document.getElementById('nc_notes').value,
+  };
+  try {
+    const r = await fetch('/api/clients', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data = await r.json();
+    if (data.success) {
+      document.querySelectorAll('.step-panel').forEach(p=>p.classList.remove('active'));
+      document.getElementById('step4').classList.add('active');
+      document.getElementById('newClientCode').textContent = data.client_code;
+      await loadAllClients();
+      toast('Client registered successfully!');
+    }
+  } catch(e){ toast('Registration failed', true); }
+  btn.disabled = false;
+}
+
+function resetClientForm() {
+  ['nc_name','nc_dob','nc_phone','nc_email','nc_address','nc_ecname','nc_ecphone','nc_concerns','nc_notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  currentStep = 1;
+  nextStep(1);
+}
+
+// ——— Smart Assignment ———
+async function loadAssignQueue() {
+  try {
+    const r = await fetch('/api/clients');
+    const clients = await r.json();
+    const pending = clients.filter(c => ['registered','screening_completed','awaiting_assignment'].includes(c.status) && !c.assigned_therapist_id);
+    const el = document.getElementById('assignQueue');
+    if (!pending.length) {
+      el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--success)"><i class="fa-solid fa-circle-check" style="font-size:32px;margin-bottom:10px"></i><p style="font-weight:700">All clients assigned!</p></div>`;
+    } else {
+      el.innerHTML = pending.map(c => `
+        <div class="queue-card" id="qc-${c.id}" onclick="selectAssignClient(${c.id})">
+          <div class="queue-name">${c.full_name} <span class="queue-code">${c.client_code}</span></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+            ${riskBadge(c.risk_level)}<span class="badge badge-blue">${c.language_pref}</span>
+            <span class="badge badge-gray">${c.therapist_gender_pref}</span>
+          </div>
+        </div>`).join('');
+    }
+  } catch(e){}
+}
+
+async function selectAssignClient(cid) {
+  selectedAssignClient = cid;
+  document.querySelectorAll('.queue-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('qc-'+cid)?.classList.add('selected');
+
+  document.getElementById('recPlaceholder').style.display='none';
+  document.getElementById('recResults').style.display='block';
+  document.getElementById('recList').innerHTML = '<div style="text-align:center;padding:30px"><i class="fa-solid fa-spinner fa-spin" style="font-size:24px;color:var(--navy)"></i><p style="margin-top:10px;color:var(--text-muted)">Analyzing match criteria...</p></div>';
+
+  const client = allClients.find(c=>c.id===cid);
+  if(client) document.getElementById('selectedClientBadge').innerHTML = `<span style="font-size:13px;font-weight:700;color:var(--navy)">${client.full_name}</span>`;
+
+  try {
+    const r = await fetch('/api/assign/recommend', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({client_id:cid})});
+    const data = await r.json();
+    const recs = data.recommendations;
+    if (!recs.length) { document.getElementById('recList').innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px">No therapists available</p>'; return; }
+    document.getElementById('recList').innerHTML = recs.map(t => {
+      const score = t.match_score;
+      const cls = score>=80?'match-high':score>=60?'match-mid':'match-low';
+      const fillColor = score>=80?'var(--success)':score>=60?'var(--warning)':'var(--danger)';
+      const pct = Math.min(100,(t.caseload/Math.max(t.max_caseload,1))*100);
+      return `<div class="rec-card">
+        <div class="rec-header">
+          <div class="rec-avatar">${(t.full_name||'?')[0]}</div>
+          <div>
+            <div style="font-size:15px;font-weight:800">${t.full_name}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${t.specialization||'General Counseling'}</div>
+            <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+              ${(t.languages||'English').split(',').map(l=>`<span class="badge badge-teal">${l.trim()}</span>`).join('')}
+              ${t.gender?`<span class="badge badge-blue">${t.gender}</span>`:''}
+            </div>
+          </div>
+          <div class="match-badge ${cls}">${score}%</div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+            <span style="color:var(--text-muted);font-weight:600">CASELOAD</span>
+            <span style="font-weight:700">${t.caseload}/${t.max_caseload}</span>
+          </div>
+          <div class="caseload-bar"><div class="caseload-fill" style="width:${pct}%;background:${fillColor}"></div></div>
+        </div>
+        <button class="btn btn-primary" onclick="assignTherapist(${cid},${t.id})"><i class="fa-solid fa-user-check"></i>Assign ${t.full_name.split(' ')[0]}</button>
+      </div>`;
+    }).join('');
+  } catch(e){ document.getElementById('recList').innerHTML='<p style="color:var(--danger)">Failed to load recommendations</p>'; }
+}
+
+async function assignTherapist(clientId, therapistId) {
+  try {
+    const r = await fetch(`/api/clients/${clientId}`, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({assigned_therapist_id:therapistId})});
+    const d = await r.json();
+    if(d.success) {
+      toast('Therapist assigned successfully!');
+      await loadAllClients();
+      loadAssignQueue();
+      document.getElementById('recPlaceholder').style.display='flex';
+      document.getElementById('recResults').style.display='none';
+      selectedAssignClient=null;
+    }
+  } catch(e){ toast('Assignment failed',true); }
+}
+
+function selectAndAssign(cid) { showSection('assignment'); setTimeout(()=>selectAssignClient(cid),400); }
+
+// ——— Appointments ———
+async function loadAppointments() {
+  const startEl = document.getElementById('apptFilterStart');
+  const endEl = document.getElementById('apptFilterEnd');
+  if(startEl && !startEl.value){
+    const today = new Date();
+    const future = new Date(today);
+    future.setMonth(future.getMonth() + 6);
+    startEl.value = today.toISOString().split('T')[0];
+    endEl.value = future.toISOString().split('T')[0];
+  }
+  const start = startEl?.value;
+  const end = endEl?.value;
+  const status = document.getElementById('apptFilterStatus')?.value;
+  let url = '/api/appointments?';
+  if (start) url += `start=${start}&`;
+  if (end) url += `end=${end}&`;
+  try {
+    const r = await fetch(url);
+    allAppointments = await r.json();
+    const filtered = status ? allAppointments.filter(a=>a.status===status) : allAppointments;
+    const tb = document.getElementById('apptTableBody');
+    tb.innerHTML = filtered.map(a => `
+      <tr>
+        <td>${formatDate(a.start_time)} <span style="font-size:11px;color:var(--text-muted)">${formatApptTime(a.start_time)}</span></td>
+        <td><strong>${a.client_name||'—'}</strong></td>
+        <td>${a.therapist_name||'—'}</td>
+        <td><span class="badge badge-blue">${a.type}</span></td>
+        <td>${statusBadge(a.status)}</td>
+        <td>${a.location}</td>
+        <td style="display:flex;gap:4px">
+          <button class="btn btn-sm btn-success" onclick="updateApptStatus(${a.id},'completed')" title="Complete"><i class="fa-solid fa-check"></i></button>
+          <button class="btn btn-sm btn-outline" onclick="changeAppt(${a.id})" title="Change"><i class="fa-solid fa-pen"></i></button>
+          <button class="btn btn-sm btn-danger" onclick="updateApptStatus(${a.id},'cancelled')" title="Cancel"><i class="fa-solid fa-ban"></i></button>
+        </td>
+      </tr>`).join('');
+  } catch(e){}
+}
+
+async function updateApptStatus(id, status) {
+  const reason = status==='cancelled' ? (prompt('Reason for cancelling this appointment:') || '') : '';
+  await fetch(`/api/appointments/${id}`, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status, reason, cancel_reason:reason})});
+  toast('Appointment updated');
+  loadTodaySchedule(); loadAppointments();
+}
+async function changeAppt(id) {
+  const dateTime = prompt('Enter new date and time in ISO format (YYYY-MM-DDTHH:MM):');
+  if(!dateTime) return;
+  const reason = prompt('Reason for changing this appointment:') || '';
+  await fetch(`/api/appointments/${id}`, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({start_time:dateTime, change_reason:reason, reason, action:'changed'})});
+  toast('Appointment changed');
+  loadTodaySchedule(); loadAppointments(); renderCalendar();
+}
+
+// ——— Book Modal ———
+function openBookModal(clientId='', therapistId='') {
+  document.getElementById('bookOverlay').classList.add('active');
+  document.getElementById('bookModal').classList.add('active');
+  const today = new Date();
+  const max = new Date(today);
+  max.setMonth(max.getMonth() + 6);
+  const bookDate = document.getElementById('bookDate');
+  bookDate.value = today.toISOString().split('T')[0];
+  bookDate.min = today.toISOString().split('T')[0];
+  bookDate.max = max.toISOString().split('T')[0];
+  const clientSel = document.getElementById('bookClient');
+  const therapistSel = document.getElementById('bookTherapist');
+  const preClient = clientId ? String(clientId) : '';
+  const preTherapist = therapistId ? String(therapistId) : '';
+  clientSel.innerHTML = '<option value="">Select a client...</option>' + allClients.map(c=>`<option value="${c.id}">${c.full_name} (${c.client_code})</option>`).join('');
+  if (preClient) clientSel.value = preClient;
+  fetch('/api/users').then(r=>r.json()).then(users=>{
+    const therapists = users.filter(u=>u.role==='therapist'&&u.is_active);
+    therapistSel.innerHTML = '<option value="">Select therapist...</option>' + therapists.map(t=>`<option value="${t.id}">${t.full_name}</option>`).join('');
+    if (preTherapist) therapistSel.value = preTherapist;
+    loadBookingRoomAvailability();
+  }).catch(()=>{});
+  loadRooms().then(() => loadBookingRoomAvailability());
+  ['bookDate','bookStart','bookEnd'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.onchange = loadBookingRoomAvailability;
+  });
+}
+function closeBookModal() {
+  document.getElementById('bookOverlay').classList.remove('active');
+  document.getElementById('bookModal').classList.remove('active');
+}
+async function bookAppointment() {
+  const cid=document.getElementById('bookClient').value, tid=document.getElementById('bookTherapist').value;
+  const date=document.getElementById('bookDate').value, start=document.getElementById('bookStart').value, end=document.getElementById('bookEnd').value;
+  if(!cid||!tid||!date||!start){toast('Please fill all required fields',true);return;}
+  const body={client_id:cid,therapist_id:tid,start_time:`${date}T${start}:00`,end_time:`${date}T${end}:00`,
+    type:document.getElementById('bookType').value,location:document.getElementById('bookLocation').value,
+    notes:document.getElementById('bookNotes').value, is_recurring:document.getElementById('bookRecurring').checked};
+  const roomId = document.getElementById('bookRoom')?.value || '';
+  if(roomId) body.room_id = roomId;
+  const r=await fetch('/api/appointments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.success){closeBookModal();toast('Appointment booked!');loadTodaySchedule();loadAppointments();renderCalendar();}
+  else toast('Booking failed',true);
+}
+
+// ——— Finance ———
+function switchFinTab(tab) {
+  document.getElementById('finInvoices').style.display = tab==='invoices'?'block':'none';
+  document.getElementById('finRevenue').style.display = tab==='revenue'?'block':'none';
+}
+
+async function loadInvoices() {
+  try {
+    const r = await fetch('/api/invoices');
+    allInvoices = await r.json();
+    const tb = document.getElementById('invoiceTableBody');
+    if(!tb) return;
+    tb.innerHTML = allInvoices.map(i => `
+      <tr>
+        <td><strong>${i.client_name}</strong><br><span style="font-size:11px;color:var(--text-muted)">${i.client_code}</span></td>
+        <td>${i.service_name||'—'}</td>
+        <td style="font-weight:700">ETB ${(i.amount||0).toLocaleString()}</td>
+        <td>${invStatusBadge(i.status)}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${formatDate(i.due_date)}</td>
+        <td>${i.status==='pending'?`<button class="btn btn-sm btn-success" onclick="openPaymentFor(${i.id},${i.client_id})"><i class="fa-solid fa-credit-card"></i>Pay</button>`:'<span style="color:var(--text-muted);font-size:12px">Settled</span>'}</td>
+      </tr>`).join('');
+  } catch(e){}
+}
+
+function openInvoiceModal() {
+  document.getElementById('invoiceOverlay').classList.add('active');
+  document.getElementById('invoiceModal').classList.add('active');
+  const sel = document.getElementById('invClient');
+  sel.innerHTML = '<option value="">Select client...</option>' + allClients.map(c=>`<option value="${c.id}">${c.full_name} (${c.client_code})</option>`).join('');
+  fetch('/api/services').then(r=>r.json()).then(svcs=>{
+    document.getElementById('invService').innerHTML = '<option value="">Select service...</option>' + svcs.map(s=>`<option value="${s.id}" data-price="${s.price}">${s.name} (ETB ${s.price})</option>`).join('');
+    document.getElementById('invService').onchange = function(){
+      const opt = this.options[this.selectedIndex];
+      if(opt.dataset.price) document.getElementById('invAmount').value = opt.dataset.price;
+    };
+  });
+}
+function closeInvoiceModal() {
+  document.getElementById('invoiceOverlay').classList.remove('active');
+  document.getElementById('invoiceModal').classList.remove('active');
+}
+async function createInvoice() {
+  const body={client_id:document.getElementById('invClient').value,service_id:document.getElementById('invService').value,
+    amount:document.getElementById('invAmount').value,notes:document.getElementById('invNotes').value};
+  const r=await fetch('/api/invoices',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.success){closeInvoiceModal();toast('Invoice created!');loadInvoices();}
+  else toast('Failed',true);
+}
+function openPaymentFor(invId,clientId) {
+  document.getElementById('payInvoiceId').value=invId;
+  document.getElementById('payClientId').value=clientId;
+  document.getElementById('paymentOverlay').classList.add('active');
+  document.getElementById('paymentModal').classList.add('active');
+}
+function openInvoiceForClient(cid) { closeClientDrawer(); showSection('finance'); setTimeout(()=>openInvoiceModal(),300); }
+function closePaymentModal() {
+  document.getElementById('paymentOverlay').classList.remove('active');
+  document.getElementById('paymentModal').classList.remove('active');
+}
+async function submitPayment() {
+  const body={invoice_id:document.getElementById('payInvoiceId').value,client_id:document.getElementById('payClientId').value,
+    amount_paid:document.getElementById('payAmount').value,payment_method:document.getElementById('payMethod').value,
+    invoice_status:document.getElementById('payStatus').value,notes:document.getElementById('payNotes').value};
+  const r=await fetch('/api/payments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.success){closePaymentModal();toast('Payment recorded!');loadInvoices();}
+  else toast('Failed',true);
+}
+
+// ——— Messages ———
+async function loadMessages() {
+  try {
+    const r = await fetch('/api/messages');
+    const msgs = await r.json();
+    const el = document.getElementById('msgList');
+    el.innerHTML = msgs.map(m=>`
+      <div style="padding:12px;border-radius:8px;cursor:pointer;border-bottom:1px solid var(--border)">
+        <div style="font-size:13px;font-weight:700">${m.sender_name||'System'}</div>
+        <div style="font-size:12px;color:var(--text-muted)">${m.subject}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px">${formatDate(m.sent_at)}</div>
+      </div>`).join('') || '<p style="text-align:center;color:var(--text-muted);padding:20px">No messages</p>';
+    // Load users for compose
+    const r2 = await fetch('/api/users');
+    const users = await r2.json();
+    document.getElementById('msgTo').innerHTML = '<option value="">Select recipient...</option>' + users.map(u=>`<option value="${u.id}">${u.full_name} (${u.role})</option>`).join('');
+  } catch(e){}
+}
+function showCompose() { /* already visible */ }
+async function sendMsg() {
+  const body={recipient_id:document.getElementById('msgTo').value,subject:document.getElementById('msgSubject').value,body:document.getElementById('msgBody').value};
+  if(!body.recipient_id||!body.subject){toast('Fill all fields',true);return;}
+  const r=await fetch('/api/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.success){toast('Message sent!');document.getElementById('msgSubject').value='';document.getElementById('msgBody').value='';}
+}
+
+// ——— Helpers ———
+function statusBadge(s) {
+  const map={registered:'blue',screening_completed:'indigo',awaiting_assignment:'orange',assigned:'teal',
+    active:'green',completed:'gray',terminated:'red',cancelled:'red',scheduled:'blue',no_show:'orange'};
+  return `<span class="badge badge-${map[s]||'gray'}">${(s||'unknown').replace(/_/g,' ')}</span>`;
+}
+function riskBadge(r) {
+  const map={low:'green',medium:'orange',high:'red'};
+  return `<span class="badge badge-${map[r]||'gray'}">${r||'low'}</span>`;
+}
+function invStatusBadge(s) {
+  const map={pending:'orange',paid:'green',partial:'indigo',overdue:'red'};
+  return `<span class="badge badge-${map[s]||'gray'}">${s||'pending'}</span>`;
+}
+function formatDate(d) {
+  if(!d) return '—';
+  try { return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); } catch(e){return d;}
+}
+function formatApptTime(d) {
+  if(!d) return '—';
+  try { return new Date(d).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}); } catch(e){return '';}
+}
+function formatTime(d) {
+  if(!d) return '—';
+  try { return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+new Date(d).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}); } catch(e){return d;}
+}
+
+function toast(msg, isError=false) {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast' + (isError?' error':'');
+  t.innerHTML = `<i class="fa-solid ${isError?'fa-circle-xmark':'fa-circle-check'} toast-icon"></i><span class="toast-text">${msg}</span>`;
+  c.appendChild(t);
+  setTimeout(()=>t.classList.add('show'),50);
+  setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),400);},3500);
+}
+
+function hashHue(seed){
+  const text = String(seed || '0');
+  let hash = 0;
+  for(let i=0;i<text.length;i++) hash = ((hash << 5) - hash) + text.charCodeAt(i);
+  return Math.abs(hash) % 360;
+}
+
+function appointmentPalette(seed){
+  const hue = hashHue(seed);
+  return {
+    base: `hsl(${hue} 72% 46%)`,
+    dark: `hsl(${hue} 72% 34%)`,
+    soft: `hsla(${hue}, 72%, 46%, .16)`,
+    softStrong: `hsla(${hue}, 72%, 46%, .24)`,
+  };
+}
+
+function appointmentVisual(a){
+  const seed = a.therapist_id || a.therapist_name || 'appt';
+  const pal = appointmentPalette(seed);
+  const status = (a.status || '').toLowerCase();
+  const changeScope = (a.change_scope || '').toLowerCase();
+  if(status === 'cancelled') {
+    return { palette: { base: 'hsl(215 15% 58%)', dark: 'hsl(215 15% 40%)', soft: 'rgba(148,163,184,.14)', softStrong: 'rgba(148,163,184,.22)' }, cls: 'appt-cancelled', label: 'Cancelled' };
+  }
+  if(changeScope === 'temporary') {
+    return { palette: { base: 'hsl(45 95% 52%)', dark: 'hsl(38 92% 40%)', soft: 'rgba(245,158,11,.14)', softStrong: 'rgba(245,158,11,.22)' }, cls: 'appt-temporary', label: 'Temporary change' };
+  }
+  if(changeScope === 'permanent') {
+    return { palette: { base: 'hsl(45 90% 48%)', dark: 'hsl(40 86% 36%)', soft: 'rgba(255,191,0,.15)', softStrong: 'rgba(255,191,0,.25)' }, cls: '', label: 'Permanent change' };
+  }
+  return { palette: pal, cls: '', label: a.therapist_name || 'Therapist' };
+}
+
+function isoLocal(value){
+  if(!value) return '';
+  try {
+    const d = new Date(value);
+    const tz = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    return tz.toISOString().slice(0, 16);
+  } catch(e) {
+    return '';
+  }
+}
+
+function formatRoomChip(room, state='available'){
+  const label = `${room?.name || 'Room'}${room?.code ? ` (${room.code})` : ''}`;
+  const style = room?.color ? `border-color:${room.color};color:${room.color};background:${state==='busy' ? `${room.color}12` : `${room.color}18`};` : '';
+  const cls = state === 'busy' ? 'busy' : state === 'selected' ? 'selected' : 'available';
+  return `<span class="room-chip ${cls}" style="${style}">${label}</span>`;
+}
+
+function formatRoomOption(room){
+  return `${room?.name || 'Room'}${room?.code ? ` (${room.code})` : ''}`;
+}
+
+async function loadRooms(){
+  try{
+    const r = await fetch('/api/rooms');
+    allRooms = await r.json();
+  }catch(e){
+    allRooms = [];
+  }
+}
+
+async function loadBookingRoomAvailability(){
+  const roomSelect = document.getElementById('bookRoom');
+  const panel = document.getElementById('bookRoomChips');
+  if(!roomSelect || !panel) return;
+  const date = document.getElementById('bookDate')?.value;
+  const start = document.getElementById('bookStart')?.value;
+  const end = document.getElementById('bookEnd')?.value || start;
+  if(!date || !start){
+    roomSelect.innerHTML = '<option value="">Choose a date and time first</option>';
+    panel.innerHTML = '<span class="room-chip neutral">Pick a date and time to see room availability</span>';
+    return;
+  }
+  try{
+    const slotStart = `${date}T${start}:00`;
+    const slotEnd = `${date}T${end}:00`;
+    const r = await fetch(`/api/rooms/available?start=${encodeURIComponent(slotStart)}&end=${encodeURIComponent(slotEnd)}`);
+    const d = await r.json();
+    const available = d.rooms || [];
+    const availableIds = new Set(available.map(room => String(room.id)));
+    roomSelect.innerHTML = '<option value="">Auto-assign best available room</option>' + allRooms.map(room => {
+      const isAvail = availableIds.has(String(room.id));
+      return `<option value="${room.id}" ${isAvail ? '' : 'disabled'}>${formatRoomOption(room)}${isAvail ? '' : ' - busy'}</option>`;
+    }).join('');
+    panel.innerHTML = available.length
+      ? available.map(room => formatRoomChip(room, 'available')).join('')
+      : '<span class="room-chip busy">No therapy room is free for this slot</span>';
+  }catch(e){
+    panel.innerHTML = '<span class="room-chip neutral">Room availability could not be loaded</span>';
+  }
+}
+
+async function loadRoomAvailability(startValue, endValue, selectedRoomId){
+  const panel = document.getElementById('apptRoomChips');
+  const roomSelect = document.getElementById('apptEditorRoom');
+  if(!panel || !roomSelect) return;
+  if(!startValue){
+    panel.innerHTML = '<span class="room-chip neutral">Pick a date and time to check availability</span>';
+    roomSelect.innerHTML = '<option value="">Select a room after choosing a time</option>';
+    return;
+  }
+  try{
+    const params = new URLSearchParams({ start: startValue, end: endValue || startValue });
+    const apptId = document.getElementById('apptEditorId')?.value;
+    if(apptId) params.set('appointment_id', apptId);
+    const r = await fetch(`/api/rooms/available?${params.toString()}`);
+    const d = await r.json();
+    const available = d.rooms || [];
+    const availableIds = new Set(available.map(rm => String(rm.id)));
+    roomSelect.innerHTML = '<option value="">Auto-assign best available room</option>' + allRooms.map(room => {
+      const isAvail = availableIds.has(String(room.id));
+      return `<option value="${room.id}" ${String(selectedRoomId || roomSelect.value)===String(room.id)?'selected':''} ${isAvail ? '' : 'disabled'}>${formatRoomOption(room)}${isAvail ? '' : ' - busy'}</option>`;
+    }).join('');
+    panel.innerHTML = available.length
+      ? available.map(room => formatRoomChip(room, String(selectedRoomId || roomSelect.value)===String(room.id) ? 'selected' : 'available')).join('')
+      : '<span class="room-chip busy">No rooms are available for this slot</span>';
+  }catch(e){
+    panel.innerHTML = '<span class="room-chip neutral">Room availability could not be loaded</span>';
+  }
+}
+
+function setApptEditorMode(mode){
+  const scope = mode === 'permanent' ? 'permanent' : mode === 'cancelled' ? 'temporary' : 'temporary';
+  document.getElementById('apptEditorScope').value = scope;
+  document.getElementById('apptEditorStatus').value = mode === 'cancelled' ? 'cancelled' : 'scheduled';
+  document.getElementById('apptModeTemp').classList.toggle('active', mode === 'temporary');
+  document.getElementById('apptModePerm').classList.toggle('active', mode === 'permanent');
+  document.getElementById('apptModeCancel').classList.toggle('active', mode === 'cancelled');
+  document.getElementById('apptModeTemp').classList.toggle('temp', mode === 'temporary');
+  document.getElementById('apptModePerm').classList.toggle('perm', mode === 'permanent');
+  document.getElementById('apptModeCancel').classList.toggle('cancel', mode === 'cancelled');
+  const dtGroup = document.querySelector('.appt-editor-time-group');
+  const note = document.getElementById('apptEditorNote');
+  const saveBtn = document.getElementById('apptEditorSaveBtn');
+  if(mode === 'cancelled'){
+    dtGroup.classList.add('appt-editor-hidden');
+    note.innerHTML = '<strong>Cancellation:</strong> add the reason so the therapist gets the same explanation in Telegram and in their schedule.';
+    saveBtn.textContent = 'Cancel Session';
+    saveBtn.className = 'btn btn-danger appt-editor-save';
+  }else if(mode === 'permanent'){
+    dtGroup.classList.remove('appt-editor-hidden');
+    note.innerHTML = '<strong>Permanent change:</strong> updates the recurring pattern for this session series and sends the reason to Telegram.';
+    saveBtn.textContent = 'Save Permanent Change';
+    saveBtn.className = 'btn btn-gold appt-editor-save';
+  }else{
+    dtGroup.classList.remove('appt-editor-hidden');
+    note.innerHTML = '<strong>Temporary change:</strong> updates this appointment only and keeps the rest of the series intact.';
+    saveBtn.textContent = 'Save Temporary Change';
+    saveBtn.className = 'btn btn-warning appt-editor-save';
+  }
+}
+
+function openAppointmentEditor(apptId, mode='temporary'){
+  const openWith = (appt) => {
+    if(!appt){ toast('Appointment not found', true); return; }
+    if(!allAppointments.find(a => String(a.id) === String(appt.id))) {
+      allAppointments = [appt, ...allAppointments.filter(a => String(a.id) !== String(appt.id))];
+    }
+    document.getElementById('apptEditorId').value = appt.id;
+    document.getElementById('apptEditorDateTime').value = isoLocal(appt.start_time);
+    document.getElementById('apptEditorEndTime').value = isoLocal(appt.end_time);
+    document.getElementById('apptEditorReason').value = appt.change_reason || appt.cancel_reason || '';
+    document.getElementById('apptEditorOverlay').classList.add('active');
+    document.getElementById('apptEditorModal').classList.add('active');
+    setApptEditorMode(mode);
+    loadRoomAvailability(isoLocal(appt.start_time), isoLocal(appt.end_time), appt.room_id);
+    document.getElementById('apptEditorDateTime').onchange = refreshAppointmentRoomAvailability;
+    document.getElementById('apptEditorEndTime').onchange = refreshAppointmentRoomAvailability;
+    const title = appt.client_name ? `${appt.client_name}${appt.client_code ? ' · ' + appt.client_code : ''}` : 'Appointment';
+    document.getElementById('apptEditorTitle').textContent = title;
+    document.getElementById('apptEditorSubtitle').textContent = `${formatDate(appt.start_time)} ${formatApptTime(appt.start_time)} · ${appt.therapist_name || 'Therapist'} · ${appt.location || 'Location not set'}`;
+  };
+  const appt = allAppointments.find(a => String(a.id) === String(apptId));
+  if(appt){
+    openWith(appt);
+    return;
+  }
+  fetch(`/api/appointments/${apptId}`)
+    .then(r => r.ok ? r.json() : null)
+    .then(d => {
+      if(!d || d.error){ toast('Appointment not found', true); return; }
+      openWith(d);
+    })
+    .catch(() => toast('Appointment not found', true));
+}
+
+function closeAppointmentEditor(){
+  document.getElementById('apptEditorOverlay').classList.remove('active');
+  document.getElementById('apptEditorModal').classList.remove('active');
+}
+
+function refreshAppointmentRoomAvailability(){
+  const startValue = document.getElementById('apptEditorDateTime')?.value;
+  const endValue = document.getElementById('apptEditorEndTime')?.value || startValue;
+  const roomSelect = document.getElementById('apptEditorRoom');
+  loadRoomAvailability(startValue, endValue, roomSelect?.value);
+}
+
+function toIsoInputValue(value){
+  if(!value) return '';
+  try{
+    const d = new Date(value);
+    return d.toISOString().slice(0,16);
+  }catch(e){ return ''; }
+}
+
+async function saveAppointmentEditor(){
+  const id = document.getElementById('apptEditorId').value;
+  const scope = document.getElementById('apptEditorScope').value || 'temporary';
+  const status = document.getElementById('apptEditorStatus').value || 'scheduled';
+  const reason = document.getElementById('apptEditorReason').value.trim();
+  const roomId = document.getElementById('apptEditorRoom')?.value || '';
+  if(!id){ toast('No appointment selected', true); return; }
+  const body = { reason };
+  if(status === 'cancelled'){
+    if(!reason){ toast('Please add a cancellation reason', true); return; }
+    body.status = 'cancelled';
+    body.cancel_reason = reason;
+    body.action = 'cancelled';
+  }else{
+    const dt = document.getElementById('apptEditorDateTime').value;
+    if(!dt){ toast('Please choose a new date and time', true); return; }
+    body.start_time = new Date(dt).toISOString();
+    const end = document.getElementById('apptEditorEndTime').value;
+    if(end) body.end_time = new Date(end).toISOString();
+    if(roomId) body.room_id = roomId;
+    body.change_reason = reason;
+    body.change_scope = scope;
+    body.action = 'changed';
+  }
+  const r = await fetch(`/api/appointments/${id}`, {
+    method:'PUT',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  });
+  const d = await r.json();
+  if(d.success){
+    closeAppointmentEditor();
+    toast(status === 'cancelled' ? 'Appointment cancelled' : (scope === 'permanent' ? 'Permanent change saved' : 'Temporary change saved'));
+    loadTodaySchedule();
+    loadAppointments();
+    renderCalendar();
+  } else {
+    toast(d.error || 'Update failed', true);
+  }
+}
+
+async function loadAppointments() {
+  const start = document.getElementById('apptFilterStart')?.value;
+  const end = document.getElementById('apptFilterEnd')?.value;
+  const status = document.getElementById('apptFilterStatus')?.value;
+  let url = '/api/appointments?';
+  if (start) url += `start=${start}&`;
+  if (end) url += `end=${end}&`;
+  try {
+    const r = await fetch(url);
+    allAppointments = await r.json();
+    const filtered = status ? allAppointments.filter(a => a.status === status) : allAppointments;
+    const tb = document.getElementById('apptTableBody');
+    if (!tb) return;
+    if (!filtered.length) {
+      tb.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted)">No appointments found</td></tr>`;
+      return;
+    }
+    tb.innerHTML = filtered.sort((a,b)=>new Date(a.start_time)-new Date(b.start_time)).map(a => {
+      const visual = appointmentVisual(a);
+      return `
+      <tr style="box-shadow:inset 4px 0 0 ${visual.palette.base}">
+        <td style="border-left:4px solid ${visual.palette.base}">
+          <div style="font-weight:700">${formatDate(a.start_time)}</div>
+          <div style="font-size:11px;color:var(--text-muted)">${formatApptTime(a.start_time)}</div>
+        </td>
+        <td>
+          <button class="btn btn-ghost btn-sm" style="padding:0;background:none;border:none;color:var(--navy);font-weight:800" onclick="openClientDrawer(${a.client_id});event.stopPropagation()">${a.client_name||'—'}</button>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:3px">${a.client_code||''}</div>
+        </td>
+        <td><span class="appt-color-chip" style="background:${visual.palette.base}">${a.therapist_name||'—'}</span></td>
+        <td><span class="badge badge-blue">${a.type}</span>${a.change_scope ? ` <span class="badge badge-${a.change_scope==='permanent'?'gold':'orange'}">${a.change_scope}</span>` : ''}<div style="margin-top:4px"><span class="badge badge-gray">${a.room_name || a.room_code || 'Room not set'}</span></div></td>
+        <td>${statusBadge(a.status)}</td>
+        <td>${a.location}</td>
+        <td style="display:flex;gap:4px;flex-wrap:wrap">
+          ${['completed', 'cancelled', 'no_show'].includes(a.status) ? 
+            `<span style="font-size:12px;color:var(--text-muted);font-weight:600;padding:6px 0">Finalized</span>` :
+            `<button class="btn btn-sm btn-success" onclick="updateApptStatus(${a.id},'completed')" title="Complete"><i class="fa-solid fa-check"></i></button>
+             <button class="btn btn-sm btn-outline" onclick="openAppointmentEditor(${a.id},'temporary')" title="Temporary change"><i class="fa-solid fa-clock-rotate-left"></i></button>
+             <button class="btn btn-sm btn-gold" onclick="openAppointmentEditor(${a.id},'permanent')" title="Permanent change"><i class="fa-solid fa-calendar-days"></i></button>
+             <button class="btn btn-sm btn-danger" onclick="openAppointmentEditor(${a.id},'cancelled')" title="Cancel"><i class="fa-solid fa-ban"></i></button>`
+          }
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e){}
+}
+
+async function updateApptStatus(id, status) {
+  if(status === 'cancelled'){
+    openAppointmentEditor(id, 'cancelled');
+    return;
+  }
+  await fetch(`/api/appointments/${id}`, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status, action:status})});
+  toast('Appointment updated');
+  loadTodaySchedule();
+  loadAppointments();
+  renderCalendar();
+}
+
+async function changeAppt(id, scope='temporary') {
+  openAppointmentEditor(id, scope);
+}
+
+async function showDayDetail(dateStr, label) {
+  const panel = document.getElementById('dayDetailPanel');
+  document.getElementById('dayDetailTitle').textContent = label;
+  panel.style.display='block';
+  try {
+    const r = await fetch(`/api/appointments?start=${dateStr}&end=${dateStr}`);
+    const appts = await r.json();
+    if (!appts.length) {
+      document.getElementById('dayDetailList').innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted)"><i class="fa-regular fa-calendar" style="font-size:28px;margin-bottom:8px"></i><p style="font-weight:600">No appointments this day</p><p style="font-size:12px;margin-top:4px">Use the appointment panel to book, change, or cancel a slot.</p></div>`;
+      return;
+    }
+    document.getElementById('dayDetailList').innerHTML = appts.sort((a,b)=>new Date(a.start_time)-new Date(b.start_time)).map(a => {
+      const visual = appointmentVisual(a);
+      return `
+      <div class="day-event ${visual.cls}" style="background:linear-gradient(135deg, ${visual.palette.base}, ${visual.palette.dark});" onclick="openClientDrawer(${a.client_id})">
+        <div class="event-time">
+          <div>${formatApptTime(a.start_time)}</div>
+          <div style="font-size:10px;opacity:.7;margin-top:2px">${formatDate(a.start_time)}</div>
+        </div>
+        <div class="event-info">
+          <div class="ev-name"><span>${a.client_name}</span><span class="appt-chip">${a.client_code||'Code'}</span></div>
+          <div class="ev-sub">${a.therapist_name} · ${a.type} · ${a.location}</div>
+          <div class="event-meta">
+            ${statusBadge(a.status)}
+            ${a.change_scope ? `<span class="badge badge-gray">${a.change_scope}</span>` : ''}
+            <span class="badge badge-indigo">${a.room_name || a.room_code || 'Room not set'}</span>
+            ${a.cancel_reason ? `<span class="badge badge-red">Reason logged</span>` : ''}
+            <button class="btn btn-gold btn-sm" onclick="openAppointmentEditor(${a.id},'permanent')"><i class="fa-solid fa-calendar-days"></i></button>
+            <button class="btn btn-danger btn-sm" onclick="openAppointmentEditor(${a.id},'cancelled')"><i class="fa-solid fa-ban"></i></button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    setTimeout(() => panel.scrollIntoView({behavior:'smooth', block:'start'}), 50);
+  } catch(e){}
+}
+
+
+let ncVcCurrentDate = new Date();
+let ncVcView = 'week';
+let ncVcAppointments = [];
+let ncVcSelectedStart = null;
+let ncVcSelectedEnd = null;
+
+async function ncVcFetchData() {
+  await loadRooms();
+  try {
+    const r = await fetch('/api/appointments');
+    ncVcAppointments = await r.json();
+  } catch (e) {
+    ncVcAppointments = [];
+  }
+  ncVcRender();
+  ncLoadRooms();
+}
+
+function ncVcNav(dir) {
+  if (ncVcView === 'day') ncVcCurrentDate.setDate(ncVcCurrentDate.getDate() + dir);
+  else ncVcCurrentDate.setDate(ncVcCurrentDate.getDate() + (dir * 7));
+  ncVcRender();
+}
+
+function ncVcSetView(view) { ncVcView = view; ncVcRender(); }
+
+function ncVcGetWeekDays(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(d.setDate(diff));
+  return Array.from({length: 5}, (_, i) => { const nd = new Date(monday); nd.setDate(monday.getDate() + i); return nd; });
+}
+
+function ncVcRender() {
+  const grid = document.getElementById('ncVcGrid');
+  const label = document.getElementById('ncVcDateLabel');
+  if (!grid || !label) return;
+  const days = ncVcView === 'day' ? [ncVcCurrentDate] : ncVcGetWeekDays(ncVcCurrentDate);
+  label.textContent = ncVcView === 'day' ? days[0].toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric', year:'numeric'}) : `${days[0].toLocaleDateString('en-US', {month:'short', day:'numeric'})} - ${days[4].toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}`;
+  let html = '<div class="vc-time-col"><div class="vc-day-header">Time</div>';
+  for (let h = 8; h <= 19; h++) html += `<div class="vc-time-slot">${h > 12 ? h - 12 : h} ${h >= 12 ? 'PM' : 'AM'}</div>`;
+  html += '</div><div class="vc-days">';
+  days.forEach(day => {
+    html += `<div class="vc-day-col"><div class="vc-day-header">${day.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'})}</div>`;
+    for (let h = 8; h <= 19; h++) {
+      const slotStart = new Date(day); slotStart.setHours(h, 0, 0, 0);
+      const slotEnd = new Date(day); slotEnd.setHours(h + 1, 0, 0, 0);
+      const busy = ncVcAppointments.some(a => !isFinalAppointmentStatus(a.status) && new Date(a.start_time) < slotEnd && new Date(a.end_time || a.start_time) > slotStart);
+      html += `<div class="vc-slot ${busy ? 'busy' : 'available'}" data-start="${slotStart.toISOString()}" data-end="${slotEnd.toISOString()}" onclick="ncVcSlotClick(this, ${busy})"></div>`;
+    }
+    html += '</div>';
+  });
+  html += '</div>';
+  grid.innerHTML = html;
+}
+
+function ncVcSlotClick(el, busy) {
+  if (busy) return;
+  ncVcSelectedStart = el.dataset.start;
+  ncVcSelectedEnd = el.dataset.end;
+  const dateEl = document.getElementById('nc_book_date');
+  const startEl = document.getElementById('nc_book_start');
+  const endEl = document.getElementById('nc_book_end');
+  if (dateEl) dateEl.value = ncVcSelectedStart.slice(0, 10);
+  if (startEl) startEl.value = ncVcSelectedStart.slice(11, 16);
+  if (endEl) endEl.value = ncVcSelectedEnd.slice(11, 16);
+  const lbl = document.getElementById('ncVcSelectedLabel');
+  if (lbl) { lbl.style.display = 'block'; lbl.textContent = `Selected: ${new Date(ncVcSelectedStart).toLocaleString('en-US', {weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}`; }
+  ncLoadRooms();
+}
+
+async function ncLoadRooms() {
+  const ncRoom = document.getElementById('nc_book_room');
+  const bookRoom = document.getElementById('bookRoom');
+  if (bookRoom && ncRoom) ncRoom.innerHTML = bookRoom.innerHTML;
+  await loadBookingRoomAvailability();
 }
 
 </script>
