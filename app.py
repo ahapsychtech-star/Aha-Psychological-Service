@@ -828,7 +828,7 @@ def init_db():
 
         # Keep the bundled demo accounts usable even if an older DB exists.
 
-        c.execute("UPDATE users SET is_active=1 WHERE username IN ('admin', 'reception', 'therapist', 'supervisor')")
+        c.execute("UPDATE users SET is_active=true WHERE username IN ('admin', 'reception', 'therapist', 'supervisor')")
 
 
 
@@ -1640,7 +1640,7 @@ def notify_roles(roles, subject, body):
 
         users = conn.execute(
 
-            f"SELECT id, telegram_chat_id FROM users WHERE role IN ({','.join('?' for _ in roles)}) AND is_active=1",
+            f"SELECT id, telegram_chat_id FROM users WHERE role IN ({','.join('?' for _ in roles)}) AND is_active=true",
 
             tuple(roles)
 
@@ -3523,7 +3523,7 @@ def notify_daily_schedule(date_str=None):
 
             JOIN appointments a ON a.therapist_id=u.id
 
-            WHERE u.role='therapist' AND u.is_active=1
+            WHERE u.role='therapist' AND u.is_active=true
 
               AND a.start_time >= ? AND a.start_time < ?
 
@@ -4133,7 +4133,7 @@ def login():
 
         with get_db() as conn:
             user = conn.execute(
-                'SELECT * FROM users WHERE username=? AND is_active=1', (username,)
+                'SELECT * FROM users WHERE username=? AND is_active=true', (username,)
             ).fetchone()
 
         if user and check_password_hash(user['password_hash'], password):
@@ -5359,7 +5359,7 @@ def public_intake():
 
         with get_db() as notif_conn:
             notif_users = notif_conn.execute(
-                "SELECT telegram_chat_id FROM users WHERE role IN ('admin','receptionist') AND is_active=1 AND telegram_chat_id IS NOT NULL AND telegram_chat_id != ''"
+                "SELECT telegram_chat_id FROM users WHERE role IN ('admin','receptionist') AND is_active=true AND telegram_chat_id IS NOT NULL AND telegram_chat_id != ''"
             ).fetchall()
 
         for nu in notif_users:
@@ -5605,7 +5605,7 @@ def assessment_templates():
 
         
 
-        query = 'SELECT * FROM assessment_templates WHERE is_active=1'
+        query = 'SELECT * FROM assessment_templates WHERE is_active=true'
 
         params = []
 
@@ -5735,7 +5735,7 @@ def assessment_template_detail(tid):
     try:
         with get_db() as conn:
             if request.method == 'DELETE':
-                conn.execute('UPDATE assessment_templates SET is_active=0, updated_at=? WHERE id=?', (datetime.now().isoformat(), tid))
+                conn.execute('UPDATE assessment_templates SET is_active=false, updated_at=? WHERE id=?', (datetime.now().isoformat(), tid))
                 conn.commit()
                 return jsonify({'success': True})
 
@@ -6002,7 +6002,7 @@ def screening_links():
 
             return jsonify({'error': 'Template is required'}), 400
 
-        template = conn.execute('SELECT * FROM assessment_templates WHERE id=? AND is_active=1', (template_id,)).fetchone()
+        template = conn.execute('SELECT * FROM assessment_templates WHERE id=? AND is_active=true', (template_id,)).fetchone()
 
         if not template:
 
@@ -6734,7 +6734,7 @@ def get_alerts():
 
             FROM risk_alerts r LEFT JOIN clients c ON r.client_id=c.id
 
-            WHERE r.is_active=1 ORDER BY r.triggered_at DESC''').fetchall()
+            WHERE r.is_active=true ORDER BY r.triggered_at DESC''').fetchall()
 
     return jsonify([dict(r) for r in rows])
 
@@ -6750,7 +6750,7 @@ def resolve_alert(aid):
 
     with get_db() as conn:
 
-        conn.execute('UPDATE risk_alerts SET is_active=0, resolved_by=?, resolved_at=? WHERE id=?',
+        conn.execute('UPDATE risk_alerts SET is_active=false, resolved_by=?, resolved_at=? WHERE id=?',
 
                      (current_user()['id'], datetime.now().isoformat(), aid))
 
@@ -6772,7 +6772,7 @@ def get_services():
 
     with get_db() as conn:
 
-        rows = conn.execute('SELECT * FROM services WHERE is_active=1 ORDER BY name').fetchall()
+        rows = conn.execute('SELECT * FROM services WHERE is_active=true ORDER BY name').fetchall()
 
     return jsonify([dict(r) for r in rows])
 
@@ -6834,7 +6834,7 @@ def delete_service(sid):
 
     with get_db() as conn:
 
-        conn.execute('UPDATE services SET is_active=0 WHERE id=?', (sid,))
+        conn.execute('UPDATE services SET is_active=false WHERE id=?', (sid,))
 
         conn.commit()
 
@@ -6938,67 +6938,61 @@ def get_dashboard_analytics():
 
         active_clients = conn.execute("SELECT COUNT(*) FROM clients WHERE status NOT IN ('completed','terminated','inactive')").fetchone()[0]
 
-        new_this_month = conn.execute("SELECT COUNT(*) FROM clients WHERE CAST(registration_date AS DATE) >= date_trunc('month', CURRENT_DATE)").fetchone()[0]
+        new_this_month = conn.execute(
+            "SELECT COUNT(*) FROM clients WHERE CAST(registration_date AS DATE) >= date_trunc('month', CURRENT_DATE)"
+        ).fetchone()[0]
 
-        today_appts = conn.execute("SELECT COUNT(*) FROM appointments WHERE CAST(start_time AS DATE) = CURRENT_DATE AND status='scheduled'").fetchone()[0]
+        today_appts = conn.execute(
+            "SELECT COUNT(*) FROM appointments WHERE CAST(start_time AS DATE) = CURRENT_DATE AND status='scheduled'"
+        ).fetchone()[0]
 
-        pending_assignment = conn.execute("SELECT COUNT(*) FROM clients WHERE status IN ('registered','screening_completed') AND assigned_therapist_id IS NULL").fetchone()[0]
+        pending_assignment = conn.execute(
+            "SELECT COUNT(*) FROM clients WHERE status IN ('registered','screening_completed') AND assigned_therapist_id IS NULL"
+        ).fetchone()[0]
 
-        active_alerts = conn.execute("SELECT COUNT(*) FROM risk_alerts WHERE is_active=1").fetchone()[0]
+        try:
+            active_alerts = conn.execute("SELECT COUNT(*) FROM risk_alerts WHERE is_active=true").fetchone()[0]
+        except Exception:
+            active_alerts = 0
 
         total_revenue = conn.execute("SELECT COALESCE(SUM(amount_paid),0) FROM payments").fetchone()[0]
 
-        revenue_this_month = conn.execute("SELECT COALESCE(SUM(amount_paid),0) FROM payments WHERE CAST(payment_date AS DATE) >= date_trunc('month', CURRENT_DATE)").fetchone()[0]
+        revenue_this_month = conn.execute(
+            "SELECT COALESCE(SUM(amount_paid),0) FROM payments WHERE CAST(payment_date AS DATE) >= date_trunc('month', CURRENT_DATE)"
+        ).fetchone()[0]
 
         pending_invoices = conn.execute("SELECT COUNT(*) FROM invoices WHERE status='pending'").fetchone()[0]
 
-        therapist_count = conn.execute("SELECT COUNT(*) FROM users WHERE role='therapist' AND is_active=1").fetchone()[0]
+        therapist_count = conn.execute(
+            "SELECT COUNT(*) FROM users WHERE role='therapist' AND is_active=true"
+        ).fetchone()[0]
 
-
-
-        # Monthly new clients (last 6 months)
-
+        # Monthly new clients (last 6 months) - PostgreSQL syntax
         monthly_clients = conn.execute("""
-
-            SELECT strftime('%Y-%m', registration_date) as month, COUNT(*) as count
-
-            FROM clients WHERE registration_date >= date('now','-6 months')
-
+            SELECT to_char(CAST(registration_date AS DATE), 'YYYY-MM') as month, COUNT(*) as count
+            FROM clients
+            WHERE CAST(registration_date AS DATE) >= CURRENT_DATE - INTERVAL '6 months'
             GROUP BY month ORDER BY month
-
         """).fetchall()
-
-
 
         # Appointment status breakdown
-
         appt_status = conn.execute("SELECT status, COUNT(*) as count FROM appointments GROUP BY status").fetchall()
 
-
-
-        # Therapist caseloads
-
+        # Therapist caseloads - PostgreSQL syntax
         caseloads = conn.execute("""
-
             SELECT u.full_name, u.max_caseload, COUNT(c.id) as current_caseload
-
             FROM users u LEFT JOIN clients c ON c.assigned_therapist_id=u.id AND c.status NOT IN ('completed','terminated')
-
-            WHERE u.role='therapist' AND u.is_active=1 GROUP BY u.id
-
+            WHERE u.role='therapist' AND u.is_active=true GROUP BY u.id, u.full_name, u.max_caseload
         """).fetchall()
-
-
 
         # Recent audit logs
-
-        recent_activity = conn.execute("""
-
-            SELECT a.*, u.full_name FROM audit_logs a LEFT JOIN users u ON a.user_id=u.id
-
-            ORDER BY a.timestamp DESC LIMIT 10
-
-        """).fetchall()
+        try:
+            recent_activity = conn.execute("""
+                SELECT a.*, u.full_name FROM audit_logs a LEFT JOIN users u ON a.user_id=u.id
+                ORDER BY a.timestamp DESC LIMIT 10
+            """).fetchall()
+        except Exception:
+            recent_activity = []
 
 
 
@@ -7068,7 +7062,7 @@ def recommend_therapist():
 
             FROM users u LEFT JOIN clients c ON c.assigned_therapist_id=u.id AND c.status NOT IN ('completed','terminated')
 
-            WHERE u.role='therapist' AND u.is_active=1 GROUP BY u.id
+            WHERE u.role='therapist' AND u.is_active=true GROUP BY u.id
 
         """).fetchall()
 
