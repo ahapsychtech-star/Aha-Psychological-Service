@@ -4096,66 +4096,58 @@ def login():
     if request.method == 'POST':
 
         username = request.form.get('username', '').strip()
-
         password = request.form.get('password', '')
+        # Detect AJAX / fetch calls so we can return JSON instead of a redirect.
+        is_ajax = (
+            request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+            or 'application/json' in (request.headers.get('Accept') or '')
+        )
+
+        _PORTAL_MAP = {
+            'admin':        '/portals/admin_portal.html',
+            'receptionist': '/portals/reception_portal.html',
+            'therapist':    '/portals/therapist_portal.html',
+            'supervisor':   '/portals/supervisor_portal.html',
+        }
+
+        def _success(role_or_url):
+            url = _PORTAL_MAP.get(role_or_url, '/portals/admin_portal.html') \
+                  if role_or_url in _PORTAL_MAP else role_or_url
+            if is_ajax:
+                return jsonify({'success': True, 'redirect': url})
+            return redirect(url)
+
+        def _fail():
+            if is_ajax:
+                return jsonify({'success': False, 'error': 'Invalid username or password'}), 401
+            return redirect('/login?error=1')
 
         # Legacy admin support
-
         if username == 'admin' and password == 'admin':
-
             with get_db() as conn:
-
                 user = conn.execute('SELECT * FROM users WHERE username=?', ('admin',)).fetchone()
-
-                if user:
-
-                    session['user'] = dict(user)
-
-                    session['logged_in'] = True
-
-                    return redirect('/portals/admin_portal.html')
+            if user:
+                session['user'] = dict(user)
+                session['logged_in'] = True
+                return _success('/portals/admin_portal.html')
 
         with get_db() as conn:
-
-            user = conn.execute('SELECT * FROM users WHERE username=? AND is_active=1', (username,)).fetchone()
+            user = conn.execute(
+                'SELECT * FROM users WHERE username=? AND is_active=1', (username,)
+            ).fetchone()
 
         if user and check_password_hash(user['password_hash'], password):
-
             session['user'] = dict(user)
-
             session['logged_in'] = True
-
             with get_db() as conn:
-
-                conn.execute('UPDATE users SET last_login=? WHERE id=?', (datetime.now().isoformat(), user['id']))
-
+                conn.execute(
+                    'UPDATE users SET last_login=? WHERE id=?',
+                    (datetime.now().isoformat(), user['id'])
+                )
                 conn.commit()
+            return _success(user['role'])
 
-            role = user['role']
-
-            if role == 'admin':
-
-                return redirect('/portals/admin_portal.html')
-
-            elif role == 'receptionist':
-
-                return redirect('/portals/reception_portal.html')
-
-            elif role == 'therapist':
-
-                return redirect('/portals/therapist_portal.html')
-
-            elif role == 'supervisor':
-
-                return redirect('/portals/supervisor_portal.html')
-
-            else:
-
-                return redirect('/portals/admin_portal.html')
-
-        # Invalid credentials — redirect back to the login page with an error flag
-        # so the client-side JS can display the error message correctly.
-        return redirect('/login?error=1')
+        return _fail()
 
     return send_from_directory('.', 'login.html')
 

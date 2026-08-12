@@ -204,7 +204,9 @@
             <i class="fa fa-exclamation-circle"></i> Invalid username or password.
         </div>
 
-        <form method="POST" action="/api/login" id="loginForm">
+    <!-- The form action is handled entirely by the fetch() call below. -->
+    <!-- Keeping method/action as fallback for no-JS environments. -->
+    <form method="POST" action="/api/login" id="loginForm">
             <div class="form-group">
                 <label for="username">Username</label>
                 <div class="input-wrap">
@@ -219,21 +221,84 @@
                     <input type="password" id="password" name="password" placeholder="Enter your password" required>
                 </div>
             </div>
-            <button type="submit" class="btn-login">Sign In &rarr;</button>
+            <button type="submit" class="btn-login" id="loginBtn">Sign In &rarr;</button>
         </form>
 
         <a href="index.html" class="back-link"><span>&#8592;</span> Back to Website</a>
     </div>
 
     <script>
-        // Point the login form at the Flask API route so POST requests reach the backend
-        // instead of the static Vercel route that returns HTTP 405.
-        document.getElementById('loginForm').action = window.API_BASE + '/api/login';
+        // ── Fetch-based login ──────────────────────────────────────────────────
+        // We use fetch() instead of a native form POST so the request always goes
+        // through JavaScript (identical to every other apiFetch call in the portals).
+        // This avoids Vercel's edge-layer HTTP 405 rejection that fires when a POST
+        // hits a route that Vercel has internally marked as static/GET-only.
 
-        // Show error if URL has ?error=1
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn  = document.getElementById('loginBtn');
+        const errorEl   = document.getElementById('errorMsg');
+
+        // Fallback: if api_config.js didn't load, use the current origin.
+        const API_BASE = (typeof window.API_BASE !== 'undefined' && window.API_BASE)
+            ? window.API_BASE
+            : window.location.origin;
+
+        // Show error if hard-navigated back with ?error=1 (e.g. non-JS fallback path).
         if (window.location.search.includes('error')) {
-            document.getElementById('errorMsg').classList.add('show');
+            errorEl.classList.add('show');
         }
+
+        loginForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            // Reset UI
+            errorEl.classList.remove('show');
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Signing in…';
+
+            const body = new URLSearchParams({
+                username: document.getElementById('username').value.trim(),
+                password: document.getElementById('password').value,
+            }).toString();
+
+            try {
+                const res = await fetch(API_BASE + '/api/login', {
+                    method:      'POST',
+                    credentials: 'include',          // send & receive session cookie
+                    headers: {
+                        'Content-Type':     'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest',  // tells Flask to return JSON
+                    },
+                    body: body,
+                });
+
+                // Flask returns: { success: true, redirect: '/portals/...' }
+                //            or: { success: false, error: '...' }  (HTTP 401)
+                const data = await res.json();
+
+                if (data.success && data.redirect) {
+                    // Navigate the top-level page to the portal.
+                    // The session cookie was set by the /api/login response above,
+                    // so Flask's serve_portal will recognise the session.
+                    window.location.href = API_BASE + data.redirect;
+                } else {
+                    errorEl.querySelector
+                        ? (errorEl.innerHTML = '<i class="fa fa-exclamation-circle"></i> '
+                            + (data.error || 'Invalid username or password.'))
+                        : null;
+                    errorEl.classList.add('show');
+                    loginBtn.disabled = false;
+                    loginBtn.innerHTML = 'Sign In &rarr;';
+                }
+            } catch (err) {
+                // Network / parse error
+                errorEl.innerHTML = '<i class="fa fa-exclamation-circle"></i> '
+                    + 'Could not reach the server. Please try again.';
+                errorEl.classList.add('show');
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = 'Sign In &rarr;';
+            }
+        });
     </script>
 </body>
 </html>
