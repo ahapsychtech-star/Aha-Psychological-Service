@@ -7469,6 +7469,32 @@ def cron_upcoming_sessions():
         return jsonify({'error': str(e)}), 500
 
 
+# Debug endpoint: echo request details to verify that Vercel is invoking the Python app
+@app.route('/api/echo', methods=['GET', 'POST', 'OPTIONS'])
+def api_echo():
+    # Allow simple OPTIONS preflight responses
+    if request.method == 'OPTIONS':
+        return ('', 204)
+    data = None
+    try:
+        data = request.get_json(silent=True)
+    except Exception:
+        data = None
+    if not data:
+        # fallback to form data
+        try:
+            data = request.form.to_dict()
+        except Exception:
+            data = {}
+    return jsonify({
+        'ok': True,
+        'method': request.method,
+        'args': request.args.to_dict(),
+        'form': data,
+        'headers': dict(request.headers)
+    })
+
+
 if __name__ == '__main__':
 
     app.run(host='0.0.0.0', port=8000, debug=False)
