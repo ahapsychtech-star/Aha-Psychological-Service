@@ -1241,6 +1241,11 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
+
+function isFinalAppointmentStatus(status){
+  return ['completed', 'cancelled', 'no_show'].includes(String(status || '').toLowerCase());
+}
+
 // â”€â”€â”€ Globals â”€â”€â”€
 let currentUser = null;
 let allClients = [];
@@ -1745,7 +1750,7 @@ async function renderDayView() {
 
 async function loadAllClients() {
   try {
-    const r = await fetch('/api/clients');
+    const r = await apiFetch('/api/clients');
     allClients = await r.json();
     renderClientsTable();
   } catch(e){}
@@ -1787,7 +1792,7 @@ async function openClientDrawer(cid) {
   document.getElementById('drawerClientName').textContent = 'Loading...';
   document.getElementById('drawerContent').innerHTML = `<div class="skel" style="height:200px"></div>`;
   try {
-    const r = await fetch(`/api/clients/${cid}`);
+    const r = await apiFetch(`/api/clients/${cid}`);
     const data = await r.json();
     document.getElementById('drawerClientName').textContent = data.client.full_name;
     switchDrawerTab('info', data);
@@ -1804,7 +1809,7 @@ function switchDrawerTab(tab, data) {
   document.querySelectorAll('#drawerTabs button').forEach(b => {
     b.className = b.textContent.trim().toLowerCase().startsWith(tab.charAt(0).toUpperCase()+tab.slice(1)) ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
   });
-  if (!data) { fetch(`/api/clients/${currentDrawerClient}`).then(r=>r.json()).then(d => renderDrawerTab(tab,d)); return; }
+  if (!data) { apiFetch(`/api/clients/${currentDrawerClient}`).then(r=>r.json()).then(d => renderDrawerTab(tab,d)); return; }
   renderDrawerTab(tab, data);
 }
 
@@ -1942,7 +1947,7 @@ async function registerClient() {
     notes: document.getElementById('nc_notes').value,
   };
   try {
-    const r = await fetch('/api/clients', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const r = await apiFetch('/api/clients', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const data = await r.json();
     if (data.success) {
       document.querySelectorAll('.step-panel').forEach(p=>p.classList.remove('active'));
@@ -1964,7 +1969,7 @@ function resetClientForm() {
 // â”€â”€â”€ Smart Assignment â”€â”€â”€
 async function loadAssignQueue() {
   try {
-    const r = await fetch('/api/clients');
+    const r = await apiFetch('/api/clients');
     const clients = await r.json();
     const pending = clients.filter(c => ['registered','screening_completed','awaiting_assignment'].includes(c.status) && !c.assigned_therapist_id);
     const el = document.getElementById('assignQueue');
@@ -1996,7 +2001,7 @@ async function selectAssignClient(cid) {
   if(client) document.getElementById('selectedClientBadge').innerHTML = `<span style="font-size:13px;font-weight:700;color:var(--navy)">${client.full_name}</span>`;
 
   try {
-    const r = await fetch('/api/assign/recommend', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({client_id:cid})});
+    const r = await apiFetch('/api/assign/recommend', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({client_id:cid})});
     const data = await r.json();
     const recs = data.recommendations;
     if (!recs.length) { document.getElementById('recList').innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px">No therapists available</p>'; return; }
@@ -2141,7 +2146,7 @@ async function registerClient() {
     notes: document.getElementById('nc_notes').value,
   };
   try {
-    const r = await fetch('/api/clients', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const r = await apiFetch('/api/clients', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const data = await r.json();
     if (data.success) {
       document.querySelectorAll('.step-panel').forEach(p=>p.classList.remove('active'));
@@ -2163,7 +2168,7 @@ function resetClientForm() {
 // ——— Smart Assignment ———
 async function loadAssignQueue() {
   try {
-    const r = await fetch('/api/clients');
+    const r = await apiFetch('/api/clients');
     const clients = await r.json();
     const pending = clients.filter(c => ['registered','screening_completed','awaiting_assignment'].includes(c.status) && !c.assigned_therapist_id);
     const el = document.getElementById('assignQueue');
@@ -2195,7 +2200,7 @@ async function selectAssignClient(cid) {
   if(client) document.getElementById('selectedClientBadge').innerHTML = `<span style="font-size:13px;font-weight:700;color:var(--navy)">${client.full_name}</span>`;
 
   try {
-    const r = await fetch('/api/assign/recommend', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({client_id:cid})});
+    const r = await apiFetch('/api/assign/recommend', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({client_id:cid})});
     const data = await r.json();
     const recs = data.recommendations;
     if (!recs.length) { document.getElementById('recList').innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px">No therapists available</p>'; return; }
@@ -2232,7 +2237,7 @@ async function selectAssignClient(cid) {
 
 async function assignTherapist(clientId, therapistId) {
   try {
-    const r = await fetch(`/api/clients/${clientId}`, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({assigned_therapist_id:therapistId})});
+    const r = await apiFetch(`/api/clients/${clientId}`, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({assigned_therapist_id:therapistId})});
     const d = await r.json();
     if(d.success) {
       toast('Therapist assigned successfully!');
@@ -2288,7 +2293,7 @@ async function loadAppointments() {
 
 async function updateApptStatus(id, status) {
   const reason = status==='cancelled' ? (prompt('Reason for cancelling this appointment:') || '') : '';
-  await fetch(`/api/appointments/${id}`, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status, reason, cancel_reason:reason})});
+  await apiFetch(`/api/appointments/${id}`, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status, reason, cancel_reason:reason})});
   toast('Appointment updated');
   loadTodaySchedule(); loadAppointments();
 }
@@ -2296,7 +2301,7 @@ async function changeAppt(id) {
   const dateTime = prompt('Enter new date and time in ISO format (YYYY-MM-DDTHH:MM):');
   if(!dateTime) return;
   const reason = prompt('Reason for changing this appointment:') || '';
-  await fetch(`/api/appointments/${id}`, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({start_time:dateTime, change_reason:reason, reason, action:'changed'})});
+  await apiFetch(`/api/appointments/${id}`, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({start_time:dateTime, change_reason:reason, reason, action:'changed'})});
   toast('Appointment changed');
   loadTodaySchedule(); loadAppointments(); renderCalendar();
 }
@@ -2318,7 +2323,7 @@ function openBookModal(clientId='', therapistId='') {
   const preTherapist = therapistId ? String(therapistId) : '';
   clientSel.innerHTML = '<option value="">Select a client...</option>' + allClients.map(c=>`<option value="${c.id}">${c.full_name} (${c.client_code})</option>`).join('');
   if (preClient) clientSel.value = preClient;
-  fetch('/api/users').then(r=>r.json()).then(users=>{
+  apiFetch('/api/users').then(r=>r.json()).then(users=>{
     const therapists = users.filter(u=>u.role==='therapist'&&u.is_active);
     therapistSel.innerHTML = '<option value="">Select therapist...</option>' + therapists.map(t=>`<option value="${t.id}">${t.full_name}</option>`).join('');
     if (preTherapist) therapistSel.value = preTherapist;
@@ -2343,7 +2348,7 @@ async function bookAppointment() {
     notes:document.getElementById('bookNotes').value, is_recurring:document.getElementById('bookRecurring').checked};
   const roomId = document.getElementById('bookRoom')?.value || '';
   if(roomId) body.room_id = roomId;
-  const r=await fetch('/api/appointments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const r=await apiFetch('/api/appointments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   const d=await r.json();
   if(d.success){closeBookModal();toast('Appointment booked!');loadTodaySchedule();loadAppointments();renderCalendar();}
   else toast('Booking failed',true);
@@ -2357,7 +2362,7 @@ function switchFinTab(tab) {
 
 async function loadInvoices() {
   try {
-    const r = await fetch('/api/invoices');
+    const r = await apiFetch('/api/invoices');
     allInvoices = await r.json();
     const tb = document.getElementById('invoiceTableBody');
     if(!tb) return;
@@ -2378,7 +2383,7 @@ function openInvoiceModal() {
   document.getElementById('invoiceModal').classList.add('active');
   const sel = document.getElementById('invClient');
   sel.innerHTML = '<option value="">Select client...</option>' + allClients.map(c=>`<option value="${c.id}">${c.full_name} (${c.client_code})</option>`).join('');
-  fetch('/api/services').then(r=>r.json()).then(svcs=>{
+  apiFetch('/api/services').then(r=>r.json()).then(svcs=>{
     document.getElementById('invService').innerHTML = '<option value="">Select service...</option>' + svcs.map(s=>`<option value="${s.id}" data-price="${s.price}">${s.name} (ETB ${s.price})</option>`).join('');
     document.getElementById('invService').onchange = function(){
       const opt = this.options[this.selectedIndex];
@@ -2393,7 +2398,7 @@ function closeInvoiceModal() {
 async function createInvoice() {
   const body={client_id:document.getElementById('invClient').value,service_id:document.getElementById('invService').value,
     amount:document.getElementById('invAmount').value,notes:document.getElementById('invNotes').value};
-  const r=await fetch('/api/invoices',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const r=await apiFetch('/api/invoices',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   const d=await r.json();
   if(d.success){closeInvoiceModal();toast('Invoice created!');loadInvoices();}
   else toast('Failed',true);
@@ -2413,7 +2418,7 @@ async function submitPayment() {
   const body={invoice_id:document.getElementById('payInvoiceId').value,client_id:document.getElementById('payClientId').value,
     amount_paid:document.getElementById('payAmount').value,payment_method:document.getElementById('payMethod').value,
     invoice_status:document.getElementById('payStatus').value,notes:document.getElementById('payNotes').value};
-  const r=await fetch('/api/payments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const r=await apiFetch('/api/payments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   const d=await r.json();
   if(d.success){closePaymentModal();toast('Payment recorded!');loadInvoices();}
   else toast('Failed',true);
@@ -2422,7 +2427,7 @@ async function submitPayment() {
 // ——— Messages ———
 async function loadMessages() {
   try {
-    const r = await fetch('/api/messages');
+    const r = await apiFetch('/api/messages');
     const msgs = await r.json();
     const el = document.getElementById('msgList');
     el.innerHTML = msgs.map(m=>`
@@ -2432,7 +2437,7 @@ async function loadMessages() {
         <div style="font-size:11px;color:var(--text-muted);margin-top:4px">${formatDate(m.sent_at)}</div>
       </div>`).join('') || '<p style="text-align:center;color:var(--text-muted);padding:20px">No messages</p>';
     // Load users for compose
-    const r2 = await fetch('/api/users');
+    const r2 = await apiFetch('/api/users');
     const users = await r2.json();
     document.getElementById('msgTo').innerHTML = '<option value="">Select recipient...</option>' + users.map(u=>`<option value="${u.id}">${u.full_name} (${u.role})</option>`).join('');
   } catch(e){}
@@ -2441,7 +2446,7 @@ function showCompose() { /* already visible */ }
 async function sendMsg() {
   const body={recipient_id:document.getElementById('msgTo').value,subject:document.getElementById('msgSubject').value,body:document.getElementById('msgBody').value};
   if(!body.recipient_id||!body.subject){toast('Fill all fields',true);return;}
-  const r=await fetch('/api/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const r=await apiFetch('/api/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   const d=await r.json();
   if(d.success){toast('Message sent!');document.getElementById('msgSubject').value='';document.getElementById('msgBody').value='';}
 }
@@ -2541,7 +2546,7 @@ function formatRoomOption(room){
 
 async function loadRooms(){
   try{
-    const r = await fetch('/api/rooms');
+    const r = await apiFetch('/api/rooms');
     allRooms = await r.json();
   }catch(e){
     allRooms = [];
@@ -2563,7 +2568,7 @@ async function loadBookingRoomAvailability(){
   try{
     const slotStart = `${date}T${start}:00`;
     const slotEnd = `${date}T${end}:00`;
-    const r = await fetch(`/api/rooms/available?start=${encodeURIComponent(slotStart)}&end=${encodeURIComponent(slotEnd)}`);
+    const r = await apiFetch(`/api/rooms/available?start=${encodeURIComponent(slotStart)}&end=${encodeURIComponent(slotEnd)}`);
     const d = await r.json();
     const available = d.rooms || [];
     const availableIds = new Set(available.map(room => String(room.id)));
@@ -2592,7 +2597,7 @@ async function loadRoomAvailability(startValue, endValue, selectedRoomId){
     const params = new URLSearchParams({ start: startValue, end: endValue || startValue });
     const apptId = document.getElementById('apptEditorId')?.value;
     if(apptId) params.set('appointment_id', apptId);
-    const r = await fetch(`/api/rooms/available?${params.toString()}`);
+    const r = await apiFetch(`/api/rooms/available?${params.toString()}`);
     const d = await r.json();
     const available = d.rooms || [];
     const availableIds = new Set(available.map(rm => String(rm.id)));
@@ -2685,7 +2690,7 @@ function openAppointmentEditor(apptId, mode='temporary'){
     return;
   }
   // Not in local cache — fetch directly from API
-  fetch(`/api/appointments/${apptId}`, {credentials: 'include'})
+  apiFetch(`/api/appointments/${apptId}`, {credentials: 'include'})
     .then(r => {
       if(!r.ok) throw new Error('Not found');
       return r.json();
@@ -2741,7 +2746,7 @@ async function saveAppointmentEditor(){
     body.change_scope = scope;
     body.action = 'changed';
   }
-  const r = await fetch(`/api/appointments/${id}`, {
+  const r = await apiFetch(`/api/appointments/${id}`, {
     method:'PUT',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify(body)
@@ -2810,7 +2815,7 @@ async function updateApptStatus(id, status) {
     openAppointmentEditor(id, 'cancelled');
     return;
   }
-  await fetch(`/api/appointments/${id}`, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status, action:status})});
+  await apiFetch(`/api/appointments/${id}`, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status, action:status})});
   toast('Appointment updated');
   loadTodaySchedule();
   loadAppointments();
@@ -2826,7 +2831,7 @@ async function showDayDetail(dateStr, label) {
   document.getElementById('dayDetailTitle').textContent = label;
   panel.style.display='block';
   try {
-    const r = await fetch(`/api/appointments?start=${dateStr}&end=${dateStr}`);
+    const r = await apiFetch(`/api/appointments?start=${dateStr}&end=${dateStr}`);
     const appts = await r.json();
     
     // Fix: Merge into allAppointments so the edit modal can find them
@@ -2885,7 +2890,7 @@ let ncVcSelectedEnd = null;
 async function ncVcFetchData() {
   await loadRooms();
   try {
-    const r = await fetch('/api/appointments');
+    const r = await apiFetch('/api/appointments');
     ncVcAppointments = await r.json();
   } catch (e) {
     ncVcAppointments = [];
@@ -2957,7 +2962,7 @@ async function ncLoadRooms() {
 
 async function loadNewClientBookingTherapists() {
   try {
-    const res = await fetch('/api/users');
+    const res = await apiFetch('/api/users');
     const users = await res.json();
     const therapists = users.filter(u => u.role === 'therapist' && u.is_active);
     const sel = document.getElementById('nc_book_therapist');
