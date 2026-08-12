@@ -2955,8 +2955,10 @@ async function ncLoadRooms() {
   await loadBookingRoomAvailability();
 }
 
+// Initialize portal on load
+document.addEventListener('DOMContentLoaded', init);
+
 </script>
 </body>
 </html>
-
 
