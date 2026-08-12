@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "bash -lc \"echo $VERCEL_GIT_COMMIT_SHA > .vercel_build && date -u > .vercel_build_date\"",
+  "buildCommand": "bash -lc \"echo $VERCEL_GIT_COMMIT_SHA > build-meta.txt && date -u > build-meta-date.txt\"",
   "outputDirectory": ".",
   "framework": null,
   "routes": [
