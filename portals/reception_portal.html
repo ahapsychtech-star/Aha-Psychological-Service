@@ -1336,7 +1336,86 @@ function showSection(name) {
   }
 }
 
-// â”€â”€â”€ Dashboard â”€â”€â”€
+// ─── Smart Assignment ───
+async function loadAssignQueue() {
+  const el = document.getElementById('assignQueue');
+  if (!el) return;
+  el.innerHTML = '<div class="skel" style="height:60px;margin-bottom:8px"></div><div class="skel" style="height:60px;margin-bottom:8px"></div><div class="skel" style="height:60px"></div>';
+  try {
+    const res = await apiFetch('/api/clients');
+    const clients = await res.json();
+    const unassigned = clients.filter(c => ['registered','screening_completed','awaiting_assignment'].includes(c.status) && !c.assigned_therapist_id);
+    if (!unassigned.length) {
+      el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--success);font-size:13px;font-weight:600"><i class="fa-solid fa-circle-check" style="font-size:24px;display:block;margin-bottom:8px"></i>All clients are assigned!</div>`;
+      return;
+    }
+    el.innerHTML = unassigned.map(c => `
+      <div onclick="selectAssignClient(${c.id})" style="display:flex;align-items:center;gap:10px;padding:12px;border-radius:8px;background:var(--bg);cursor:pointer;border:1px solid var(--border);transition:all .2s" onmouseover="this.style.borderColor='var(--navy)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0">${(c.full_name||'?')[0]}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.full_name}</div>
+          <div style="font-size:11px;color:var(--text-muted)">${c.client_code||''} · ${(c.status||'').replace(/_/g,' ')}</div>
+        </div>
+        <span class="badge badge-${c.risk_level==='high'?'red':c.risk_level==='medium'?'orange':'gray'}">${c.risk_level||'low'}</span>
+      </div>`).join('');
+  } catch(e) {
+    el.innerHTML = '<p style="color:var(--danger);padding:16px">Failed to load clients</p>';
+  }
+}
+
+async function selectAssignClient(clientId) {
+  const recPlaceholder = document.getElementById('recPlaceholder');
+  const recResults = document.getElementById('recResults');
+  const recList = document.getElementById('recList');
+  const badge = document.getElementById('selectedClientBadge');
+  if (!recResults || !recList) return;
+  recPlaceholder && (recPlaceholder.style.display='none');
+  recResults.style.display = 'block';
+  recList.innerHTML = '<div class="skel" style="height:80px;margin-bottom:10px"></div><div class="skel" style="height:80px;margin-bottom:10px"></div><div class="skel" style="height:80px"></div>';
+  try {
+    const res = await apiFetch('/api/assign/recommend', {method:'POST', body: JSON.stringify({client_id: clientId})});
+    const data = await res.json();
+    const recs = data.recommendations || [];
+    const client = (allClients||[]).find(c=>c.id===clientId);
+    if (badge && client) badge.innerHTML = `<span class="badge badge-blue">${client.full_name}</span>`;
+    if (!recs.length) {
+      recList.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:20px">No therapist recommendations available</p>';
+      return;
+    }
+    recList.innerHTML = recs.map((r,i) => `
+      <div style="display:flex;align-items:center;gap:14px;padding:14px;border-radius:10px;background:var(--bg);border:1px solid var(--border)${i===0?';border-color:var(--gold);box-shadow:0 0 0 2px rgba(255,191,0,.15)':''}">
+        <div style="width:44px;height:44px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0">${(r.full_name||'?')[0]}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:700">${r.full_name}${i===0?' <span class="badge badge-gold" style="margin-left:6px">Best Match</span>':''}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Caseload: ${r.caseload||0} / ${r.max_caseload||'-'} · Score: ${Math.round(r.score||0)}</div>
+        </div>
+        <button class="btn btn-gold btn-sm" onclick="assignTherapist(${clientId},${r.id},'${(r.full_name||'').replace(/'/g,'\\\'')}')" style="flex-shrink:0">
+          <i class="fa-solid fa-user-plus"></i>Assign
+        </button>
+      </div>`).join('');
+  } catch(e) {
+    recList.innerHTML = '<p style="color:var(--danger);padding:16px">Failed to load recommendations</p>';
+  }
+}
+
+async function assignTherapist(clientId, therapistId, therapistName) {
+  if (!confirm(`Assign ${therapistName} to this client?`)) return;
+  try {
+    const res = await apiFetch(`/api/clients/${clientId}`, {method:'PUT', body: JSON.stringify({assigned_therapist_id: therapistId})});
+    if (res.ok) {
+      toast(`Client assigned to ${therapistName}`);
+      await loadAssignQueue();
+      await loadAllClients();
+      document.getElementById('recResults').style.display = 'none';
+      document.getElementById('recPlaceholder') && (document.getElementById('recPlaceholder').style.display='flex');
+    } else {
+      const err = await res.json();
+      toast(err.error || 'Failed to assign', 'error');
+    }
+  } catch(e) { toast('Failed to assign', 'error'); }
+}
+
+// ─── Dashboard ───
 async function loadDashboard() {
   try {
     const res = await apiFetch('/api/analytics/dashboard');
@@ -1872,439 +1951,6 @@ function renderDrawerTab(tab, data) {
   }
 }
 
-function infoRow(label, val) {
-  return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
-    <span style="font-size:12px;font-weight:700;color:var(--text-muted)">${label.toUpperCase()}</span>
-    <span style="font-size:13px;font-weight:600">${val||'â€”'}</span>
-  </div>`;
-}
-
-// â”€â”€â”€ New Client â”€â”€â”€
-let currentStep = 1;
-
-function nextStep(step) {
-  if (step > 1 && !validateStep(currentStep)) return;
-  currentStep = step;
-  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('step'+step).classList.add('active');
-
-  [1,2,3].forEach(i => {
-    const dot = document.getElementById('step'+i+'dot');
-    dot.className = 'step-dot' + (i < step ? ' done' : i === step ? ' active' : '');
-    if (i < 3) document.getElementById('line'+i).className = 'step-line' + (i < step ? ' done' : '');
-  });
-
-  if (step === 3) buildReview();
-}
-
-function validateStep(step) {
-  if (step === 1) {
-    const required = ['nc_name','nc_dob','nc_gender','nc_phone','nc_ecname','nc_ecphone'];
-    for (const id of required) {
-      if (!document.getElementById(id)?.value.trim()) { toast('Please fill all required fields (*)', true); return false; }
-    }
-  }
-  return true;
-}
-
-function buildReview() {
-  const rows = [
-    ['Full Name', document.getElementById('nc_name').value],
-    ['Date of Birth', document.getElementById('nc_dob').value],
-    ['Gender', document.getElementById('nc_gender').value],
-    ['Phone', document.getElementById('nc_phone').value],
-    ['Email', document.getElementById('nc_email').value||'â€”'],
-    ['Address', document.getElementById('nc_address').value||'â€”'],
-    ['Emergency Contact', document.getElementById('nc_ecname').value + ' Â· ' + document.getElementById('nc_ecphone').value],
-    ['Language Preference', document.getElementById('nc_lang').value],
-    ['Therapist Gender Pref', document.getElementById('nc_genderpref').value],
-    ['Intake Source', document.getElementById('nc_source').value],
-    ['Presenting Concerns', document.getElementById('nc_concerns').value||'â€”'],
-  ];
-  document.getElementById('reviewContent').innerHTML = rows.map(([l,v])=>
-    `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
-      <span style="font-size:12px;font-weight:700;color:var(--text-muted)">${l}</span>
-      <span style="font-size:13px;font-weight:600;max-width:60%;text-align:right">${v}</span>
-    </div>`).join('');
-}
-
-async function registerClient() {
-  const btn = document.getElementById('registerBtn');
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registering...';
-  btn.disabled = true;
-  const body = {
-    full_name: document.getElementById('nc_name').value,
-    date_of_birth: document.getElementById('nc_dob').value,
-    gender: document.getElementById('nc_gender').value,
-    phone: document.getElementById('nc_phone').value,
-    email: document.getElementById('nc_email').value,
-    address: document.getElementById('nc_address').value,
-    emergency_contact_name: document.getElementById('nc_ecname').value,
-    emergency_contact_phone: document.getElementById('nc_ecphone').value,
-    language_pref: document.getElementById('nc_lang').value,
-    therapist_gender_pref: document.getElementById('nc_genderpref').value,
-    intake_source: document.getElementById('nc_source').value,
-    notes: document.getElementById('nc_notes').value,
-  };
-  try {
-    const r = await apiFetch('/api/clients', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    const data = await r.json();
-    if (data.success) {
-      document.querySelectorAll('.step-panel').forEach(p=>p.classList.remove('active'));
-      document.getElementById('step4').classList.add('active');
-      document.getElementById('newClientCode').textContent = data.client_code;
-      await loadAllClients();
-      toast('Client registered successfully!');
-    }
-  } catch(e){ toast('Registration failed', true); }
-  btn.disabled = false;
-}
-
-function resetClientForm() {
-  ['nc_name','nc_dob','nc_phone','nc_email','nc_address','nc_ecname','nc_ecphone','nc_concerns','nc_notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
-  currentStep = 1;
-  nextStep(1);
-}
-
-// â”€â”€â”€ Smart Assignment â”€â”€â”€
-async function loadAssignQueue() {
-  try {
-    const r = await apiFetch('/api/clients');
-    const clients = await r.json();
-    const pending = clients.filter(c => ['registered','screening_completed','awaiting_assignment'].includes(c.status) && !c.assigned_therapist_id);
-    const el = document.getElementById('assignQueue');
-    if (!pending.length) {
-      el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--success)"><i class="fa-solid fa-circle-check" style="font-size:32px;margin-bottom:10px"></i><p style="font-weight:700">All clients assigned!</p></div>`;
-    } else {
-      el.innerHTML = pending.map(c => `
-        <div class="queue-card" id="qc-${c.id}" onclick="selectAssignClient(${c.id})">
-          <div class="queue-name">${c.full_name} <span class="queue-code">${c.client_code}</span></div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
-            ${riskBadge(c.risk_level)}<span class="badge badge-blue">${c.language_pref}</span>
-            <span class="badge badge-gray">${c.therapist_gender_pref}</span>
-          </div>
-        </div>`).join('');
-    }
-  } catch(e){}
-}
-
-async function selectAssignClient(cid) {
-  selectedAssignClient = cid;
-  document.querySelectorAll('.queue-card').forEach(c => c.classList.remove('selected'));
-  document.getElementById('qc-'+cid)?.classList.add('selected');
-
-  document.getElementById('recPlaceholder').style.display='none';
-  document.getElementById('recResults').style.display='block';
-  document.getElementById('recList').innerHTML = '<div style="text-align:center;padding:30px"><i class="fa-solid fa-spinner fa-spin" style="font-size:24px;color:var(--navy)"></i><p style="margin-top:10px;color:var(--text-muted)">Analyzing match criteria...</p></div>';
-
-  const client = allClients.find(c=>c.id===cid);
-  if(client) document.getElementById('selectedClientBadge').innerHTML = `<span style="font-size:13px;font-weight:700;color:var(--navy)">${client.full_name}</span>`;
-
-  try {
-    const r = await apiFetch('/api/assign/recommend', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({client_id:cid})});
-    const data = await r.json();
-    const recs = data.recommendations;
-    if (!recs.length) { document.getElementById('recList').innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px">No therapists available</p>'; return; }
-    document.getElementById('recList').innerHTML = recs.map(t => {
-      const score = t.match_score;
-      const cls = score>=80?'match-high':score>=60?'match-mid':'match-low';
-      const fillColor = score>=80?'var(--success)':score>=60?'var(--warning)':'var(--danger)';
-      const pct = Math.min(100,(t.caseload/Math.max(t.max_caseload,1))*100);
-      return `<div class="rec-card">
-        <div class="rec-header">
-          <div class="rec-avatar">${(t.full_name||'?')[0]}</div>
-          <div>
-            <div style="font-size:15px;font-weight:800">${t.full_name}</div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${t.specialization||'General Counseling'}</div>
-            <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
-              ${(t.languages||'English').split(',').map(l=>`<span class="badge badge-teal">${l.trim()}</span>`).join('')}
-              ${t.gender?`<span class="badge badge-blue">${t.gender}</span>`:''}
-            </div>
-          </div>
-          <div class="match-badge ${cls}">${score}%</div>
-        </div>
-        <div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
-            <span style="color:var(--text-muted);font-weight:600">CASELOAD</span>
-            <span style="font-weight:700">${t.caseload}/${t.max_caseload}</span>
-          </div>
-      ${infoRow('Language',c.language_pref)}${infoRow('Therapist Preference',c.therapist_gender_pref)}
-      ${infoRow('Intake Source',c.intake_source)}${infoRow('Assigned Therapist',c.therapist_name||'Unassigned')}
-      <div style="display:flex;gap:8px;margin-top:16px">
-        <button class="btn btn-gold btn-sm" onclick="selectAndAssign(${c.id})"><i class="fa-solid fa-user-check"></i>Assign Therapist</button>
-        <button class="btn btn-outline btn-sm" onclick="openInvoiceForClient(${c.id})"><i class="fa-solid fa-file-invoice"></i>Create Invoice</button>
-      </div>`;
-  } else if (tab==='journey') {
-    const j = data.journey;
-    el.innerHTML = j.length ? `<div class="timeline">${j.map(e=>`
-      <div class="timeline-item">
-        <div class="timeline-dot"><i class="fa-solid fa-arrow-right" style="font-size:10px"></i></div>
-        <div class="timeline-content">
-          <div class="timeline-date">${formatDate(e.changed_at)} by ${e.changed_by_name||'System'}</div>
-          <div class="timeline-text">${e.stage.replace(/_/g,' ').toUpperCase()}</div>
-          ${e.notes?`<div style="font-size:12px;color:var(--text-muted);margin-top:4px">${e.notes}</div>`:''}
-        </div>
-      </div>`).join('')}</div>` : '<p style="color:var(--text-muted)">No journey records.</p>';
-  } else if (tab==='appointments') {
-    const a = data.appointments;
-    el.innerHTML = a.length ? `<div style="display:flex;flex-direction:column;gap:10px">${a.map(ap=>`
-      <div style="padding:12px;border-radius:12px;background:linear-gradient(180deg,#fff,#fbfdff);border:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <div style="width:44px;height:44px;border-radius:12px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-calendar-check"></i></div>
-        <div style="flex:1;min-width:180px"><div style="font-size:13px;font-weight:800;color:var(--navy)">${formatDate(ap.start_time)} - ${formatTime(ap.start_time)}</div>
-          <div style="font-size:12px;color:var(--text-muted);margin-top:3px">${ap.type} - ${ap.therapist_name||'TBA'} - ${ap.location||'Location not set'}</div>
-          <div style="margin-top:6px">${statusBadge(ap.status)}${ap.change_scope ? ` <span class="badge badge-${ap.change_scope==='permanent'?'gold':'orange'}">${ap.change_scope}</span>` : ''}</div></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-left:auto">
-          <button class="btn btn-gold btn-sm" onclick="openBookModal(${c.id}, ${ap.therapist_id || 'null'})"><i class="fa-solid fa-rotate-right"></i>Continue</button>
-          <button class="btn btn-outline btn-sm" onclick="openClientDrawer(${c.id})"><i class="fa-solid fa-eye"></i>Open Profile</button>
-        </div>
-      </div>`).join('')}</div>` : '<p style="color:var(--text-muted)">No appointments.</p>';
-  } else if (tab==='finance') {
-    const inv = data.invoices;
-    el.innerHTML = inv.length ? `<div>${inv.map(i=>`
-      <div style="padding:12px;border-radius:8px;background:var(--bg);margin-bottom:8px;display:flex;align-items:center;gap:10px">
-        <i class="fa-solid fa-file-invoice-dollar" style="color:var(--navy)"></i>
-        <div><div style="font-size:13px;font-weight:700">ETB ${(i.amount||0).toLocaleString()}</div>
-          <div style="font-size:12px;color:var(--text-muted)">Due: ${formatDate(i.due_date)}</div></div>
-        <div style="margin-left:auto">${invStatusBadge(i.status)}</div>
-        ${i.status==='pending'?`<button class="btn btn-sm btn-success" onclick="openPaymentFor(${i.id},${i.client_id})">Pay</button>`:''}
-      </div>`).join('')}</div>` : '<p style="color:var(--text-muted)">No invoices.</p>';
-  }
-}
-
-function infoRow(label, val) {
-  return `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
-    <span style="font-size:12px;font-weight:700;color:var(--text-muted)">${label.toUpperCase()}</span>
-    <span style="font-size:13px;font-weight:600">${val||'—'}</span>
-  </div>`;
-}
-
-// ——— New Client ———
-let currentStep = 1;
-
-function nextStep(step) {
-  if (step > 1 && !validateStep(currentStep)) return;
-  currentStep = step;
-  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('step'+step).classList.add('active');
-
-  [1,2,3].forEach(i => {
-    const dot = document.getElementById('step'+i+'dot');
-    dot.className = 'step-dot' + (i < step ? ' done' : i === step ? ' active' : '');
-    if (i < 3) document.getElementById('line'+i).className = 'step-line' + (i < step ? ' done' : '');
-  });
-
-  if (step === 3) buildReview();
-}
-
-function validateStep(step) {
-  if (step === 1) {
-    const required = ['nc_name','nc_dob','nc_gender','nc_phone','nc_ecname','nc_ecphone'];
-    for (const id of required) {
-      if (!document.getElementById(id)?.value.trim()) { toast('Please fill all required fields (*)', true); return false; }
-    }
-  }
-  return true;
-}
-
-function buildReview() {
-  const rows = [
-    ['Full Name', document.getElementById('nc_name').value],
-    ['Date of Birth', document.getElementById('nc_dob').value],
-    ['Gender', document.getElementById('nc_gender').value],
-    ['Phone', document.getElementById('nc_phone').value],
-    ['Email', document.getElementById('nc_email').value||'—'],
-    ['Address', document.getElementById('nc_address').value||'—'],
-    ['Emergency Contact', document.getElementById('nc_ecname').value + ' · ' + document.getElementById('nc_ecphone').value],
-    ['Language Preference', document.getElementById('nc_lang').value],
-    ['Therapist Gender Pref', document.getElementById('nc_genderpref').value],
-    ['Intake Source', document.getElementById('nc_source').value],
-    ['Presenting Concerns', document.getElementById('nc_concerns').value||'—'],
-  ];
-  document.getElementById('reviewContent').innerHTML = rows.map(([l,v])=>
-    `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
-      <span style="font-size:12px;font-weight:700;color:var(--text-muted)">${l}</span>
-      <span style="font-size:13px;font-weight:600;max-width:60%;text-align:right">${v}</span>
-    </div>`).join('');
-}
-
-async function registerClient() {
-  const btn = document.getElementById('registerBtn');
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registering...';
-  btn.disabled = true;
-  const body = {
-    full_name: document.getElementById('nc_name').value,
-    date_of_birth: document.getElementById('nc_dob').value,
-    gender: document.getElementById('nc_gender').value,
-    phone: document.getElementById('nc_phone').value,
-    email: document.getElementById('nc_email').value,
-    address: document.getElementById('nc_address').value,
-    emergency_contact_name: document.getElementById('nc_ecname').value,
-    emergency_contact_phone: document.getElementById('nc_ecphone').value,
-    language_pref: document.getElementById('nc_lang').value,
-    therapist_gender_pref: document.getElementById('nc_genderpref').value,
-    intake_source: document.getElementById('nc_source').value,
-    notes: document.getElementById('nc_notes').value,
-  };
-  try {
-    const r = await apiFetch('/api/clients', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    const data = await r.json();
-    if (data.success) {
-      document.querySelectorAll('.step-panel').forEach(p=>p.classList.remove('active'));
-      document.getElementById('step4').classList.add('active');
-      document.getElementById('newClientCode').textContent = data.client_code;
-      await loadAllClients();
-      toast('Client registered successfully!');
-    }
-  } catch(e){ toast('Registration failed', true); }
-  btn.disabled = false;
-}
-
-function resetClientForm() {
-  ['nc_name','nc_dob','nc_phone','nc_email','nc_address','nc_ecname','nc_ecphone','nc_concerns','nc_notes'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
-  currentStep = 1;
-  nextStep(1);
-}
-
-// ——— Smart Assignment ———
-async function loadAssignQueue() {
-  try {
-    const r = await apiFetch('/api/clients');
-    const clients = await r.json();
-    const pending = clients.filter(c => ['registered','screening_completed','awaiting_assignment'].includes(c.status) && !c.assigned_therapist_id);
-    const el = document.getElementById('assignQueue');
-    if (!pending.length) {
-      el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--success)"><i class="fa-solid fa-circle-check" style="font-size:32px;margin-bottom:10px"></i><p style="font-weight:700">All clients assigned!</p></div>`;
-    } else {
-      el.innerHTML = pending.map(c => `
-        <div class="queue-card" id="qc-${c.id}" onclick="selectAssignClient(${c.id})">
-          <div class="queue-name">${c.full_name} <span class="queue-code">${c.client_code}</span></div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
-            ${riskBadge(c.risk_level)}<span class="badge badge-blue">${c.language_pref}</span>
-            <span class="badge badge-gray">${c.therapist_gender_pref}</span>
-          </div>
-        </div>`).join('');
-    }
-  } catch(e){}
-}
-
-async function selectAssignClient(cid) {
-  selectedAssignClient = cid;
-  document.querySelectorAll('.queue-card').forEach(c => c.classList.remove('selected'));
-  document.getElementById('qc-'+cid)?.classList.add('selected');
-
-  document.getElementById('recPlaceholder').style.display='none';
-  document.getElementById('recResults').style.display='block';
-  document.getElementById('recList').innerHTML = '<div style="text-align:center;padding:30px"><i class="fa-solid fa-spinner fa-spin" style="font-size:24px;color:var(--navy)"></i><p style="margin-top:10px;color:var(--text-muted)">Analyzing match criteria...</p></div>';
-
-  const client = allClients.find(c=>c.id===cid);
-  if(client) document.getElementById('selectedClientBadge').innerHTML = `<span style="font-size:13px;font-weight:700;color:var(--navy)">${client.full_name}</span>`;
-
-  try {
-    const r = await apiFetch('/api/assign/recommend', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({client_id:cid})});
-    const data = await r.json();
-    const recs = data.recommendations;
-    if (!recs.length) { document.getElementById('recList').innerHTML='<p style="color:var(--text-muted);text-align:center;padding:20px">No therapists available</p>'; return; }
-    document.getElementById('recList').innerHTML = recs.map(t => {
-      const score = t.match_score;
-      const cls = score>=80?'match-high':score>=60?'match-mid':'match-low';
-      const fillColor = score>=80?'var(--success)':score>=60?'var(--warning)':'var(--danger)';
-      const pct = Math.min(100,(t.caseload/Math.max(t.max_caseload,1))*100);
-      return `<div class="rec-card">
-        <div class="rec-header">
-          <div class="rec-avatar">${(t.full_name||'?')[0]}</div>
-          <div>
-            <div style="font-size:15px;font-weight:800">${t.full_name}</div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${t.specialization||'General Counseling'}</div>
-            <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
-              ${(t.languages||'English').split(',').map(l=>`<span class="badge badge-teal">${l.trim()}</span>`).join('')}
-              ${t.gender?`<span class="badge badge-blue">${t.gender}</span>`:''}
-            </div>
-          </div>
-          <div class="match-badge ${cls}">${score}%</div>
-        </div>
-        <div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
-            <span style="color:var(--text-muted);font-weight:600">CASELOAD</span>
-            <span style="font-weight:700">${t.caseload}/${t.max_caseload}</span>
-          </div>
-          <div class="caseload-bar"><div class="caseload-fill" style="width:${pct}%;background:${fillColor}"></div></div>
-        </div>
-        <button class="btn btn-primary" onclick="assignTherapist(${cid},${t.id})"><i class="fa-solid fa-user-check"></i>Assign ${t.full_name.split(' ')[0]}</button>
-      </div>`;
-    }).join('');
-  } catch(e){ document.getElementById('recList').innerHTML='<p style="color:var(--danger)">Failed to load recommendations</p>'; }
-}
-
-async function assignTherapist(clientId, therapistId) {
-  try {
-    const r = await apiFetch(`/api/clients/${clientId}`, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({assigned_therapist_id:therapistId})});
-    const d = await r.json();
-    if(d.success) {
-      toast('Therapist assigned successfully!');
-      await loadAllClients();
-      loadAssignQueue();
-      document.getElementById('recPlaceholder').style.display='flex';
-      document.getElementById('recResults').style.display='none';
-      selectedAssignClient=null;
-    }
-  } catch(e){ toast('Assignment failed',true); }
-}
-
-function selectAndAssign(cid) { showSection('assignment'); setTimeout(()=>selectAssignClient(cid),400); }
-
-// ——— Appointments ———
-async function loadAppointments() {
-  const startEl = document.getElementById('apptFilterStart');
-  const endEl = document.getElementById('apptFilterEnd');
-  if(startEl && !startEl.value){
-    const today = new Date();
-    const future = new Date(today);
-    future.setMonth(future.getMonth() + 6);
-    startEl.value = today.toISOString().split('T')[0];
-    endEl.value = future.toISOString().split('T')[0];
-  }
-  const start = startEl?.value;
-  const end = endEl?.value;
-  const status = document.getElementById('apptFilterStatus')?.value;
-  let url = '/api/appointments?';
-  if (start) url += `start=${start}&`;
-  if (end) url += `end=${end}&`;
-  try {
-    const r = await fetch(url);
-    allAppointments = await r.json();
-    const filtered = status ? allAppointments.filter(a=>a.status===status) : allAppointments;
-    const tb = document.getElementById('apptTableBody');
-    tb.innerHTML = filtered.map(a => `
-      <tr>
-        <td>${formatDate(a.start_time)} <span style="font-size:11px;color:var(--text-muted)">${formatApptTime(a.start_time)}</span></td>
-        <td><strong>${a.client_name||'—'}</strong></td>
-        <td>${a.therapist_name||'—'}</td>
-        <td><span class="badge badge-blue">${a.type}</span></td>
-        <td>${statusBadge(a.status)}</td>
-        <td>${a.location}</td>
-        <td style="display:flex;gap:4px">
-          <button class="btn btn-sm btn-success" onclick="updateApptStatus(${a.id},'completed')" title="Complete"><i class="fa-solid fa-check"></i></button>
-          <button class="btn btn-sm btn-outline" onclick="changeAppt(${a.id})" title="Change"><i class="fa-solid fa-pen"></i></button>
-          <button class="btn btn-sm btn-danger" onclick="updateApptStatus(${a.id},'cancelled')" title="Cancel"><i class="fa-solid fa-ban"></i></button>
-        </td>
-      </tr>`).join('');
-  } catch(e){}
-}
-
-async function updateApptStatus(id, status) {
-  const reason = status==='cancelled' ? (prompt('Reason for cancelling this appointment:') || '') : '';
-  await apiFetch(`/api/appointments/${id}`, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status, reason, cancel_reason:reason})});
-  toast('Appointment updated');
-  loadTodaySchedule(); loadAppointments();
-}
-async function changeAppt(id) {
-  const dateTime = prompt('Enter new date and time in ISO format (YYYY-MM-DDTHH:MM):');
-  if(!dateTime) return;
-  const reason = prompt('Reason for changing this appointment:') || '';
-  await apiFetch(`/api/appointments/${id}`, {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({start_time:dateTime, change_reason:reason, reason, action:'changed'})});
-  toast('Appointment changed');
-  loadTodaySchedule(); loadAppointments(); renderCalendar();
-}
 
 // ——— Book Modal ———
 function openBookModal(clientId='', therapistId='') {
@@ -2771,7 +2417,7 @@ async function loadAppointments() {
   if (start) url += `start=${start}&`;
   if (end) url += `end=${end}&`;
   try {
-    const r = await fetch(url);
+    const r = await apiFetch(url);
     allAppointments = await r.json();
     const filtered = status ? allAppointments.filter(a => a.status === status) : allAppointments;
     const tb = document.getElementById('apptTableBody');
