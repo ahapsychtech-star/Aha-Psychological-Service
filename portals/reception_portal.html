@@ -2955,10 +2955,30 @@ async function ncLoadRooms() {
   await loadBookingRoomAvailability();
 }
 
+async function loadNewClientBookingTherapists() {
+  try {
+    const res = await fetch('/api/users');
+    const users = await res.json();
+    const therapists = users.filter(u => u.role === 'therapist' && u.is_active);
+    const sel = document.getElementById('nc_book_therapist');
+    if (sel) {
+      sel.innerHTML = '<option value="">Select therapist...</option>' + 
+        therapists.map(t => `<option value="${t.id}">${t.full_name}</option>`).join('');
+    }
+  } catch(e) {}
+}
+
+async function loadNewClientBookingRoomAvailability() {
+  const ncRoom = document.getElementById('nc_book_room');
+  if (!ncRoom) return;
+  if (!allRooms || !allRooms.length) await loadRooms();
+  ncRoom.innerHTML = '<option value="">Select Room (Optional)</option>' + 
+    allRooms.map(r=>`<option value="${r.id}">${r.name}</option>`).join('');
+}
+
 // Initialize portal on load
 document.addEventListener('DOMContentLoaded', init);
 
 </script>
 </body>
 </html>
-
