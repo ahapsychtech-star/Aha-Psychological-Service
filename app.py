@@ -67,6 +67,15 @@ app = Flask(__name__, template_folder='.', static_folder='.')
 app.secret_key = os.getenv('SECRET_KEY', 'aha_psy_CHANGE_ME_IN_RAILWAY_prod_secret_2024')
 
 _IS_VERCEL = bool(os.getenv('VERCEL') or os.getenv('VERCEL_ENV'))
+
+# ─── Session cookie settings — required for HTTPS (Vercel) and same-site POSTs ───
+# Secure=True ensures the cookie is only sent over HTTPS.
+# SameSite='Lax' allows the cookie to be sent on same-site navigations and
+# form POSTs that originate from the same domain, which is what login uses.
+app.config['SESSION_COOKIE_SECURE'] = _IS_VERCEL  # True on Vercel (HTTPS), False in local dev
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_NAME'] = 'aha_session'
 UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', '/tmp/uploads' if _IS_VERCEL else 'uploads')
 
 try:
@@ -4144,7 +4153,9 @@ def login():
 
                 return redirect('/portals/admin_portal.html')
 
-        return send_from_directory('.', 'login.html')
+        # Invalid credentials — redirect back to the login page with an error flag
+        # so the client-side JS can display the error message correctly.
+        return redirect('/login?error=1')
 
     return send_from_directory('.', 'login.html')
 
