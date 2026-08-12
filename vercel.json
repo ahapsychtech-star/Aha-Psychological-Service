@@ -22,7 +22,7 @@
     },
     {
       "path": "/api/cron/upcoming-sessions",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 4 * * *"
     }
   ]
 }
