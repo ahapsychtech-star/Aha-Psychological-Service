@@ -5,9 +5,31 @@
   "framework": null,
   "routes": [
     {
-      "src": "/(.*)",
-      "dest": "/api/index.py"
-    }
+      "src": "/api/(.*)",
+      "dest": "/api/index",
+      "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+    },
+    {
+      "src": "/logout",
+      "dest": "/api/index",
+      "methods": ["GET", "POST"]
+    },
+    {
+      "src": "/admin",
+      "dest": "/api/index",
+      "methods": ["GET", "POST"]
+    },
+    {
+      "src": "/portals/(.*)",
+      "dest": "/api/index",
+      "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+    },
+    { "src": "/login",              "dest": "/login.html" },
+    { "src": "/about",              "dest": "/about.html" },
+    { "src": "/contact",            "dest": "/contact.html" },
+    { "src": "/team",               "dest": "/team.html" },
+    { "src": "/blog",               "dest": "/blog.html" },
+    { "src": "/book-appointment",   "dest": "/portals/intake_form.html" }
   ],
   "crons": [
     {
