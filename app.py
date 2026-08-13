@@ -1732,9 +1732,8 @@ def is_room_available(room_id, start_time, end_time, appointment_id=None):
 
                                 AND status NOT IN ('cancelled','terminated')
 
-                                AND start_time::timestamp < %s::timestamp
-
-                                AND COALESCE(end_time, start_time)::timestamp > %s::timestamp
+                                AND start_time < ?
+                                AND COALESCE(end_time, start_time) > ?
 
                                 AND (? IS NULL OR id<>?)''',
 
@@ -1817,7 +1816,7 @@ def backfill_missing_appointment_rooms():
 
               AND COALESCE(status, 'scheduled') NOT IN ('cancelled', 'terminated')
 
-            ORDER BY start_time::timestamp ASC, id ASC
+            ORDER BY start_time ASC, id ASC
 
         ''').fetchall()
 
@@ -4512,8 +4511,8 @@ def update_client(cid):
 
                              (f"\n\nTermination reason: {data.get('notes', '')}", cid))
 
-                conn.execute("UPDATE appointments SET status='terminated', cancel_reason=?, cancelled_by=?, updated_at=? WHERE client_id=? AND status='scheduled' AND start_time::timestamp >= NOW()",
-                             (data.get('notes', 'Client services terminated'), current_user()['id'], datetime.now().isoformat(), cid))
+                conn.execute("UPDATE appointments SET status='terminated', cancel_reason=?, cancelled_by=?, updated_at=? WHERE client_id=? AND status='scheduled' AND start_time >= ?",
+                             (data.get('notes', 'Client services terminated'), current_user()['id'], datetime.now().isoformat(), cid, datetime.now().isoformat()))
 
         if 'assigned_therapist_id' in data:
 
@@ -5054,7 +5053,7 @@ def update_appointment(aid):
 
             if series_id:
 
-                future_rows = conn.execute("SELECT id FROM appointments WHERE recurrence_series_id=? AND id<>? AND status='scheduled' AND start_time::timestamp >= %s::timestamp", (series_id, aid, old_start_time)).fetchall()
+                future_rows = conn.execute("SELECT id FROM appointments WHERE recurrence_series_id=? AND id<>? AND status='scheduled' AND start_time >= ?", (series_id, aid, old_start_time)).fetchall()
 
                 for row in future_rows:
 
@@ -6184,11 +6183,13 @@ def screening_links():
 
         expires_at = (datetime.now() + timedelta(hours=max(1, expires_hours))).isoformat()
 
+        effective_therapist = data.get('therapist_id') or user['id']
+
         cur = conn.execute('''INSERT INTO screening_links (token, therapist_id, template_id, client_id, expires_at)
 
                               VALUES (?,?,?,?,?)''',
 
-                           (token, user['id'], template_id, data.get('client_id') or None, expires_at))
+                           (token, effective_therapist, template_id, data.get('client_id') or None, expires_at))
 
         conn.commit()
 
