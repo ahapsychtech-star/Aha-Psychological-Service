@@ -5050,10 +5050,16 @@ def update_appointment(aid):
         if data.get('terminate_series') and data.get('status') == 'terminated':
 
             series_id = current.get('recurrence_series_id')
-
             if series_id:
-
                 future_rows = conn.execute("SELECT id FROM appointments WHERE recurrence_series_id=? AND id<>? AND status='scheduled' AND start_time >= ?", (series_id, aid, old_start_time)).fetchall()
+            else:
+                future_rows = conn.execute('''
+                    SELECT id FROM appointments
+                    WHERE client_id=? AND therapist_id=? AND type=? AND location=?
+                      AND status='scheduled'
+                      AND start_time >= ?
+                      AND id <> ?
+                ''', (current['client_id'], current['therapist_id'], current['type'], current['location'], old_start_time, aid)).fetchall()
 
                 for row in future_rows:
 

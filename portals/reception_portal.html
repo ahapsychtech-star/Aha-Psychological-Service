@@ -2963,11 +2963,15 @@ async function loadScreeningTemplates() {
 async function ncGenerateScreeningLink() {
   const templateId = document.getElementById('nc_screening_template')?.value;
   const expires = document.getElementById('nc_screening_expires')?.value;
-  const clientId = document.getElementById('nc_client_id')?.value || currentClient?.id;
+  const clientId = document.getElementById('nc_client_id')?.value || (typeof currentClient !== 'undefined' ? currentClient?.id : null);
   const therapistId = document.getElementById('nc_book_therapist')?.value;
   
   if (!templateId) {
     toast('Please select a screening tool first', true);
+    return;
+  }
+  if (!therapistId) {
+    toast('Please assign a therapist first so they can see the results', true);
     return;
   }
   
