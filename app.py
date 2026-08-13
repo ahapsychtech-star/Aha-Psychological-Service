@@ -5213,16 +5213,19 @@ def delete_appointment(aid):
         return jsonify({'error': 'Unauthorized'}), 401
 
     with get_db() as conn:
-
-        conn.execute('UPDATE appointments SET status=?, cancel_reason=?, cancelled_by=?, updated_at=? WHERE id=?',
-
-                     ('cancelled', 'Cancelled by admin/reception', current_user()['id'], datetime.now().isoformat(), aid))
-
-        conn.execute('INSERT INTO appointment_history (appointment_id,action,performed_by,reason) VALUES (?,?,?,?)',
-
-                     (aid, 'cancelled', current_user()['id'], 'Cancelled by delete endpoint'))
-
-        conn.commit()
+        if request.args.get('hard') == 'true':
+            # Hard delete completely removes the session and its history
+            conn.execute('DELETE FROM appointment_history WHERE appointment_id=?', (aid,))
+            conn.execute('DELETE FROM appointments WHERE id=?', (aid,))
+            conn.commit()
+            return jsonify({'success': True})
+        else:
+            # Soft cancel
+            conn.execute('UPDATE appointments SET status=?, cancel_reason=?, cancelled_by=?, updated_at=? WHERE id=?',
+                         ('cancelled', 'Cancelled by admin/reception', current_user()['id'], datetime.now().isoformat(), aid))
+            conn.execute('INSERT INTO appointment_history (appointment_id,action,performed_by,reason) VALUES (?,?,?,?)',
+                         (aid, 'cancelled', current_user()['id'], 'Cancelled by delete endpoint'))
+            conn.commit()
 
     try:
 

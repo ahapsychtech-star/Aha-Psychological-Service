@@ -567,6 +567,37 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
   }
 }
 
+
+/* ── Past slot disabling ── */
+.vc-slot.past { background: rgba(100,116,139,0.05) !important; cursor: not-allowed !important; pointer-events: none !important; border-left: none !important; }
+.vc-day-col.past-day .vc-day-header { opacity: .5; }
+.vc-day-col.past-day .vc-slot { background: rgba(100,116,139,0.04) !important; cursor: not-allowed !important; pointer-events: none !important; border-left: none !important; }
+.vc-day-col.today .vc-day-header { font-weight: 800; color: var(--navy); background: rgba(4,48,105,.05); }
+.vc-slot.selected { background: rgba(4,48,105,0.2) !important; border-left: 3px solid var(--navy) !important; border-bottom: 1px solid rgba(4,48,105,0.3) !important; }
+.vc-slot.selected::after { content: '✓'; position: absolute; right: 4px; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--navy); font-weight: 800; }
+
+/* ── Delete session button ── */
+.btn-delete { background: rgba(239,68,68,0.08); color: var(--danger); border: 1.5px solid rgba(239,68,68,0.22); }
+.btn-delete:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
+
+/* ── Screening section in step 2 ── */
+.screening-section { background: linear-gradient(135deg,rgba(79,70,229,.04),rgba(124,58,237,.04)); border: 1.5px solid rgba(79,70,229,.15); border-radius: 12px; padding: 16px; margin-top: 14px; }
+.screening-section-title { font-size:13px; font-weight:800; color:var(--indigo); margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+.screening-link-box { background:#fff; border:1px solid rgba(79,70,229,.18); border-radius:8px; padding:10px 14px; font-size:11.5px; font-family:monospace; word-break:break-all; color:var(--indigo); margin-top:8px; }
+.screening-link-row { display:flex; gap:8px; align-items:center; margin-top:8px; }
+
+/* ── Update appointment modal improvements ── */
+.appt-section-card { background:linear-gradient(180deg,#fff,#fbfdff); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:14px; }
+.appt-section-label { font-size:10.5px; font-weight:800; letter-spacing:.9px; text-transform:uppercase; color:var(--text-muted); margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+.appt-mode-btn.active.term { background:rgba(139,92,246,.1); border-color:rgba(139,92,246,.3); color:#5b21b6; }
+.appt-mode-row { gap:8px; }
+.appt-mode-btn { padding:9px 14px; border-radius:10px; font-size:12.5px; }
+.mode-explanation { display:none; padding:10px 14px; border-radius:10px; font-size:12.5px; line-height:1.6; margin-bottom:12px; }
+.mode-explanation.visible { display:block; }
+.mode-explanation.temp { background:rgba(245,158,11,.08); border:1px solid rgba(245,158,11,.2); color:#92400e; }
+.mode-explanation.perm { background:rgba(255,191,0,.1); border:1px solid rgba(255,191,0,.25); color:var(--navy); }
+.mode-explanation.cancel { background:rgba(239,68,68,.07); border:1px solid rgba(239,68,68,.2); color:#991b1b; }
+.mode-explanation.term { background:rgba(139,92,246,.07); border:1px solid rgba(139,92,246,.2); color:#5b21b6; }
 </style>
 </head>
 <body>
@@ -877,6 +908,49 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
             </div>
           </div>
 
+          <!-- Screening Tool Section -->
+          <div class="screening-section">
+            <div class="screening-section-title">
+              <i class="fa-solid fa-clipboard-list" style="color:var(--indigo)"></i>
+              Pre-session Screening Tool
+              <span style="font-size:10.5px;font-weight:500;color:var(--text-muted);margin-left:auto">(Optional — helps the counselor prepare)</span>
+            </div>
+            <div style="font-size:12.5px;color:var(--text-muted);line-height:1.6;margin-bottom:12px">
+              Send a screening assessment link to the client, or fill it in here with them. The counselor will see the results before the first session.
+            </div>
+            <div class="grid-2" style="margin-bottom:10px">
+              <div class="form-group" style="margin-bottom:0">
+                <label>Screening Tool</label>
+                <select class="form-control" id="nc_screening_template">
+                  <option value="">Choose a screening tool...</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label>Expires After</label>
+                <select class="form-control" id="nc_screening_expires">
+                  <option value="24">24 hours</option>
+                  <option value="48">48 hours</option>
+                  <option value="72">3 days</option>
+                  <option value="168">1 week</option>
+                </select>
+              </div>
+            </div>
+            <div id="ncScreeningLinkBox" style="display:none">
+              <div class="screening-link-box" id="ncScreeningLinkText"></div>
+              <div class="screening-link-row">
+                <button type="button" class="btn btn-sm btn-ghost" onclick="ncCopyScreeningLink()" style="font-size:12px"><i class="fa-solid fa-copy"></i> Copy Link</button>
+                <a id="ncScreeningFillBtn" href="#" target="_blank" class="btn btn-sm btn-outline" style="font-size:12px"><i class="fa-solid fa-pen-to-square"></i> Fill Here</a>
+                <span id="ncScreeningStatus" style="font-size:11.5px;font-weight:600;color:var(--success);display:none"><i class="fa-solid fa-circle-check"></i> Link copied!</span>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+              <button type="button" class="btn btn-outline btn-sm" onclick="ncGenerateScreeningLink()" id="ncScreeningGenBtn">
+                <i class="fa-solid fa-link"></i> Generate Screening Link
+              </button>
+            </div>
+          </div>
+
+
           <div style="display:flex;justify-content:space-between;margin-top:16px">
             <button class="btn btn-ghost" onclick="nextStep(1)"><i class="fa-solid fa-arrow-left"></i> Back</button>
             <button class="btn btn-primary" onclick="nextStep(3)">Review &amp; Register <i class="fa-solid fa-arrow-right"></i></button>
@@ -1156,20 +1230,51 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
       <button class="drawer-close" onclick="closeAppointmentEditor()"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="modal-body">
+      <!-- Hero info strip -->
       <div class="appt-editor-hero">
         <div class="appt-editor-title" id="apptEditorTitle">Edit appointment details</div>
-        <div class="appt-editor-sub" id="apptEditorSubtitle">Choose a change type, enter the new time if needed, and add the reason so the therapist receives a clear Telegram update.</div>
+        <div class="appt-editor-sub" id="apptEditorSubtitle">Choose a change type below — each section adjusts to show only what you need.</div>
       </div>
       <input type="hidden" id="apptEditorId">
       <input type="hidden" id="apptEditorScope" value="temporary">
       <input type="hidden" id="apptEditorStatus" value="scheduled">
-      <div class="appt-mode-row">
-        <button type="button" class="appt-mode-btn active temp" id="apptModeTemp" onclick="setApptEditorMode('temporary')">Temporary change</button>
-        <button type="button" class="appt-mode-btn" id="apptModePerm" onclick="setApptEditorMode('permanent')">Permanent change</button>
-        <button type="button" class="appt-mode-btn" id="apptModeCancel" onclick="setApptEditorMode('cancelled')">Cancel this session</button>
-        <button type="button" class="appt-mode-btn" id="apptModeTerminate" onclick="setApptEditorMode('terminated')">End recurring series</button>
+
+      <!-- Section 1: Change Type -->
+      <div class="appt-section-card">
+        <div class="appt-section-label"><i class="fa-solid fa-sliders" style="color:var(--gold)"></i> What would you like to do?</div>
+        <div class="appt-mode-row" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+          <button type="button" class="appt-mode-btn active temp" id="apptModeTemp" onclick="setApptEditorMode('temporary')">
+            <i class="fa-solid fa-clock-rotate-left"></i> Reschedule (once)
+          </button>
+          <button type="button" class="appt-mode-btn" id="apptModePerm" onclick="setApptEditorMode('permanent')">
+            <i class="fa-solid fa-calendar-days"></i> Reschedule (all future)
+          </button>
+          <button type="button" class="appt-mode-btn" id="apptModeCancel" onclick="setApptEditorMode('cancelled')">
+            <i class="fa-solid fa-ban"></i> Cancel this session
+          </button>
+          <button type="button" class="appt-mode-btn" id="apptModeTerminate" onclick="setApptEditorMode('terminated')">
+            <i class="fa-solid fa-stop-circle"></i> End recurring series
+          </button>
+        </div>
+        <!-- Per-mode explanation boxes -->
+        <div class="mode-explanation temp visible" id="modeExplTemp">
+          <strong>Reschedule (once):</strong> Moves <em>this single session</em> to a new date/time. All other sessions in the series stay unchanged.
+        </div>
+        <div class="mode-explanation perm" id="modeExplPerm">
+          <strong>Reschedule (all future):</strong> Updates the recurring schedule from this session onwards. Pick the new regular time slot.
+        </div>
+        <div class="mode-explanation cancel" id="modeExplCancel">
+          <strong>Cancel this session:</strong> Marks <em>this appointment only</em> as cancelled. The therapist gets notified via Telegram. Provide a reason below.
+        </div>
+        <div class="mode-explanation term" id="modeExplTerm">
+          <strong>End recurring series:</strong> Terminates this session <em>and all future sessions</em> in the series. Use this when a client is completing therapy. A reason is required.
+        </div>
       </div>
-      <div class="appt-editor-time-group">
+
+      <!-- Section 2: New Time (hidden for cancel/terminate) -->
+      <div class="appt-section-card appt-editor-time-group" id="apptTimeSection">
+        <div class="appt-section-label"><i class="fa-solid fa-calendar-clock" style="color:var(--navy)"></i> Select New Date &amp; Time</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">Click a <span style="color:#10b981;font-weight:700">green slot</span> to pick the new time. Grey slots are past or already booked.</div>
         <!-- VISUAL CALENDAR COMPONENT -->
         <div class="vc-container" id="vcContainer">
           <div class="vc-header">
@@ -1190,31 +1295,37 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
 
         <input type="hidden" id="apptEditorDateTime">
         <input type="hidden" id="apptEditorEndTime">
-        <div id="vcSelectedLabel" style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:12px;text-align:center;padding:8px;background:rgba(59,130,246,.05);border-radius:8px;display:none"></div>
-
-        <div class="form-group" style="margin-bottom:16px">
-          <label>Therapy room</label>
-          <select class="form-control" id="apptEditorRoom"></select>
+        <div id="vcSelectedLabel" style="font-size:13px;font-weight:700;color:var(--navy);margin:10px 0;padding:10px 14px;background:rgba(4,48,105,.06);border-radius:10px;border:1px solid rgba(4,48,105,.12);display:none">
+          <i class="fa-solid fa-circle-check" style="color:var(--success);margin-right:6px"></i><span id="vcSelectedLabelText"></span>
         </div>
 
-        <div class="appt-room-panel">
-          <h4>Room availability</h4>
+        <div class="appt-room-panel" style="margin-top:10px">
+          <h4>Room Availability</h4>
           <div id="apptRoomChips" class="room-chip-row">
             <span class="room-chip neutral">Pick a date and time to check availability</span>
           </div>
         </div>
+        <div class="form-group" style="margin-bottom:0;margin-top:12px">
+          <label>Therapy Room</label>
+          <select class="form-control" id="apptEditorRoom"></select>
+        </div>
       </div>
-      <div class="form-group">
-        <label>Reason</label>
-        <textarea class="form-control" id="apptEditorReason" placeholder="Write the reason here so the therapist and reception teams get the same message..."></textarea>
-      </div>
-      <div class="appt-editor-note" id="apptEditorNote">
-        <strong>Temporary change:</strong> updates this appointment only. <strong>Permanent change:</strong> updates the recurring pattern when the appointment belongs to a repeated series. <strong>Cancel:</strong> marks the session cancelled and sends the reason to the therapist Telegram account.
+
+      <!-- Section 3: Reason (always visible) -->
+      <div class="appt-section-card">
+        <div class="appt-section-label"><i class="fa-solid fa-pen-line" style="color:var(--teal)"></i> Reason <span id="apptReasonRequired" style="color:var(--danger)">*</span></div>
+        <textarea class="form-control" id="apptEditorReason" rows="3" placeholder="Explain the reason — the therapist will receive this exact message via Telegram..."></textarea>
+        <div style="font-size:11.5px;color:var(--text-muted);margin-top:6px" id="apptReasonHint">Optional for rescheduling. Required for cancellation or ending a series.</div>
       </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeAppointmentEditor()">Cancel</button>
-      <button class="btn btn-danger appt-editor-save" id="apptEditorSaveBtn" onclick="saveAppointmentEditor()">Save Change</button>
+    <div class="modal-footer" style="justify-content:space-between">
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="closeAppointmentEditor()">Discard</button>
+        <button class="btn btn-delete btn-sm" id="apptEditorDeleteBtn" onclick="deleteAppointment(document.getElementById('apptEditorId').value)" title="Permanently delete this session record">
+          <i class="fa-solid fa-trash-alt"></i> Delete Session
+        </button>
+      </div>
+      <button class="btn btn-warning appt-editor-save" id="apptEditorSaveBtn" onclick="saveAppointmentEditor()">Save Change</button>
     </div>
   </div>
 </div>
@@ -1651,7 +1762,7 @@ function bookVcGetWeekDays(date) {
   const diff = d.getDate() - day + (day === 0 ? -6 : 1);
   const monday = new Date(d.setDate(diff));
   const days = [];
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {  // Mon–Sat
     const nd = new Date(monday);
     nd.setDate(monday.getDate() + i);
     days.push(nd);
@@ -1663,10 +1774,13 @@ function bookVcRender() {
   const grid = document.getElementById('bookVcGrid');
   const label = document.getElementById('bookVcDateLabel');
   if (!grid || !label) return;
-  const days = bookVcView === 'day' ? [bookVcCurrentDate] : bookVcGetWeekDays(bookVcCurrentDate);
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const currentHour = now.getHours();
+  const days = bookVcView === 'day' ? [new Date(bookVcCurrentDate)] : bookVcGetWeekDays(bookVcCurrentDate);
   label.textContent = bookVcView === 'day'
     ? days[0].toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric', year:'numeric'})
-    : `${days[0].toLocaleDateString('en-US', {month:'short', day:'numeric'})} - ${days[4].toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}`;
+    : `${days[0].toLocaleDateString('en-US', {month:'short', day:'numeric'})} – ${days[days.length-1].toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}`;
   let html = `<div class="vc-time-col"><div class="vc-day-header">Time</div>`;
   for (let h = 8; h <= 19; h++) {
     const hour = h > 12 ? h - 12 : h;
@@ -1674,24 +1788,34 @@ function bookVcRender() {
   }
   html += `</div><div class="vc-days">`;
   days.forEach(day => {
-    html += `<div class="vc-day-col"><div class="vc-day-header">${day.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'})}</div>`;
+    const dayLocalStr = `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
+    const isPastDay = dayLocalStr < todayStr;
+    const isToday = dayLocalStr === todayStr;
+    const dayCls = isPastDay ? 'vc-day-col past-day' : isToday ? 'vc-day-col today' : 'vc-day-col';
+    html += `<div class="${dayCls}"><div class="vc-day-header">${day.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'})}</div>`;
     for (let h = 8; h <= 19; h++) {
-      const slotStart = new Date(day);
-      slotStart.setHours(h, 0, 0, 0);
-      const slotEnd = new Date(day);
-      slotEnd.setHours(h + 1, 0, 0, 0);
+      const slotStart = new Date(day); slotStart.setHours(h, 0, 0, 0);
+      const slotEnd = new Date(day); slotEnd.setHours(h + 1, 0, 0, 0);
       const slotStartStr = slotStart.toISOString();
       const slotEndStr = slotEnd.toISOString();
-      const isBusy = bookVcAppointments.some(a => {
+      const isPastSlot = isPastDay || (isToday && h <= currentHour);
+      const isBusy = !isPastSlot && bookVcAppointments.some(a => {
         if (['cancelled', 'no_show', 'terminated'].includes(String(a.status || '').toLowerCase())) return false;
         const aStart = new Date(a.start_time);
         const aEnd = new Date(a.end_time || a.start_time);
         return aStart < slotEnd && aEnd > slotStart;
       });
-      let cls = 'vc-slot available';
-      if (isBusy) cls = 'vc-slot busy';
-      if (bookVcSelectedStart === slotStartStr) cls += ' selected';
-      html += `<div class="${cls}" data-start="${slotStartStr}" data-end="${slotEndStr}" onclick="bookVcSlotClick(this, ${isBusy})"></div>`;
+      const isSelected = bookVcSelectedStart === slotStartStr;
+      let cls = 'vc-slot';
+      if (isPastSlot) cls += ' past';
+      else if (isBusy) cls += ' busy';
+      else cls += ' available';
+      if (isSelected) cls += ' selected';
+      if (isPastSlot) {
+        html += `<div class="${cls}"></div>`;
+      } else {
+        html += `<div class="${cls}" data-start="${slotStartStr}" data-end="${slotEndStr}" onclick="bookVcSlotClick(this, ${isBusy})"></div>`;
+      }
     }
     html += `</div>`;
   });
@@ -1705,19 +1829,25 @@ function bookVcSlotClick(el, isBusy) {
   const end = el.dataset.end;
   bookVcSelectedStart = start;
   bookVcSelectedEnd = end;
+  // Use local date/time extraction to avoid timezone issues
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  const localDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth()+1).padStart(2,'0')}-${String(startDate.getDate()).padStart(2,'0')}`;
+  const localStartTime = `${String(startDate.getHours()).padStart(2,'0')}:00`;
+  const localEndTime = `${String(endDate.getHours()).padStart(2,'0')}:00`;
   const dateEl = document.getElementById('bookDate');
   const startEl = document.getElementById('bookStart');
   const endEl = document.getElementById('bookEnd');
   const dtEl = document.getElementById('bookVcDateTime');
   const endHiddenEl = document.getElementById('bookVcEndTime');
-  if (dateEl) dateEl.value = start.slice(0, 10);
-  if (startEl) startEl.value = start.slice(11, 16);
-  if (endEl) endEl.value = end.slice(11, 16);
+  if (dateEl) dateEl.value = localDateStr;
+  if (startEl) startEl.value = localStartTime;
+  if (endEl) endEl.value = localEndTime;
   if (dtEl) dtEl.value = start;
   if (endHiddenEl) endHiddenEl.value = end;
   const lbl = document.getElementById('bookVcSelectedLabel');
   if (lbl) {
-    lbl.textContent = `Selected: ${new Date(start).toLocaleString('en-US', {weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})} - ${new Date(end).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+    lbl.textContent = `✔ Selected: ${startDate.toLocaleString('en-US', {weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})} – ${endDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
     lbl.style.display = 'block';
   }
   loadBookingRoomAvailability();
@@ -2290,44 +2420,110 @@ let vcSelectedEnd = null;
 async function vcInit(){const current=allAppointments.find(a=>String(a.id)===String(document.getElementById('apptEditorId')?.value));vcCurrentDate=current?.start_time?new Date(current.start_time):new Date();vcSelectedStart=document.getElementById('apptEditorDateTime')?.value?new Date(document.getElementById('apptEditorDateTime').value).toISOString():null;vcSelectedEnd=document.getElementById('apptEditorEndTime')?.value?new Date(document.getElementById('apptEditorEndTime').value).toISOString():null;try{const r=await apiFetch('/api/appointments');vcAppointments=await r.json();}catch(e){vcAppointments=[];}vcRender();}
 function vcNav(dir){vcCurrentDate.setDate(vcCurrentDate.getDate()+(vcView==='day'?dir:dir*7));vcRender();}
 function vcSetView(view){vcView=view;document.getElementById('vcBtnDay')?.classList.toggle('active',view==='day');document.getElementById('vcBtnWeek')?.classList.toggle('active',view==='week');vcRender();}
-function vcDays(){const d=new Date(vcCurrentDate);if(vcView==='day')return[d];d.setDate(d.getDate()-((d.getDay()+6)%7));return Array.from({length:5},(_,i)=>{const day=new Date(d);day.setDate(d.getDate()+i);return day;});}
-function vcRender(){const grid=document.getElementById('vcGrid'),label=document.getElementById('vcDateLabel');if(!grid||!label)return;const days=vcDays();label.textContent=vcView==='day'?days[0].toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'}):`${days[0].toLocaleDateString('en-US',{month:'short',day:'numeric'})} ? ${days[4].toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;let html='<div class="vc-time-col"><div class="vc-day-header">Time</div>';for(let h=8;h<=19;h++)html+=`<div class="vc-time-slot">${h>12?h-12:h} ${h>=12?'PM':'AM'}</div>`;html+='</div><div class="vc-days">';const editing=String(document.getElementById('apptEditorId')?.value||'');for(const day of days){html+=`<div class="vc-day-col"><div class="vc-day-header">${day.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</div>`;for(let h=8;h<=19;h++){const start=new Date(day);start.setHours(h,0,0,0);const end=new Date(start);end.setHours(h+1);const busy=vcAppointments.some(a=>String(a.id)!==editing&&!['cancelled','terminated'].includes(String(a.status||'').toLowerCase())&&new Date(a.start_time)<end&&new Date(a.end_time||a.start_time)>start);const iso=start.toISOString();html+=`<button type="button" class="vc-slot ${busy?'busy':'available'} ${vcSelectedStart===iso?'selected':''}" data-start="${iso}" data-end="${end.toISOString()}" ${busy?'disabled':''} onclick="vcSlotClick(this)"></button>`;}html+='</div>';}html+='</div>';grid.innerHTML=html;}
-function vcSlotClick(el){vcSelectedStart=el.dataset.start;vcSelectedEnd=el.dataset.end;document.getElementById('apptEditorDateTime').value=el.dataset.start.slice(0,16);document.getElementById('apptEditorEndTime').value=el.dataset.end.slice(0,16);const label=document.getElementById('vcSelectedLabel');label.textContent=`Selected: ${new Date(el.dataset.start).toLocaleString()} ? ${new Date(el.dataset.end).toLocaleTimeString()}`;label.style.display='block';refreshAppointmentRoomAvailability();vcRender();}
+function vcDays(){
+  const d=new Date(vcCurrentDate);
+  if(vcView==='day')return[d];
+  d.setDate(d.getDate()-((d.getDay()+6)%7));
+  return Array.from({length:6},(_,i)=>{const day=new Date(d);day.setDate(d.getDate()+i);return day;}); // Mon-Sat
+}
+function vcRender(){
+  const grid=document.getElementById('vcGrid'),label=document.getElementById('vcDateLabel');
+  if(!grid||!label)return;
+  const now=new Date();
+  const todayStr=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const currentHour=now.getHours();
+  const days=vcDays();
+  label.textContent=vcView==='day'
+    ?days[0].toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'})
+    :`${days[0].toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${days[days.length-1].toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+  let html='<div class="vc-time-col"><div class="vc-day-header">Time</div>';
+  for(let h=8;h<=19;h++)html+=`<div class="vc-time-slot">${h>12?h-12:h} ${h>=12?'PM':'AM'}</div>`;
+  html+='</div><div class="vc-days">';
+  const editing=String(document.getElementById('apptEditorId')?.value||'');
+  for(const day of days){
+    const dayLocalStr=`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
+    const isPastDay=dayLocalStr<todayStr;
+    const isToday=dayLocalStr===todayStr;
+    const dayCls=isPastDay?'vc-day-col past-day':isToday?'vc-day-col today':'vc-day-col';
+    html+=`<div class="${dayCls}"><div class="vc-day-header">${day.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</div>`;
+    for(let h=8;h<=19;h++){
+      const start=new Date(day);start.setHours(h,0,0,0);
+      const end=new Date(start);end.setHours(h+1);
+      const isPastSlot=isPastDay||(isToday&&h<=currentHour);
+      const busy=!isPastSlot&&vcAppointments.some(a=>String(a.id)!==editing&&!['cancelled','terminated'].includes(String(a.status||'').toLowerCase())&&new Date(a.start_time)<end&&new Date(a.end_time||a.start_time)>start);
+      const iso=start.toISOString();
+      const isSelected=vcSelectedStart===iso;
+      let cls='vc-slot';
+      if(isPastSlot)cls+=' past';
+      else if(busy)cls+=' busy';
+      else cls+=' available';
+      if(isSelected)cls+=' selected';
+      if(isPastSlot){
+        html+=`<div class="${cls}"></div>`;
+      }else{
+        html+=`<button type="button" class="${cls}" data-start="${iso}" data-end="${end.toISOString()}" ${busy?'disabled':''} onclick="vcSlotClick(this)"></button>`;
+      }
+    }
+    html+='</div>';
+  }
+  html+='</div>';
+  grid.innerHTML=html;
+}
+function vcSlotClick(el){
+  vcSelectedStart=el.dataset.start;
+  vcSelectedEnd=el.dataset.end;
+  document.getElementById('apptEditorDateTime').value=el.dataset.start;
+  document.getElementById('apptEditorEndTime').value=el.dataset.end;
+  const startDate=new Date(el.dataset.start);
+  const endDate=new Date(el.dataset.end);
+  const labelEl=document.getElementById('vcSelectedLabel');
+  const labelTxt=document.getElementById('vcSelectedLabelText');
+  if(labelEl){labelEl.style.display='block';}
+  if(labelTxt){labelTxt.textContent=`${startDate.toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})} – ${endDate.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`;}
+  refreshAppointmentRoomAvailability();
+  vcRender();
+}
+
 
 function setApptEditorMode(mode){
   const scope = mode === 'permanent' ? 'permanent' : mode === 'terminated' ? 'series' : 'temporary';
   document.getElementById('apptEditorScope').value = scope;
   document.getElementById('apptEditorStatus').value = mode === 'cancelled' ? 'cancelled' : mode === 'terminated' ? 'terminated' : 'scheduled';
-  document.getElementById('apptModeTemp').classList.toggle('active', mode === 'temporary');
-  document.getElementById('apptModePerm').classList.toggle('active', mode === 'permanent');
-  document.getElementById('apptModeCancel').classList.toggle('active', mode === 'cancelled');
-  document.getElementById('apptModeTerminate')?.classList.toggle('active', mode === 'terminated');
-  document.getElementById('apptModeTemp').classList.toggle('temp', mode === 'temporary');
-  document.getElementById('apptModePerm').classList.toggle('perm', mode === 'permanent');
-  document.getElementById('apptModeCancel').classList.toggle('cancel', mode === 'cancelled');
-  const dtGroup = document.querySelector('.appt-editor-time-group');
-  const note = document.getElementById('apptEditorNote');
+  // Mode buttons - reset all then set active
+  ['apptModeTemp','apptModePerm','apptModeCancel','apptModeTerminate'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    el.classList.remove('active','temp','perm','cancel','term');
+  });
+  if(mode==='temporary'){document.getElementById('apptModeTemp').classList.add('active','temp');}
+  else if(mode==='permanent'){document.getElementById('apptModePerm').classList.add('active','perm');}
+  else if(mode==='cancelled'){document.getElementById('apptModeCancel').classList.add('active','cancel');}
+  else if(mode==='terminated'){document.getElementById('apptModeTerminate')?.classList.add('active','term');}
+  // Show/hide explanation boxes
+  document.getElementById('modeExplTemp')?.classList.toggle('visible', mode==='temporary');
+  document.getElementById('modeExplPerm')?.classList.toggle('visible', mode==='permanent');
+  document.getElementById('modeExplCancel')?.classList.toggle('visible', mode==='cancelled');
+  document.getElementById('modeExplTerm')?.classList.toggle('visible', mode==='terminated');
+  // Show/hide time section
+  const timeSection = document.getElementById('apptTimeSection');
   const saveBtn = document.getElementById('apptEditorSaveBtn');
+  const reasonHint = document.getElementById('apptReasonHint');
   if(mode === 'terminated'){
-    dtGroup.classList.add('appt-editor-hidden');
-    note.innerHTML = '<strong>End recurring series:</strong> terminates this and every future scheduled session in this series. Add the reason for the client record and Telegram update.';
-    saveBtn.textContent = 'End Recurring Series';
-    saveBtn.className = 'btn btn-danger appt-editor-save';
+    if(timeSection) timeSection.style.display='none';
+    if(saveBtn){saveBtn.textContent='End Recurring Series';saveBtn.className='btn btn-danger appt-editor-save';}
+    if(reasonHint) reasonHint.textContent='A reason is required — the therapist and client file will both be updated.';
   }else if(mode === 'cancelled'){
-    dtGroup.classList.add('appt-editor-hidden');
-    note.innerHTML = '<strong>Cancellation:</strong> add the reason so the therapist gets the same explanation in Telegram and in their schedule.';
-    saveBtn.textContent = 'Cancel Session';
-    saveBtn.className = 'btn btn-danger appt-editor-save';
+    if(timeSection) timeSection.style.display='none';
+    if(saveBtn){saveBtn.textContent='Cancel Session';saveBtn.className='btn btn-danger appt-editor-save';}
+    if(reasonHint) reasonHint.textContent='A cancellation reason is required — the therapist receives this via Telegram.';
   }else if(mode === 'permanent'){
-    dtGroup.classList.remove('appt-editor-hidden');
-    note.innerHTML = '<strong>Permanent change:</strong> updates the recurring pattern for this session series and sends the reason to Telegram.';
-    saveBtn.textContent = 'Save Permanent Change';
-    saveBtn.className = 'btn btn-gold appt-editor-save';
+    if(timeSection) timeSection.style.display='';
+    if(saveBtn){saveBtn.textContent='Save Permanent Change';saveBtn.className='btn btn-gold appt-editor-save';}
+    if(reasonHint) reasonHint.textContent='Optional — explain why the schedule is changing.';
   }else{
-    dtGroup.classList.remove('appt-editor-hidden');
-    note.innerHTML = '<strong>Temporary change:</strong> updates this appointment only and keeps the rest of the series intact.';
-    saveBtn.textContent = 'Save Temporary Change';
-    saveBtn.className = 'btn btn-warning appt-editor-save';
+    if(timeSection) timeSection.style.display='';
+    if(saveBtn){saveBtn.textContent='Save Reschedule';saveBtn.className='btn btn-warning appt-editor-save';}
+    if(reasonHint) reasonHint.textContent='Optional for rescheduling. Required for cancellation or ending a series.';
   }
 }
 
@@ -2603,25 +2799,47 @@ function ncVcGetWeekDays(date) {
   const day = d.getDay();
   const diff = d.getDate() - day + (day === 0 ? -6 : 1);
   const monday = new Date(d.setDate(diff));
-  return Array.from({length: 5}, (_, i) => { const nd = new Date(monday); nd.setDate(monday.getDate() + i); return nd; });
+  return Array.from({length: 6}, (_, i) => { const nd = new Date(monday); nd.setDate(monday.getDate() + i); return nd; }); // Mon–Sat
 }
 
 function ncVcRender() {
   const grid = document.getElementById('ncVcGrid');
   const label = document.getElementById('ncVcDateLabel');
   if (!grid || !label) return;
-  const days = ncVcView === 'day' ? [ncVcCurrentDate] : ncVcGetWeekDays(ncVcCurrentDate);
-  label.textContent = ncVcView === 'day' ? days[0].toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric', year:'numeric'}) : `${days[0].toLocaleDateString('en-US', {month:'short', day:'numeric'})} - ${days[4].toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}`;
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const currentHour = now.getHours();
+  const days = ncVcView === 'day' ? [new Date(ncVcCurrentDate)] : ncVcGetWeekDays(ncVcCurrentDate);
+  label.textContent = ncVcView === 'day'
+    ? days[0].toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric', year:'numeric'})
+    : `${days[0].toLocaleDateString('en-US', {month:'short', day:'numeric'})} – ${days[days.length-1].toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}`;
   let html = '<div class="vc-time-col"><div class="vc-day-header">Time</div>';
   for (let h = 8; h <= 19; h++) html += `<div class="vc-time-slot">${h > 12 ? h - 12 : h} ${h >= 12 ? 'PM' : 'AM'}</div>`;
   html += '</div><div class="vc-days">';
   days.forEach(day => {
-    html += `<div class="vc-day-col"><div class="vc-day-header">${day.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'})}</div>`;
+    const dayLocalStr = `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
+    const isPastDay = dayLocalStr < todayStr;
+    const isToday = dayLocalStr === todayStr;
+    const dayCls = isPastDay ? 'vc-day-col past-day' : isToday ? 'vc-day-col today' : 'vc-day-col';
+    html += `<div class="${dayCls}"><div class="vc-day-header">${day.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'})}</div>`;
     for (let h = 8; h <= 19; h++) {
       const slotStart = new Date(day); slotStart.setHours(h, 0, 0, 0);
       const slotEnd = new Date(day); slotEnd.setHours(h + 1, 0, 0, 0);
-      const busy = ncVcAppointments.some(a => !isFinalAppointmentStatus(a.status) && new Date(a.start_time) < slotEnd && new Date(a.end_time || a.start_time) > slotStart);
-      html += `<div class="vc-slot ${busy ? 'busy' : 'available'}" data-start="${slotStart.toISOString()}" data-end="${slotEnd.toISOString()}" onclick="ncVcSlotClick(this, ${busy})"></div>`;
+      const slotStartStr = slotStart.toISOString();
+      const slotEndStr = slotEnd.toISOString();
+      const isPastSlot = isPastDay || (isToday && h <= currentHour);
+      const busy = !isPastSlot && ncVcAppointments.some(a => !isFinalAppointmentStatus(a.status) && new Date(a.start_time) < slotEnd && new Date(a.end_time || a.start_time) > slotStart);
+      const isSelected = ncVcSelectedStart === slotStartStr;
+      let cls = 'vc-slot';
+      if (isPastSlot) cls += ' past';
+      else if (busy) cls += ' busy';
+      else cls += ' available';
+      if (isSelected) cls += ' selected';
+      if (isPastSlot) {
+        html += `<div class="${cls}"></div>`;
+      } else {
+        html += `<div class="${cls}" data-start="${slotStartStr}" data-end="${slotEndStr}" onclick="ncVcSlotClick(this, ${busy})"></div>`;
+      }
     }
     html += '</div>';
   });
@@ -2633,15 +2851,25 @@ function ncVcSlotClick(el, busy) {
   if (busy) return;
   ncVcSelectedStart = el.dataset.start;
   ncVcSelectedEnd = el.dataset.end;
+  // Use local date/time to avoid timezone mismatch
+  const startDate = new Date(ncVcSelectedStart);
+  const endDate = new Date(ncVcSelectedEnd);
+  const localDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth()+1).padStart(2,'0')}-${String(startDate.getDate()).padStart(2,'0')}`;
+  const localStartTime = `${String(startDate.getHours()).padStart(2,'0')}:00`;
+  const localEndTime = `${String(endDate.getHours()).padStart(2,'0')}:00`;
   const dateEl = document.getElementById('nc_book_date');
   const startEl = document.getElementById('nc_book_start');
   const endEl = document.getElementById('nc_book_end');
-  if (dateEl) dateEl.value = ncVcSelectedStart.slice(0, 10);
-  if (startEl) startEl.value = ncVcSelectedStart.slice(11, 16);
-  if (endEl) endEl.value = ncVcSelectedEnd.slice(11, 16);
+  if (dateEl) dateEl.value = localDateStr;
+  if (startEl) startEl.value = localStartTime;
+  if (endEl) endEl.value = localEndTime;
   const lbl = document.getElementById('ncVcSelectedLabel');
-  if (lbl) { lbl.style.display = 'block'; lbl.textContent = `Selected: ${new Date(ncVcSelectedStart).toLocaleString('en-US', {weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}`; }
+  if (lbl) {
+    lbl.style.display = 'block';
+    lbl.textContent = `✔ Selected: ${startDate.toLocaleString('en-US', {weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})} – ${endDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+  }
   ncLoadRooms();
+  ncVcRender(); // Re-render to show selection highlight
 }
 
 async function ncLoadRooms() {
@@ -2686,8 +2914,97 @@ async function loadNewClientBookingRoomAvailability() {
   } catch(e) { ncRoom.innerHTML = '<option value="">Room availability could not be loaded</option>'; }
 }
 
+async function deleteAppointment(id) {
+  if (!confirm('Are you sure you want to completely delete this session? This will remove it entirely (not just cancel it).')) return;
+  try {
+    const res = await apiFetch(`/api/appointments/${id}?hard=true`, { method: 'DELETE' });
+    if (res.ok) {
+      toast('Session permanently deleted', false);
+      closeAppointmentEditor();
+      loadTodaySchedule();
+      loadAppointments();
+      renderCalendar();
+    } else {
+      toast('Failed to delete session', true);
+    }
+  } catch(e) {
+    toast('Error deleting session', true);
+  }
+}
+
+async function loadScreeningTemplates() {
+  const sel = document.getElementById('nc_screening_template');
+  if (!sel) return;
+  try {
+    const res = await apiFetch('/api/assessment-templates');
+    if (res.ok) {
+      const templates = await res.json();
+      sel.innerHTML = '<option value="">Choose a screening tool...</option>' + 
+        templates.map(t => `<option value="${t.id}">${t.name} (${t.category})</option>`).join('');
+    }
+  } catch(e) {
+    console.error('Failed to load screening templates:', e);
+  }
+}
+
+async function ncGenerateScreeningLink() {
+  const templateId = document.getElementById('nc_screening_template')?.value;
+  const expires = document.getElementById('nc_screening_expires')?.value;
+  const clientId = document.getElementById('nc_client_id')?.value || currentClient?.id;
+  
+  if (!templateId) {
+    toast('Please select a screening tool first', true);
+    return;
+  }
+  
+  const btn = document.getElementById('ncScreeningGenBtn');
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating...';
+  btn.disabled = true;
+  
+  try {
+    const res = await apiFetch('/api/screening-links', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        template_id: parseInt(templateId),
+        expires_hours: parseInt(expires || 24),
+        client_id: clientId ? parseInt(clientId) : null
+      })
+    });
+    
+    const data = await res.json();
+    if (res.ok && data.success) {
+      document.getElementById('ncScreeningLinkText').textContent = data.link;
+      document.getElementById('ncScreeningFillBtn').href = data.link;
+      document.getElementById('ncScreeningLinkBox').style.display = 'block';
+      toast('Screening link generated successfully');
+    } else {
+      toast(data.error || 'Failed to generate link', true);
+    }
+  } catch(e) {
+    toast('Network error while generating link', true);
+  } finally {
+    btn.innerHTML = '<i class="fa-solid fa-link"></i> Generate Screening Link';
+    btn.disabled = false;
+  }
+}
+
+function ncCopyScreeningLink() {
+  const linkText = document.getElementById('ncScreeningLinkText').textContent;
+  if (!linkText) return;
+  
+  navigator.clipboard.writeText(linkText).then(() => {
+    const status = document.getElementById('ncScreeningStatus');
+    status.style.display = 'inline';
+    setTimeout(() => { status.style.display = 'none'; }, 2000);
+  }).catch(() => toast('Failed to copy text', true));
+}
+
 // Initialize portal on load
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  loadScreeningTemplates();
+});
 
 </script>
 </body>
