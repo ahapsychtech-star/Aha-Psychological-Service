@@ -1166,8 +1166,8 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
       <div class="appt-mode-row">
         <button type="button" class="appt-mode-btn active temp" id="apptModeTemp" onclick="setApptEditorMode('temporary')">Temporary change</button>
         <button type="button" class="appt-mode-btn" id="apptModePerm" onclick="setApptEditorMode('permanent')">Permanent change</button>
-        <button type="button" class="appt-mode-btn" id="apptModeCancel" onclick="setApptEditorMode('cancelled')">Cancel session</button>
-        <button type="button" class="appt-mode-btn" id="apptModeNoShow" onclick="setApptEditorMode('no_show')">No-show</button>
+        <button type="button" class="appt-mode-btn" id="apptModeCancel" onclick="setApptEditorMode('cancelled')">Cancel this session</button>
+        <button type="button" class="appt-mode-btn" id="apptModeTerminate" onclick="setApptEditorMode('terminated')">End recurring series</button>
       </div>
       <div class="appt-editor-time-group">
         <!-- VISUAL CALENDAR COMPONENT -->
@@ -1243,7 +1243,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
 <script>
 
 function isFinalAppointmentStatus(status){
-  return ['completed', 'cancelled', 'no_show'].includes(String(status || '').toLowerCase());
+  return ['completed', 'cancelled', 'no_show', 'terminated'].includes(String(status || '').toLowerCase());
 }
 
 // â”€â”€â”€ Globals â”€â”€â”€
@@ -1337,6 +1337,20 @@ function showSection(name) {
 }
 
 // ─── Smart Assignment ───
+// Client registration workflow
+function nextStep(step){
+  if(step === 2){ const required=[['nc_name','Full name'],['nc_dob','Date of birth'],['nc_gender','Gender'],['nc_phone','Phone']]; const missing=required.find(([id])=>!document.getElementById(id)?.value.trim()); if(missing){toast(`${missing[1]} is required`,true);return;} ncVcFetchData(); }
+  if(step === 3){ if(!document.getElementById('nc_concerns')?.value.trim()){toast('Presenting concerns are required',true);return;} if(document.getElementById('nc_book_now')?.checked){const required=[['nc_book_therapist','Therapist'],['nc_book_date','Appointment date'],['nc_book_start','Appointment time']];const missing=required.find(([id])=>!document.getElementById(id)?.value);if(missing){toast(`${missing[1]} is required to book the first appointment`,true);return;}} renderClientReview(); }
+  document.querySelectorAll('.step-panel').forEach(panel=>panel.classList.remove('active')); document.getElementById(`step${step}`)?.classList.add('active'); [1,2,3].forEach(n=>document.getElementById(`step${n}dot`)?.classList.toggle('active',n<=step)); document.getElementById('line1')?.classList.toggle('active',step>=2);document.getElementById('line2')?.classList.toggle('active',step>=3);
+}
+function renderClientReview(){ const value=id=>document.getElementById(id)?.value||'?';const therapist=document.getElementById('nc_book_therapist');const therapistName=therapist?.selectedOptions?.[0]?.textContent||'Unassigned';document.getElementById('reviewContent').innerHTML=`<div style="font-weight:800;color:var(--navy);margin-bottom:10px">${value('nc_name')}</div><div style="font-size:13px;line-height:1.8">${value('nc_phone')} ? ${value('nc_gender')} ? DOB ${value('nc_dob')}<br>Therapist: <strong>${therapistName}</strong><br>Concerns: ${value('nc_concerns')}</div>`;const book=document.getElementById('nc_book_now')?.checked;document.getElementById('reviewAppointmentContent').innerHTML=book?`<strong style="color:var(--navy)">First appointment</strong><div style="font-size:13px;line-height:1.8;margin-top:8px">${value('nc_book_date')} at ${value('nc_book_start')} ? ${document.getElementById('nc_book_room')?.selectedOptions?.[0]?.textContent||'Auto-assign room'}<br>${value('nc_recur').replace(/_/g,' ')} ? ${value('nc_book_location')}</div>`:'<span style="color:var(--text-muted)">No first appointment selected. The client will remain in the assignment queue.</span>'; }
+async function registerClient(){
+ const btn=document.getElementById('registerBtn'), therapistId=document.getElementById('nc_book_therapist')?.value||'';const payload={full_name:document.getElementById('nc_name').value.trim(),date_of_birth:document.getElementById('nc_dob').value,gender:document.getElementById('nc_gender').value,phone:document.getElementById('nc_phone').value.trim(),notes:`Presenting concerns: ${document.getElementById('nc_concerns').value.trim()}\n${document.getElementById('nc_notes').value.trim()}`.trim(),therapist_gender_pref:document.getElementById('nc_genderpref').value};btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Registering?';
+ try{const create=await apiFetch('/api/clients',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const client=await create.json();if(!create.ok||!client.success)throw new Error(client.error||'Client registration failed');if(therapistId){const assigned=await apiFetch(`/api/clients/${client.client_id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({assigned_therapist_id:therapistId})});if(!assigned.ok)throw new Error((await assigned.json()).error||'Client was created but therapist assignment failed');}if(document.getElementById('nc_book_now')?.checked){const recur=document.getElementById('nc_recur').value;const [frequency,count]=recur==='none'?['none',1]:recur.split('_');const appointment={client_id:client.client_id,therapist_id:therapistId,room_id:document.getElementById('nc_book_room').value||null,start_time:`${document.getElementById('nc_book_date').value}T${document.getElementById('nc_book_start').value}:00`,end_time:`${document.getElementById('nc_book_date').value}T${document.getElementById('nc_book_end').value}:00`,location:document.getElementById('nc_book_location').value,notes:document.getElementById('nc_book_notes').value,is_recurring:frequency!=='none',recurrence_count:Number(count),recurrence_interval_days:frequency==='biweekly'?14:7};const booked=await apiFetch('/api/appointments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(appointment)});const result=await booked.json();if(!booked.ok||!result.success)throw new Error(result.error||'Client was created but the first appointment could not be booked');}document.getElementById('newClientCode').textContent=client.client_code;document.getElementById('step4AssignMsg').style.display=therapistId?'block':'none';document.getElementById('step4AssignBtn').style.display=therapistId?'none':'';nextStep(4);await loadAllClients();await loadDashboard();loadCalendar();}catch(error){toast(error.message,true);}finally{btn.disabled=false;btn.innerHTML='<i class="fa-solid fa-user-check"></i> Register Client';}
+}
+function resetClientForm(){['nc_name','nc_dob','nc_phone','nc_concerns','nc_notes','nc_book_date','nc_book_start','nc_book_end','nc_book_notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});['nc_gender','nc_book_therapist','nc_genderpref','nc_book_room','nc_recur','nc_book_location'].forEach(id=>{const el=document.getElementById(id);if(el)el.selectedIndex=0;});const bookNow=document.getElementById('nc_book_now');if(bookNow)bookNow.checked=false;document.getElementById('ncBookFields').style.display='none';nextStep(1);}
+function selectAndAssign(clientId){showSection('assignment');setTimeout(()=>selectAssignClient(clientId),50);}
+
 async function loadAssignQueue() {
   const el = document.getElementById('assignQueue');
   if (!el) return;
@@ -1858,9 +1872,21 @@ function renderClientsTable() {
       <td style="font-size:13px">${c.therapist_name||'<span style="color:var(--text-muted)">Unassigned</span>'}</td>
       <td onclick="event.stopPropagation()" style="display:flex;gap:4px">
         <button class="btn btn-sm btn-ghost" onclick="openClientDrawer(${c.id})"><i class="fa-solid fa-eye"></i></button>
-        <button class="btn btn-sm btn-gold" onclick="selectAndAssign(${c.id})"><i class="fa-solid fa-user-check"></i></button>
+        <button class="btn btn-sm btn-gold" onclick="selectAndAssign(${c.id})" title="Assign therapist"><i class="fa-solid fa-user-check"></i></button>
+        <button class="btn btn-sm btn-danger" onclick="deleteTrialClient(${c.id},'${c.client_code || ''}')" title="Delete trial record"><i class="fa-solid fa-trash"></i></button>
       </td>
     </tr>`).join('');
+}
+
+async function deleteTrialClient(clientId, clientCode){
+  const confirmation = prompt(`This permanently deletes the trial client and all related appointments, notes, payments, and screening data.\n\nType ${clientCode} to confirm:`);
+  if(confirmation === null) return;
+  try{
+    const r = await apiFetch(`/api/clients/${clientId}`, {method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({confirm:confirmation.trim()})});
+    const d = await r.json();
+    if(!r.ok || !d.success) throw new Error(d.error || 'Could not delete the client');
+    closeClientDrawer(); await loadAllClients(); await loadDashboard(); loadCalendar(); toast('Trial client deleted');
+  }catch(error){ toast(error.message, true); }
 }
 
 async function openClientDrawer(cid) {
@@ -2216,15 +2242,12 @@ async function loadBookingRoomAvailability(){
     const slotEnd = `${date}T${end}:00`;
     const r = await apiFetch(`/api/rooms/available?start=${encodeURIComponent(slotStart)}&end=${encodeURIComponent(slotEnd)}`);
     const d = await r.json();
-    const available = d.rooms || [];
-    const availableIds = new Set(available.map(room => String(room.id)));
-    roomSelect.innerHTML = '<option value="">Auto-assign best available room</option>' + allRooms.map(room => {
-      const isAvail = availableIds.has(String(room.id));
-      return `<option value="${room.id}" ${isAvail ? '' : 'disabled'}>${formatRoomOption(room)}${isAvail ? '' : ' - busy'}</option>`;
+    const roomStates = d.rooms || [];
+    roomSelect.innerHTML = '<option value="">Auto-assign best available room</option>' + roomStates.map(room => {
+      const state = room.availability || (room.available ? 'available' : 'busy');
+      return `<option value="${room.id}" ${state === 'available' ? '' : 'disabled'}>${formatRoomOption(room)} ? ${state}</option>`;
     }).join('');
-    panel.innerHTML = available.length
-      ? available.map(room => formatRoomChip(room, 'available')).join('')
-      : '<span class="room-chip busy">No therapy room is free for this slot</span>';
+    panel.innerHTML = roomStates.map(room => formatRoomChip(room, room.availability === 'available' ? 'available' : 'busy') + ` <small style="font-weight:700">${room.availability || 'busy'}</small>`).join('') || '<span class="room-chip busy">No therapy room is configured</span>';
   }catch(e){
     panel.innerHTML = '<span class="room-chip neutral">Room availability could not be loaded</span>';
   }
@@ -2259,20 +2282,38 @@ async function loadRoomAvailability(startValue, endValue, selectedRoomId){
   }
 }
 
+let vcCurrentDate = new Date();
+let vcView = 'day';
+let vcAppointments = [];
+let vcSelectedStart = null;
+let vcSelectedEnd = null;
+async function vcInit(){const current=allAppointments.find(a=>String(a.id)===String(document.getElementById('apptEditorId')?.value));vcCurrentDate=current?.start_time?new Date(current.start_time):new Date();vcSelectedStart=document.getElementById('apptEditorDateTime')?.value?new Date(document.getElementById('apptEditorDateTime').value).toISOString():null;vcSelectedEnd=document.getElementById('apptEditorEndTime')?.value?new Date(document.getElementById('apptEditorEndTime').value).toISOString():null;try{const r=await apiFetch('/api/appointments');vcAppointments=await r.json();}catch(e){vcAppointments=[];}vcRender();}
+function vcNav(dir){vcCurrentDate.setDate(vcCurrentDate.getDate()+(vcView==='day'?dir:dir*7));vcRender();}
+function vcSetView(view){vcView=view;document.getElementById('vcBtnDay')?.classList.toggle('active',view==='day');document.getElementById('vcBtnWeek')?.classList.toggle('active',view==='week');vcRender();}
+function vcDays(){const d=new Date(vcCurrentDate);if(vcView==='day')return[d];d.setDate(d.getDate()-((d.getDay()+6)%7));return Array.from({length:5},(_,i)=>{const day=new Date(d);day.setDate(d.getDate()+i);return day;});}
+function vcRender(){const grid=document.getElementById('vcGrid'),label=document.getElementById('vcDateLabel');if(!grid||!label)return;const days=vcDays();label.textContent=vcView==='day'?days[0].toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'}):`${days[0].toLocaleDateString('en-US',{month:'short',day:'numeric'})} ? ${days[4].toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;let html='<div class="vc-time-col"><div class="vc-day-header">Time</div>';for(let h=8;h<=19;h++)html+=`<div class="vc-time-slot">${h>12?h-12:h} ${h>=12?'PM':'AM'}</div>`;html+='</div><div class="vc-days">';const editing=String(document.getElementById('apptEditorId')?.value||'');for(const day of days){html+=`<div class="vc-day-col"><div class="vc-day-header">${day.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</div>`;for(let h=8;h<=19;h++){const start=new Date(day);start.setHours(h,0,0,0);const end=new Date(start);end.setHours(h+1);const busy=vcAppointments.some(a=>String(a.id)!==editing&&!['cancelled','terminated'].includes(String(a.status||'').toLowerCase())&&new Date(a.start_time)<end&&new Date(a.end_time||a.start_time)>start);const iso=start.toISOString();html+=`<button type="button" class="vc-slot ${busy?'busy':'available'} ${vcSelectedStart===iso?'selected':''}" data-start="${iso}" data-end="${end.toISOString()}" ${busy?'disabled':''} onclick="vcSlotClick(this)"></button>`;}html+='</div>';}html+='</div>';grid.innerHTML=html;}
+function vcSlotClick(el){vcSelectedStart=el.dataset.start;vcSelectedEnd=el.dataset.end;document.getElementById('apptEditorDateTime').value=el.dataset.start.slice(0,16);document.getElementById('apptEditorEndTime').value=el.dataset.end.slice(0,16);const label=document.getElementById('vcSelectedLabel');label.textContent=`Selected: ${new Date(el.dataset.start).toLocaleString()} ? ${new Date(el.dataset.end).toLocaleTimeString()}`;label.style.display='block';refreshAppointmentRoomAvailability();vcRender();}
+
 function setApptEditorMode(mode){
-  const scope = mode === 'permanent' ? 'permanent' : mode === 'cancelled' ? 'temporary' : 'temporary';
+  const scope = mode === 'permanent' ? 'permanent' : mode === 'terminated' ? 'series' : 'temporary';
   document.getElementById('apptEditorScope').value = scope;
-  document.getElementById('apptEditorStatus').value = mode === 'cancelled' ? 'cancelled' : 'scheduled';
+  document.getElementById('apptEditorStatus').value = mode === 'cancelled' ? 'cancelled' : mode === 'terminated' ? 'terminated' : 'scheduled';
   document.getElementById('apptModeTemp').classList.toggle('active', mode === 'temporary');
   document.getElementById('apptModePerm').classList.toggle('active', mode === 'permanent');
   document.getElementById('apptModeCancel').classList.toggle('active', mode === 'cancelled');
+  document.getElementById('apptModeTerminate')?.classList.toggle('active', mode === 'terminated');
   document.getElementById('apptModeTemp').classList.toggle('temp', mode === 'temporary');
   document.getElementById('apptModePerm').classList.toggle('perm', mode === 'permanent');
   document.getElementById('apptModeCancel').classList.toggle('cancel', mode === 'cancelled');
   const dtGroup = document.querySelector('.appt-editor-time-group');
   const note = document.getElementById('apptEditorNote');
   const saveBtn = document.getElementById('apptEditorSaveBtn');
-  if(mode === 'cancelled'){
+  if(mode === 'terminated'){
+    dtGroup.classList.add('appt-editor-hidden');
+    note.innerHTML = '<strong>End recurring series:</strong> terminates this and every future scheduled session in this series. Add the reason for the client record and Telegram update.';
+    saveBtn.textContent = 'End Recurring Series';
+    saveBtn.className = 'btn btn-danger appt-editor-save';
+  }else if(mode === 'cancelled'){
     dtGroup.classList.add('appt-editor-hidden');
     note.innerHTML = '<strong>Cancellation:</strong> add the reason so the therapist gets the same explanation in Telegram and in their schedule.';
     saveBtn.textContent = 'Cancel Session';
@@ -2323,6 +2364,7 @@ function openAppointmentEditor(apptId, mode='temporary'){
     document.getElementById('apptEditorOverlay').classList.add('active');
     document.getElementById('apptEditorModal').classList.add('active');
     setApptEditorMode(mode);
+    vcInit();
     loadRoomAvailability(isoLocal(appt.start_time), isoLocal(appt.end_time), appt.room_id);
     document.getElementById('apptEditorDateTime').onchange = refreshAppointmentRoomAvailability;
     document.getElementById('apptEditorEndTime').onchange = refreshAppointmentRoomAvailability;
@@ -2376,7 +2418,10 @@ async function saveAppointmentEditor(){
   const roomId = document.getElementById('apptEditorRoom')?.value || '';
   if(!id){ toast('No appointment selected', true); return; }
   const body = { reason };
-  if(status === 'cancelled'){
+  if(status === 'terminated'){
+    if(!reason){ toast('Please add a termination reason', true); return; }
+    body.status = 'terminated'; body.cancel_reason = reason; body.action = 'terminated'; body.terminate_series = true;
+  }else if(status === 'cancelled'){
     if(!reason){ toast('Please add a cancellation reason', true); return; }
     body.status = 'cancelled';
     body.cancel_reason = reason;
@@ -2623,8 +2668,22 @@ async function loadNewClientBookingRoomAvailability() {
   const ncRoom = document.getElementById('nc_book_room');
   if (!ncRoom) return;
   if (!allRooms || !allRooms.length) await loadRooms();
-  ncRoom.innerHTML = '<option value="">Select Room (Optional)</option>' + 
-    allRooms.map(r=>`<option value="${r.id}">${r.name}</option>`).join('');
+  const date = document.getElementById('nc_book_date')?.value;
+  const start = document.getElementById('nc_book_start')?.value;
+  const end = document.getElementById('nc_book_end')?.value || start;
+  if (!date || !start) {
+    ncRoom.innerHTML = '<option value="">Choose a time to see open rooms</option>' + allRooms.filter(r=>r.is_active).map(r=>`<option value="${r.id}">${formatRoomOption(r)}</option>`).join('');
+    return;
+  }
+  try {
+    const r = await apiFetch(`/api/rooms/available?start=${encodeURIComponent(`${date}T${start}:00`)}&end=${encodeURIComponent(`${date}T${end}:00`)}`);
+    const data = await r.json();
+    const current = ncRoom.value;
+    ncRoom.innerHTML = '<option value="">Auto-assign best open room</option>' + (data.rooms || []).map(room => {
+      const state = room.availability || 'busy';
+      return `<option value="${room.id}" ${String(current)===String(room.id)?'selected':''} ${state==='available'?'':'disabled'}>${formatRoomOption(room)} ? ${state}</option>`;
+    }).join('');
+  } catch(e) { ncRoom.innerHTML = '<option value="">Room availability could not be loaded</option>'; }
 }
 
 // Initialize portal on load

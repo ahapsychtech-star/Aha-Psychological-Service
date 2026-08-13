@@ -7,6 +7,7 @@ from openai import OpenAI as GroqOpenAI
 import hashlib
 
 import secrets
+import uuid
 
 import re
 
@@ -703,6 +704,7 @@ def init_db():
         ensure_column(conn, 'appointments', 'updated_at', 'TEXT')
 
         ensure_column(conn, 'appointments', 'room_id', 'INTEGER')
+        ensure_column(conn, 'appointments', 'recurrence_series_id', 'TEXT')
 
         ensure_column(conn, 'session_notes', 'structured_content', 'TEXT')
 
@@ -1519,60 +1521,37 @@ def _appointment_notification_body(appt, action, reason='', old_start_time=None,
 
 
 
-def build_appointment_message(appt, action, reason='', old_start_time=None, old_end_time=None, change_scope=''):
-    client_name = appt.get('client_name') or 'Client'
-    therapist_name = appt.get('therapist_name') or 'Therapist'
-    
-    # Format date strings beautifully if possible
-    def fdt(val):
-        if not val: return ''
-        try:
-            # Parse ISO e.g. 2026-07-30T10:00:00
-            val = str(val)
-            d, t = val.split('T') if 'T' in val else val.split(' ')
-            t = t[:5] # HH:MM
-            return f"<b>{d}</b> at <b>{t}</b>"
-        except:
-            return f"<b>{val}</b>"
-
-    new_start = fdt(appt.get('start_time'))
-    old_start = fdt(old_start_time)
-    
-    room = appt.get('room_name') or appt.get('location') or 'Not specified'
-    appt_type = (appt.get('type') or 'Session').title()
+def build_structured_appointment_message(appt, action, reason='', old_start_time=None, old_end_time=None, change_scope=''):
+    """A compact, scan-friendly Telegram message for clinical scheduling changes."""
     status = (appt.get('status') or 'scheduled').replace('_', ' ').title()
-    
-    lines = [f"👤 <b>Client:</b> {client_name}"]
-    lines.append(f"👨‍⚕️ <b>Therapist:</b> {therapist_name}")
-    lines.append(f"🏷️ <b>Type:</b> {appt_type}")
-    lines.append(f"🚪 <b>Location:</b> {room}")
-    lines.append(f"📊 <b>Status:</b> {status}")
-    lines.append("")
-    
-    if action in ('cancelled', 'terminated'):
-        lines.append(f"❌ <b>Cancelled / Terminated</b>")
-        lines.append(f"📅 Was: {new_start}")
-        if reason:
-            lines.append(f"💬 Reason: {reason}")
-    elif action == 'no_show':
-        lines.append(f"⚠️ <b>Client No-Show</b>")
-        lines.append(f"📅 Date: {new_start}")
-        if reason:
-            lines.append(f"💬 Note: {reason}")
-    elif action in ('rescheduled', 'changed'):
-        lines.append(f"🔄 <b>Schedule Changed</b>")
-        if change_scope == 'permanent':
-            lines.append(f"<i>(This is a permanent change to the recurring series)</i>")
-        if old_start:
-            lines.append(f"📅 Previous: {old_start}")
-        lines.append(f"📅 New Time: {new_start}")
-        if reason:
-            lines.append(f"💬 Reason: {reason}")
-    else:
-        lines.append(f"📅 <b>Date/Time:</b> {new_start}")
-        if reason:
-            lines.append(f"💬 Note: {reason}")
-
+    scope = {'temporary': 'This session only', 'permanent': 'Recurring series updated', 'series': 'Recurring series ended'}.get(change_scope, 'Administrative update')
+    title = {
+        'created': 'NEW SESSION SCHEDULED',
+        'changed': 'SESSION UPDATED',
+        'rescheduled': 'SESSION RESCHEDULED',
+        'cancelled': 'SESSION CANCELLED',
+        'terminated': 'SERVICES / SERIES TERMINATED',
+        'no_show': 'SESSION MARKED NO-SHOW',
+        'completed': 'SESSION COMPLETED',
+    }.get(action, 'SESSION UPDATE')
+    lines = [
+        f'<b>{title}</b>',
+        '',
+        '<b>CLIENT</b>',
+        f'Name: {_telegram_safe(appt.get("client_name") or "Client")}',
+        f'Code: <code>{_telegram_safe(appt.get("client_code") or "Not specified")}</code>',
+        '',
+        '<b>SESSION</b>',
+        f'Therapist: {_telegram_safe(appt.get("therapist_name") or "Unassigned")}',
+        f'Date and time: {_telegram_safe(format_datetime_readable(appt.get("start_time")))}',
+        f'Room: {_telegram_safe(appt.get("room_name") or appt.get("room_code") or appt.get("location") or "Unassigned")}',
+        f'Format: {_telegram_safe(appt.get("location") or "Not specified")}',
+        f'Status: {_telegram_safe(status)}',
+    ]
+    if old_start_time:
+        lines.append(f'Previous time: {_telegram_safe(format_datetime_readable(old_start_time))}')
+    if action in ('changed', 'rescheduled', 'cancelled', 'terminated', 'no_show'):
+        lines.extend(['', '<b>CHANGE DETAILS</b>', f'Scope: {_telegram_safe(scope)}', f'Reason: {_telegram_safe(reason or "No reason provided")}'])
     return '\n'.join(lines)
 
 
@@ -1737,6 +1716,12 @@ def is_room_available(room_id, start_time, end_time, appointment_id=None):
 
         return False
 
+    room = get_room_by_id(room_id)
+
+    if not room or not room.get('is_active'):
+
+        return False
+
     with get_db() as conn:
 
         row = conn.execute('''SELECT COUNT(*) AS cnt
@@ -1767,6 +1752,41 @@ def available_rooms_for_slot(start_time, end_time, appointment_id=None):
 
     return available
 
+
+
+def room_states_for_slot(start_time, end_time, appointment_id=None):
+
+    states = []
+
+    with get_db() as conn:
+
+        rows = conn.execute('SELECT id, name, code, color, is_active, sort_order FROM rooms ORDER BY sort_order ASC, name ASC').fetchall()
+
+    for row in rows:
+
+        room = dict(row)
+
+        if not room.get('is_active'):
+
+            room['availability'] = 'closed'
+
+            room['available'] = False
+
+        elif is_room_available(room['id'], start_time, end_time, appointment_id=appointment_id):
+
+            room['availability'] = 'available'
+
+            room['available'] = True
+
+        else:
+
+            room['availability'] = 'busy'
+
+            room['available'] = False
+
+        states.append(room)
+
+    return states
 
 
 def choose_room_for_slot(start_time, end_time, preferred_room_id=None, appointment_id=None):
@@ -3444,7 +3464,7 @@ def format_appointment_message(appt, action, reason=''):
 
 def build_appointment_message(appt, action, reason='', old_start_time=None, old_end_time=None, change_scope=''):
 
-    return _appointment_notification_body(
+    return build_structured_appointment_message(
         appt,
         action,
         reason,
@@ -4468,6 +4488,16 @@ def update_client(cid):
 
     with get_db() as conn:
 
+        existing = conn.execute('SELECT id, assigned_therapist_id FROM clients WHERE id=?', (cid,)).fetchone()
+
+        if not existing:
+
+            return jsonify({'error': 'Client not found'}), 404
+
+        if current_user()['role'] == 'therapist' and existing.get('assigned_therapist_id') != current_user()['id']:
+
+            return jsonify({'error': 'You can only update clients assigned to you'}), 403
+
         if 'status' in data:
 
             conn.execute('UPDATE clients SET status=? WHERE id=?', (data['status'], cid))
@@ -4482,11 +4512,24 @@ def update_client(cid):
 
                              (f"\n\nTermination reason: {data.get('notes', '')}", cid))
 
+                conn.execute("UPDATE appointments SET status='terminated', cancel_reason=?, cancelled_by=?, updated_at=? WHERE client_id=? AND status='scheduled' AND start_time::timestamp >= NOW()",
+                             (data.get('notes', 'Client services terminated'), current_user()['id'], datetime.now().isoformat(), cid))
+
         if 'assigned_therapist_id' in data:
+
+            therapist = conn.execute('SELECT id FROM users WHERE id=? AND role=? AND is_active=1',
+                                     (data['assigned_therapist_id'], 'therapist')).fetchone()
+
+            if not therapist:
+
+                return jsonify({'error': 'Select an active therapist'}), 400
 
             conn.execute('UPDATE clients SET assigned_therapist_id=?,status=? WHERE id=?',
 
-                         (data['assigned_therapist_id'], 'assigned', cid))
+                         (therapist['id'], 'assigned', cid))
+
+            conn.execute("UPDATE appointments SET therapist_id=?, updated_at=? WHERE client_id=? AND therapist_id IS NULL AND status='scheduled'",
+                         (therapist['id'], datetime.now().isoformat(), cid))
 
             conn.execute('INSERT INTO client_journey (client_id, stage, changed_by, notes) VALUES (?,?,?,?)',
 
@@ -4550,6 +4593,46 @@ def update_client(cid):
 
 
 # ─────────────────────────────────────────────
+
+@app.route('/api/clients/<int:cid>', methods=['DELETE'])
+def delete_trial_client(cid):
+
+    if not require_role('admin', 'receptionist'):
+
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    data = request.json or {}
+
+    with get_db() as conn:
+
+        client = conn.execute('SELECT id, client_code FROM clients WHERE id=?', (cid,)).fetchone()
+
+        if not client:
+
+            return jsonify({'error': 'Client not found'}), 404
+
+        if data.get('confirm') != client['client_code']:
+
+            return jsonify({'error': f"Type client code {client['client_code']} to permanently delete this trial record"}), 400
+
+        appointment_ids = [row['id'] for row in conn.execute('SELECT id FROM appointments WHERE client_id=?', (cid,)).fetchall()]
+
+        for appointment_id in appointment_ids:
+
+            conn.execute('DELETE FROM appointment_history WHERE appointment_id=?', (appointment_id,))
+
+        for table in ('session_notes', 'treatment_plans', 'referrals', 'risk_alerts', 'screening_responses', 'intake_forms', 'assessment_submissions', 'messages', 'payments', 'invoices', 'client_journey', 'appointments'):
+
+            conn.execute(f'DELETE FROM {table} WHERE client_id=?', (cid,))
+
+        conn.execute('DELETE FROM clients WHERE id=?', (cid,))
+
+        conn.commit()
+
+    log_action(current_user()['id'], 'DELETE_TRIAL_CLIENT', 'clients', f"Deleted trial client {client['client_code']}")
+
+    return jsonify({'success': True})
+
 
 # API: APPOINTMENTS
 
@@ -4671,11 +4754,49 @@ def create_appointment():
 
     data = request.json or {}
 
-    is_recurring = data.get('is_recurring', False)
+    is_recurring = bool(data.get('is_recurring'))
 
-    
+    try:
+
+        recurrence_count = max(1, min(int(data.get('recurrence_count') or 24), 52))
+
+        recurrence_interval_days = 14 if int(data.get('recurrence_interval_days') or 7) == 14 else 7
+
+    except (TypeError, ValueError):
+
+        return jsonify({'error': 'Invalid recurrence settings'}), 400
 
     with get_db() as conn:
+
+        client = conn.execute('SELECT id, status FROM clients WHERE id=?', (data.get('client_id'),)).fetchone()
+
+        therapist = conn.execute('SELECT id FROM users WHERE id=? AND role=? AND is_active=1', (data.get('therapist_id'), 'therapist')).fetchone()
+
+        if not client or client.get('status') == 'terminated':
+
+            return jsonify({'error': 'Select an active client'}), 400
+
+        if not therapist:
+
+            return jsonify({'error': 'Select an active therapist'}), 400
+
+        if not data.get('start_time'):
+
+            return jsonify({'error': 'Start time is required'}), 400
+
+        requested_room_id = data.get('room_id') or None
+
+        location = data.get('location', 'In-Person')
+
+        effective_end = data.get('end_time') or data.get('start_time')
+
+        if requested_room_id and not is_room_available(requested_room_id, data.get('start_time'), effective_end):
+
+            return jsonify({'error': 'The selected room is closed or already booked for this time'}), 409
+
+        if location == 'In-Person' and not choose_room_for_slot(data.get('start_time'), effective_end, preferred_room_id=requested_room_id):
+
+            return jsonify({'error': 'No open therapy room is available for this time'}), 409
 
         if is_recurring:
 
@@ -4687,29 +4808,45 @@ def create_appointment():
 
             first_appt_id = None
 
-            for i in range(24):
+            series_id = str(uuid.uuid4())
 
-                cur_start = (start_dt + timedelta(days=7*i)).isoformat()
+            recurrence_rule = f'FREQ=WEEKLY;INTERVAL={recurrence_interval_days // 7};COUNT={recurrence_count}'
 
-                cur_end = (end_dt + timedelta(days=7*i)).isoformat()
+            planned_slots = []
 
-                preferred_room_id = data.get('room_id')
+            for i in range(recurrence_count):
 
-                room_id = choose_room_for_slot(cur_start, cur_end, preferred_room_id=preferred_room_id)
+                cur_start = (start_dt + timedelta(days=recurrence_interval_days*i)).isoformat()
+
+                cur_end = (end_dt + timedelta(days=recurrence_interval_days*i)).isoformat()
+
+                room_id = choose_room_for_slot(cur_start, cur_end, preferred_room_id=requested_room_id)
+
+                if location == 'In-Person' and not room_id:
+
+                    return jsonify({'error': f'No open therapy room is available for recurring session {i + 1}'}), 409
+
+                planned_slots.append((cur_start, cur_end, room_id))
+
+            for cur_start, cur_end, room_id in planned_slots:
 
                 
 
-                cur = conn.execute('''INSERT INTO appointments (client_id,therapist_id,room_id,start_time,end_time,type,status,location,notes,created_by)
+                cur = conn.execute('''INSERT INTO appointments (client_id,therapist_id,room_id,start_time,end_time,type,status,location,notes,created_by,recurrence_rule,recurrence_series_id)
 
-                    VALUES (?,?,?,?,?,?,?,?,?,?)''',
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)''',
 
                     (data.get('client_id'), data.get('therapist_id'), room_id, cur_start, cur_end,
 
                      data.get('type','individual'), data.get('status','scheduled'),
 
-                     data.get('location','In-Person'), data.get('notes','') + (' (Recurring)' if i>0 else ''), current_user()['id']))
+                     data.get('location','In-Person'), data.get('notes',''), current_user()['id'], recurrence_rule, series_id))
 
-                if i == 0:
+                conn.execute('INSERT INTO appointment_history (appointment_id,action,performed_by,reason) VALUES (?,?,?,?)',
+
+                             (cur.lastrowid, 'created', current_user()['id'], f'Recurring series {series_id}'))
+
+                if first_appt_id is None:
 
                     first_appt_id = cur.lastrowid
 
@@ -4811,6 +4948,10 @@ def update_appointment(aid):
 
             return jsonify({'error': 'Not found'}), 404
 
+        if current_user()['role'] == 'therapist' and current.get('therapist_id') != current_user()['id']:
+
+            return jsonify({'error': 'You can only update sessions assigned to you'}), 403
+
         old_start_time = current['start_time']
 
         old_end_time = current['end_time']
@@ -4879,7 +5020,19 @@ def update_appointment(aid):
 
             effective_room_id = data.get('room_id') if 'room_id' in data else current.get('room_id')
 
-            chosen_room = choose_room_for_slot(data.get('start_time') or old_start_time, data.get('end_time') or old_end_time, preferred_room_id=effective_room_id, appointment_id=aid)
+            slot_start = data.get('start_time') or old_start_time
+
+            slot_end = data.get('end_time') or old_end_time or slot_start
+
+            if data.get('room_id') and not is_room_available(data.get('room_id'), slot_start, slot_end, appointment_id=aid):
+
+                return jsonify({'error': 'The selected room is closed or already booked for this time'}), 409
+
+            chosen_room = choose_room_for_slot(slot_start, slot_end, preferred_room_id=effective_room_id, appointment_id=aid)
+
+            if current.get('location') == 'In-Person' and not chosen_room:
+
+                return jsonify({'error': 'No open therapy room is available for this time'}), 409
 
             updates.append('room_id=?')
 
@@ -4894,6 +5047,20 @@ def update_appointment(aid):
         conn.execute(f'UPDATE appointments SET {", ".join(updates)} WHERE id=?', params)
 
         updated_action = action or data.get('status') or ('changed' if (data.get('start_time') or data.get('end_time') or data.get('change_scope')) else 'updated')
+
+        if data.get('terminate_series') and data.get('status') == 'terminated':
+
+            series_id = current.get('recurrence_series_id')
+
+            if series_id:
+
+                future_rows = conn.execute("SELECT id FROM appointments WHERE recurrence_series_id=? AND id<>? AND status='scheduled' AND start_time::timestamp >= %s::timestamp", (series_id, aid, old_start_time)).fetchall()
+
+                for row in future_rows:
+
+                    conn.execute("UPDATE appointments SET status='terminated', cancel_reason=?, cancelled_by=?, change_scope='series', updated_at=? WHERE id=?", (reason or 'Recurring service terminated', current_user()['id'], datetime.now().isoformat(), row['id']))
+
+                    conn.execute('INSERT INTO appointment_history (appointment_id,action,performed_by,reason) VALUES (?,?,?,?)', (row['id'], 'terminated', current_user()['id'], reason or 'Recurring series terminated'))
 
         if data.get('change_scope') == 'permanent' and data.get('start_time'):
 
@@ -5203,9 +5370,9 @@ def rooms_available_api():
 
     appointment_id = request.args.get('appointment_id')
 
-    rooms = available_rooms_for_slot(start, end, appointment_id=appointment_id)
+    rooms = room_states_for_slot(start, end, appointment_id=appointment_id)
 
-    return jsonify({'success': True, 'rooms': rooms})
+    return jsonify({'success': True, 'rooms': rooms, 'available_rooms': [room for room in rooms if room.get('available')]})
 
 
 

@@ -1159,7 +1159,8 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
       <div class="appt-mode-row">
         <button type="button" class="appt-mode-btn active temp" id="apptModeTemp" onclick="setApptEditorMode('temporary')">Temporary change</button>
         <button type="button" class="appt-mode-btn" id="apptModePerm" onclick="setApptEditorMode('permanent')">Permanent change</button>
-        <button type="button" class="appt-mode-btn" id="apptModeCancel" onclick="setApptEditorMode('cancelled')">Cancel session</button>
+        <button type="button" class="appt-mode-btn" id="apptModeCancel" onclick="setApptEditorMode('cancelled')">Cancel this session</button>
+        <button type="button" class="appt-mode-btn" id="apptModeTerminate" onclick="setApptEditorMode('terminated')">End recurring series</button>
         <button type="button" class="appt-mode-btn" id="apptModeNoShow" onclick="setApptEditorMode('no_show')">No-show</button>
       </div>
       
@@ -2040,7 +2041,7 @@ function roomLabel(a){
 }
 
 function isFinalAppointmentStatus(status){
-  return ['completed', 'cancelled', 'no_show'].includes(String(status || '').toLowerCase());
+  return ['completed', 'cancelled', 'no_show', 'terminated'].includes(String(status || '').toLowerCase());
 }
 
 function appointmentActionButtons(a, context='schedule'){
@@ -2158,11 +2159,17 @@ function setApptEditorMode(mode){
   document.getElementById('apptModeTemp').classList.toggle('active', mode === 'temporary');
   document.getElementById('apptModePerm').classList.toggle('active', mode === 'permanent');
   document.getElementById('apptModeCancel').classList.toggle('active', mode === 'cancelled');
+  document.getElementById('apptModeTerminate')?.classList.toggle('active', mode === 'terminated');
   document.getElementById('apptModeNoShow').classList.toggle('active', mode === 'no_show');
   const dtGroup = document.querySelector('.appt-editor-time-group');
   const note = document.getElementById('apptEditorNote');
   const saveBtn = document.getElementById('apptEditorSaveBtn');
-  if(mode === 'cancelled'){
+  if(mode === 'terminated'){
+    dtGroup.classList.add('appt-editor-hidden');
+    note.innerHTML = '<strong>End recurring series:</strong> terminates this and every future scheduled session in the series. Add the reason for the client record and Telegram update.';
+    saveBtn.textContent = 'End Recurring Series';
+    saveBtn.className = 'btn btn-danger appt-editor-save';
+  } else if(mode === 'cancelled'){
     dtGroup.classList.add('appt-editor-hidden');
     note.innerHTML = '<strong>Cancellation:</strong> add the reason so reception and Telegram get the same update.';
     saveBtn.textContent = 'Cancel Session';
@@ -2210,7 +2217,13 @@ async function saveAppointmentEditor(){
   const scope = document.getElementById('apptEditorScope').value || 'temporary';
   const reason = document.getElementById('apptEditorReason').value.trim();
   const body = { reason };
-  if(mode === 'cancelled'){
+  if(mode === 'terminated'){
+    if(!reason){ toast('Please add a termination reason', true); return; }
+    body.status = 'terminated';
+    body.cancel_reason = reason;
+    body.action = 'terminated';
+    body.terminate_series = true;
+  } else if(mode === 'cancelled'){
     if(!reason){ toast('Please add a cancellation reason', true); return; }
     body.status = 'cancelled';
     body.cancel_reason = reason;
@@ -2437,7 +2450,13 @@ async function saveAppointmentEditor(){
   const scope = document.getElementById('apptEditorScope').value || 'temporary';
   const reason = document.getElementById('apptEditorReason').value.trim();
   const body = { reason };
-  if(mode === 'cancelled'){
+  if(mode === 'terminated'){
+    if(!reason){ toast('Please add a termination reason', true); return; }
+    body.status = 'terminated';
+    body.cancel_reason = reason;
+    body.action = 'terminated';
+    body.terminate_series = true;
+  } else if(mode === 'cancelled'){
     if(!reason){ toast('Please add a cancellation reason', true); return; }
     body.status = 'cancelled';
     body.cancel_reason = reason;
